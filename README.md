@@ -12,5 +12,3 @@ Example to run the building disaggregation baseline:
 
 time python building_disagg_baseline.py preprocessed_data.pkl raster_world_pop_admin_boundaries.tif output_dir/ P_2020 tza
 
-
-
