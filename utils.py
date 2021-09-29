@@ -72,3 +72,17 @@ def preprocess_census_targets(data_dict_orig):
     data_dict = convert_str_to_int_keys(data_dict_orig)
     data_dict = convert_dict_vals_str_to_float(data_dict)
     return data_dict
+
+
+def create_map_of_valid_ids(regions, no_valid_ids):
+    map_valid_ids = np.ones(regions.shape).astype(np.uint32)
+    for id in no_valid_ids:
+        map_valid_ids[regions == id] = 0
+    return map_valid_ids
+
+
+def create_valid_mask_array(num_ids, valid_ids):
+    valid_ids_mask = np.zeros(num_ids)
+    for id in valid_ids:
+        valid_ids_mask[id] = 1
+    return valid_ids_mask
