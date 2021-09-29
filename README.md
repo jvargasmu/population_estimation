@@ -1,4 +1,4 @@
-# population_estimation
+# Population Estimation
 Implementation of methods for population estimation
 
 
