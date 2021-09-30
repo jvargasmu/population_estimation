@@ -86,3 +86,38 @@ def create_valid_mask_array(num_ids, valid_ids):
     for id in valid_ids:
         valid_ids_mask[id] = 1
     return valid_ids_mask
+
+
+def compute_grouped_values(data, valid_ids, id_to_gid):
+    # Initialize target values
+    grouped_data = {}
+    for id in valid_ids:
+        gid = id_to_gid[id]
+        if gid not in grouped_data.keys():
+            grouped_data[gid] = 0
+    # Aggregate targets
+    for id in valid_ids:
+        gid = id_to_gid[id]
+        grouped_data[gid] += data[id]
+    return grouped_data
+
+
+def transform_dict_to_array(data_dict):
+    return np.array([data_dict[k] for k in data_dict.keys()]).astype(np.float32)
+
+
+def transform_dict_to_matrix(data_dict):
+    assert len(data_dict.keys()) > 0
+    # get size of matrix
+    keys = list(data_dict.keys())
+    num_rows = len(keys)
+    first_row = data_dict[keys[0]]
+    col_keys = list(first_row.keys())
+    num_cols = len(col_keys)
+    # fill matrix
+    data_array = np.zeros((num_rows, num_cols)).astype(np.float32)
+    for i, rk in enumerate(keys):
+        for j, ck in enumerate(col_keys):
+            data_array[i, j] = data_dict[rk][ck]
+
+    return data_array

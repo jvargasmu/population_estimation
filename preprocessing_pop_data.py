@@ -5,21 +5,7 @@ import csv
 import pickle
 import config_pop as cfg
 from cy_utils import count_matches, compute_area_of_regions, compute_accumulated_values_by_region
-from utils import read_shape_layer_data, read_input_raster_data, preprocess_census_targets
-
-
-def group_census_data(census_data, valid_ids, id_to_gid):
-    # Initialize target values
-    grouped_targets = {}
-    for id in valid_ids:
-        gid = id_to_gid[id]
-        if gid not in grouped_targets.keys():
-            grouped_targets[gid] = 0
-    # Aggregate targets
-    for id in valid_ids:
-        gid = id_to_gid[id]
-        grouped_targets[gid] += census_data[id]
-    return grouped_targets
+from utils import read_shape_layer_data, read_input_raster_data, preprocess_census_targets, compute_grouped_values
 
 
 def get_valid_ids(wp_ids, matches_wp_to_hd, wp_no_data):
@@ -216,7 +202,7 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
         valid_census[id] = census[id]
 
     # Aggregate targets : coarse census
-    cr_census = group_census_data(valid_census, valid_ids, id_to_cr_id)
+    cr_census = compute_grouped_values(valid_census, valid_ids, id_to_cr_id)
     cr_census_arr = np.zeros(num_coarse_regions).astype(np.float32)
     for gid in cr_census.keys():
         cr_census_arr[gid] = cr_census[gid]

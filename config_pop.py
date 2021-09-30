@@ -28,6 +28,7 @@ input_paths = {
             root_path),
         "osm_dst_road_100m_2016": "{}Covariates/TZA/OSM/DST/tza_osm_dst_road_100m_2016.tif".format(
             root_path)
+
     }
 }
 
