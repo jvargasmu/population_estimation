@@ -12,3 +12,6 @@ time python preprocessing_pop_data.py world_pop_admin_boundaries.shp raster_worl
 
 time python building_disagg_baseline.py preprocessed_data.pkl raster_world_pop_admin_boundaries.tif output_dir/ tza
 
+- Example to run the WorldPop baseline:
+
+time python train_model_with_agg_data.py preprocessed_data.pkl raster_world_pop_admin_boundaries.tif output_dir/ tza
