@@ -1,12 +1,26 @@
+
+import os
+
+
 # Data root path
-root_path = "/home/john.vargas/data/wpop/"
+# if os.isdir()
+root_paths = ["/home/john.vargas/data/wpop/",
+    "/scratch/Nando/HAC2/data/"]
+for dir in root_paths:
+    if os.path.isdir(dir):
+        root_path = dir
 
 # Input files
 
 input_paths = {
     "tza": {
+<<<<<<< HEAD
         #"buildings": "{}OtherBuildings/TZA/tza_gbuildings.tif".format(root_path),
         "buildings": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
+=======
+        "buildings": "{}OtherBuildings/TZA/tza_gbuildings.tif".format(root_path),
+        # "buildings_g": "/home/pf/pfstaff/projects/Daudt_HAC/ftp.worldpop.org.uk/GIS/Covariates/Building_patterns/Google_Open_Buildings/v1_0/country/TZA/TZA_g_bldg_patterns_100m_v1/TZA_gbp_BCB_v1_count.tif".format(root_path),
+>>>>>>> 9ef46953774b0d0e969aaf97bbb1dea6ccfcacb3
         "esaccilc_dst011_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst011_100m_2015.tif".format(
             root_path),
         "esaccilc_dst040_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst040_100m_2015.tif".format(
