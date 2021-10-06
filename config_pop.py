@@ -5,7 +5,8 @@ root_path = "/home/john.vargas/data/wpop/"
 
 input_paths = {
     "tza": {
-        "buildings": "{}OtherBuildings/TZA/tza_gbuildings.tif".format(root_path),
+        #"buildings": "{}OtherBuildings/TZA/tza_gbuildings.tif".format(root_path),
+        "buildings": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
         "esaccilc_dst011_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst011_100m_2015.tif".format(
             root_path),
         "esaccilc_dst040_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst040_100m_2015.tif".format(
@@ -38,6 +39,13 @@ metadata = {
         "hd_no_data": [0]
     }
 }
+
+input_paths["tza_f2"] = {
+    "buildings": input_paths["tza"]["buildings"],
+    "tza_viirs_100m_2016" : "{}Covariates/TZA/VIIRS/tza_viirs_100m_2016.tif".format(root_path)
+}
+
+metadata["tza_f2"] = metadata["tza"]
 
 # Columns of shapefiles
 col_coarse_level_name = "ADM2_EN"
