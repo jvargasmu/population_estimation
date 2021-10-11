@@ -31,8 +31,7 @@ input_paths = {
         # "esaccilc_dst190_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst190_100m_2015.tif".format(
         #     root_path),
         # "esaccilc_dst200_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst200_100m_2015.tif".format(
-        #     root_path),
-
+        #     root_path), 
         # "tza_tt50k_100m_2000": "{}Covariates/TZA/Accessibility/tza_tt50k_100m_2000.tif".format(
         #     root_path), 
         # "tza_dst_bsgme_100m_2015": "{}Covariates/TZA/BSGM/2015/DTE/tza_dst_bsgme_100m_2015.tif".format(
@@ -67,7 +66,6 @@ input_paths = {
 no_data_values = {
     "tza": {
         "buildings": None,
-        # "buildings_g": "/home/pf/pfstaff/projects/Daudt_HAC/ftp.worldpop.org.uk/GIS/Covariates/Building_patterns/Google_Open_Buildings/v1_0/country/TZA/TZA_g_bldg_patterns_100m_v1/TZA_gbp_BCB_v1_count.tif".format(root_path),
         "esaccilc_dst011_100m_2000": -99999,
         "esaccilc_dst040_100m_2000": -99999,
         "esaccilc_dst130_100m_2000": -99999,
