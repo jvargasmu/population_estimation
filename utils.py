@@ -121,3 +121,28 @@ def transform_dict_to_matrix(data_dict):
             data_array[i, j] = data_dict[rk][ck]
 
     return data_array
+
+
+def compute_features_from_raw_inputs(inputs, feats_list):
+    inputs_mat = []
+    for feat in feats_list:
+        inputs_mat.append(inputs[feat])
+    inputs_mat = np.array(inputs_mat)
+    all_features = inputs_mat.reshape((inputs_mat.shape[0], -1))
+    all_features = all_features.transpose()
+    return all_features
+
+
+def mostly_non_empty_map(map_valid_ids, feats_list, inputs, threshold = 0.99, min_val = 0.001):
+    map_empty_feats = np.random.rand(map_valid_ids.shape[0], map_valid_ids.shape[1]) < threshold
+    for k in feats_list:
+        min_threshold = 0
+        max_threshold = 1000.0
+        for k in inputs.keys():
+            inputs[k][inputs[k] > max_threshold] = 0
+            inputs[k][inputs[k] < min_threshold] = 0
+        map_empty_feats = np.multiply(map_empty_feats, inputs[k] <= min_val)
+
+    mostly_non_empty = (1 - map_empty_feats).astype(np.bool)
+    return mostly_non_empty
+
