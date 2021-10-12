@@ -2,7 +2,10 @@ import fiona
 from osgeo import gdal
 import numpy as np
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-
+from tqdm import tqdm
+import copy
+from pylab import figure, imshow, grid
+import torch
 
 def get_properties_dict(data_dict_orig):
     data_dict = []
@@ -146,3 +149,43 @@ def mostly_non_empty_map(map_valid_ids, feats_list, inputs, threshold = 0.99, mi
     mostly_non_empty = (1 - map_empty_feats).astype(np.bool)
     return mostly_non_empty
 
+
+def calculate_densities(census, area, map=None):
+    density = {}
+    for key, value in census.items():
+        density[key] = value / area[key]
+    if map is None:
+        return density
+
+    #write into map
+    # making sure that all the values are contained in the 
+    diffkey = set(area.keys()) - set(census.keys())
+    mapping = copy.deepcopy(density)
+    for key in diffkey:
+        mapping[key] = 0
+
+    #vectorized mapping of the integer keys (assumes keys are integers, and not excessively large compared to the length of the dicct)
+    k = np.array(list(mapping.keys()))
+    v = np.array(list(mapping.values()))
+    mapping_ar = np.zeros(k.max()+1,dtype=v.dtype) #k,v from approach #1
+    mapping_ar[k] = v
+    density_map = mapping_ar[map] 
+    return density, density_map
+    
+
+    
+def plot_2dmatrix(matrix,fig=1):
+    if torch.is_tensor(matrix):
+        if matrix.is_cuda:
+            matrix = matrix.cpu()
+        matrix = matrix.numpy()
+    figure(fig)
+    imshow(matrix, interpolation='nearest')
+    grid(True)
+
+
+def accumulate_values_by_region(map, ids, regions):
+    sums = {}
+    for id in tqdm(ids):
+        sums[id]= map[regions==id].sum()
+    return sums

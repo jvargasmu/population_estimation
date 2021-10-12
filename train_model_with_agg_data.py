@@ -91,7 +91,7 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path,
     cr_log_density_arr = np.log(cr_density_arr)
 
     # Create model
-    model = RandomForestRegressor(random_state=42, n_jobs=4)
+    model = RandomForestRegressor(random_state=42, n_jobs=4, n_estimators=1)
 
     # Fit model
     model.fit(cr_features_arr, cr_log_density_arr)
