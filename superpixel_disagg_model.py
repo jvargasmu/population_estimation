@@ -36,6 +36,7 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
             'weights_regularizer': [0., 0., 0.], # spatial color head
             # 'weights_regularizer': [0.0001, 0.001, 0.0001], # spatial color head
             'loss': 'l1',
+            'average_over_admin': True,
             "predict_log_values": False,
     
             'optim': 'adam',

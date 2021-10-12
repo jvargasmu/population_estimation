@@ -146,7 +146,6 @@ def PixTransform(source_img, guide_img, valid_mask=None, params=DEFAULT_PARAMS, 
                 optimizer.zero_grad()
 
                 y_pred = mynet(x)
-
                 loss = myloss(y_pred[mask], y[mask])
 
                 loss.backward()
@@ -155,11 +154,12 @@ def PixTransform(source_img, guide_img, valid_mask=None, params=DEFAULT_PARAMS, 
             if epoch % params['logstep'] == 0:
                 with torch.no_grad():
                     mynet.eval()
+
                     # batchwise passing for whole image
                     predicted_target_img = mynet.forward_batchwise(guide_img.unsqueeze(0)).squeeze()
+
                     # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
                     predicted_target_img[~valid_mask] = 0#predicted_target_img[valid_mask].mean()
-
 
                     if target_img is not None:
 
@@ -173,23 +173,17 @@ def PixTransform(source_img, guide_img, valid_mask=None, params=DEFAULT_PARAMS, 
                             abs_source_img = torch.exp(abs_source_img)
                             abs_target_img = torch.exp(abs_target_img)
 
-                        # mse_predicted_source_img = F.mse_loss((source_img_std * predicted_target_img)[valid_mask], (source_img_std * source_img)[valid_mask])
                         mse_predicted_source_img = F.mse_loss(abs_predicted_target_img[valid_mask], abs_source_img[valid_mask]).cpu().numpy()
-                        # mse_predicted_target_img = F.mse_loss((source_img_std * predicted_target_img)[valid_mask], (source_img_std * target_img)[valid_mask])
-                        # mse_predicted_target_img = F.mse_loss(abs_predicted_target_img[valid_mask].cpu(), abs_target_img[valid_mask]).cpu().numpy()
-                    
+
                         # convert resolution back to feature resolution
                         if params["feature_downsampling"]!=1:
                             full_res_predicted_target_image = upsample(abs_predicted_target_img, params["feature_downsampling"], orig_guide_res=orig_guide_res)
                             full_upsamp_source_image = upsample(abs_source_img, params["feature_downsampling"], orig_guide_res=orig_guide_res)
-                            # full_upsamp_target_image = upsample(abs_target_img, params["feature_downsampling"], orig_guide_res=orig_guide_res)
-                            # plot_2dmatrix(torch.log(upsample(abs_source_img, params["feature_downsampling"], orig_guide_res=orig_guide_res)))
                         else:
                             full_res_predicted_target_image = upsample(abs_predicted_target_img, params["feature_downsampling"], orig_guide_res=orig_guide_res)
                             full_upsamp_source_image = upsample(abs_source_img, params["feature_downsampling"], orig_guide_res=orig_guide_res)
                         
-                        #TODO: interpolate the missing boarder values that occure due the downsampling process
-
+                        # Aggregate by fine administrative boundary
                         agg_preds_arr = compute_accumulated_values_by_region(
                             validation_regions.numpy().astype(np.uint32),
                             full_res_predicted_target_image.cpu().numpy().astype(np.float32),
@@ -197,24 +191,8 @@ def PixTransform(source_img, guide_img, valid_mask=None, params=DEFAULT_PARAMS, 
                             num_validation_ids
                         )
                         agg_preds = {id: agg_preds_arr[id] for id in validation_ids}
-                        
-                        # source_img_back = compute_accumulated_values_by_region(
-                        #     validation_regions.numpy().astype(np.uint32),
-                        #     full_upsamp_source_image.cpu().numpy().astype(np.float32),
-                        #     valid_validation_ids,
-                        #     num_validation_ids
-                        # )
-                        # agg_source_back = {id: source_img_back[id] for id in validation_ids}
-
-                        # r2_source, mae_source, mse_source = compute_performance_metrics(agg_preds, agg_source_back) # Try to overfit this as a test!
-                        # r2_ts, mae_ts, mse_ts = compute_performance_metrics(validation_census, agg_source_back)
-
-                        
-                        # agg_preds = accumulate_values_by_region(full_res_predicted_target_image, list(validation_census.keys()), validation_regions)
                         r2, mae, mse = compute_performance_metrics(agg_preds, validation_census)
-                        # source_image_consistency = myloss(
-                        #     source_img_std * F.avg_pool2d(predicted_target_img.unsqueeze(0), D),
-                        #     source_img_std * source_img.unsqueeze(0))
+
                     if target_img is not None:
                         tnr.set_postfix(R2=r2, zMAEc=mae, zMSEs=mse_predicted_source_img) #MSEs=mse_predicted_source_img, MSEt=mse_predicted_target_img,
                                         
