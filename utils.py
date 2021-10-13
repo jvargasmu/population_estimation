@@ -189,3 +189,32 @@ def accumulate_values_by_region(map, ids, regions):
     for id in tqdm(ids):
         sums[id]= map[regions==id].sum()
     return sums
+
+
+
+def bbox2(img):
+    rows = np.any(img, axis=1)
+    cols = np.any(img, axis=0)
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+
+    return rmin, rmax, cmin, cmax
+
+
+
+
+class PatchDataset(torch.utils.data.Dataset):
+    """Patch dataset."""
+    def __init__(self, *variables, device): 
+        self.variables = variables
+        self.device = device
+
+    def __len__(self):
+        return len(self.variables[0])
+
+    def __getitem__(self, idx):
+        output = []
+        for var in self.variables:
+            # output.append(var[idx].to(self.device))
+            output.append(var[idx])
+        return output

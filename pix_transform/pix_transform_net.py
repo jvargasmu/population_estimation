@@ -5,56 +5,79 @@ import torch
 
 class PixTransformNet(nn.Module):
 
-    def __init__(self, channels_in=5, kernel_size = 1,weights_regularizer = None):
+    def __init__(self, channels_in=5, kernel_size = 1, weights_regularizer = None, device="cuda" if torch.cuda.is_available() else "cpu"):
         super(PixTransformNet, self).__init__()
 
         self.channels_in = channels_in
-        
-        # self.spatial_net = nn.Sequential(nn.Conv2d(2,32,(1,1),padding=0),
-        #                                  nn.ReLU(),nn.Conv2d(32,1024,(kernel_size,kernel_size),padding=(kernel_size-1)//2))
-        # self.color_net = nn.Sequential(nn.Conv2d(channels_in,32-2,(1,1),padding=0),
-        #                                nn.ReLU(),nn.Conv2d(32,1024,(kernel_size,kernel_size),padding=(kernel_size-1)//2))
-        self.color_net = nn.Sequential(nn.Conv2d(channels_in,32,(1,1),padding=0),
-                                       nn.ReLU(),nn.Conv2d(32,128,(kernel_size,kernel_size),padding=(kernel_size-1)//2))
-        self.head_net = nn.Sequential(nn.ReLU(),nn.Conv2d(128, 32, (kernel_size,kernel_size),padding=(kernel_size-1)//2),
-                                      nn.ReLU(),nn.Conv2d(32, 1, (1, 1),padding=0))
+        self.device = device
+
+        n1 = 128
+        n2 = 128
+        n3 = 128
+        kernel_size = 1
+
+        self.net = nn.Sequential(nn.Conv2d(channels_in,n1,(1,1),padding=0),
+                                      nn.ReLU(inplace=True),nn.Conv2d(n1, n2,(kernel_size,kernel_size),padding=(kernel_size-1)//2),
+                                      nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (kernel_size,kernel_size),padding=(kernel_size-1)//2),
+                                      nn.ReLU(inplace=True),nn.Conv2d(n3, 1, (1, 1),padding=0),
+                                      nn.ReLU(inplace=True))
 
         if weights_regularizer is None:
-            # reg_spatial = 0.0001
-            reg_color = 0.001
-            reg_head = 0.0001
+            regularizer = 0.001
         else:
             # reg_spatial = weights_regularizer[0]
-            reg_color = weights_regularizer[1]
-            reg_head = weights_regularizer[2]
+            regularizer = weights_regularizer
+            # reg_head = weights_regularizer[2]
         
         self.params_with_regularizer = []
         # self.params_with_regularizer += [{'params':self.spatial_net.parameters(),'weight_decay':reg_spatial}]
-        self.params_with_regularizer += [{'params':self.color_net.parameters(),'weight_decay':reg_color}]
-        self.params_with_regularizer += [{'params':self.head_net.parameters(),'weight_decay':reg_head}]
+        self.params_with_regularizer += [{'params':self.net.parameters(),'weight_decay':regularizer}]
+        # self.params_with_regularizer += [{'params':self.head_net.parameters(),'weight_decay':reg_head}]
 
 
-    def forward(self, input):
+    def forward(self, input, norm,  mask=None, predict_map=False):
 
-        # input_spatial = input[:,self.channels_in-2:,:,:]
-        # input_color = input[:,0:self.channels_in-2,:,:]
-        input_color = input[:,0:self.channels_in,:,:]
+        if torch.tensor(input.shape[2:4]).prod()>150**2:
+            return self.forward_batchwise(input, norm, mask)
 
-        merged_features = self.color_net(input_color) #self.spatial_net(input_spatial)
+        mean, std = norm
+
+        input = input.to(self.device)
+
+        input = self.net(input)
         
-        return self.head_net(merged_features)
+        # Check if masking should be applied
+        if mask is not None:
+            #return ((std *  self.head_net(input)[:,mask] ) + mean).sum()
+            mask = mask.to(self.device)
+            return input[:,mask].sum()
+        else:
+            # input = ((std *  self.head_net(input) ) + mean)
+        
+            # check if the output should be the map or the sum
+            if not predict_map:
+                return input.sum()
+            else:
+                return input
+                
 
-    def forward_batchwise(self, input):
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def forward_batchwise(self, input, norm, mask=None, predict_map=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
-        PS = 400
+        PS = 150
         oh, ow = input.shape[-2:]
-        output = torch.zeros((1,1,oh, ow), dtype=input.dtype, device=input.device)
+        if not predict_map:
+            outvar = 0
+        else:
+            outvar = torch.zeros((1,1,oh, ow), dtype=input.dtype, device=input.device)
 
+        sums = []
         for hi in range(0,oh,PS):
             for oi in range(0,ow,PS):
-                output[:,:,hi:hi+PS,oi:oi+PS] = self(input[:,:,hi:hi+PS,oi:oi+PS].to(device))
-   
-
-        return output
+                if not predict_map:
+                    if mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
+                        outvar += self( input[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3), norm)
+                else:
+                    outvar[:,:,hi:hi+PS,oi:oi+PS] = self( input[:,:,hi:hi+PS,oi:oi+PS], norm, predict_map=True)
+                    
+        return outvar

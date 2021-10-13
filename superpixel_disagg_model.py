@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt 
 from osgeo import gdal
+import wandb
 
 import config_pop as cfg
 from utils import read_input_raster_data, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
@@ -12,8 +13,8 @@ from utils import read_input_raster_data, compute_performance_metrics, write_geo
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 
+from pix_transform.pix_admin_transform import PixAdminTransform
 from pix_transform.pix_transform import PixTransform
-from pix_transform_baselines.baselines import bicubic
 from pix_transform_utils.utils import downsample,align_images
 # from prox_tv import tvgen
 from pix_transform_utils.plots import plot_result
@@ -25,34 +26,21 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
                              output_dir, dataset_name):
 
     ####  define parameters  ########################################################
-    params = {#'img_idxs' : [], # idx images to process, if empty then all of them
-                
-            #'scaling': 8,
-            'feature_downsampling': 1,
-            'greyscale': False, # Turn image into grey-scale
-            'channels': -1,
-            
+
+    params = {'feature_downsampling': 1,
             'spatial_features_input': False,
-            'weights_regularizer': [0., 0., 0.], # spatial color head
-            # 'weights_regularizer': [0.0001, 0.001, 0.0001], # spatial color head
+            'weights_regularizer': 0.001, # spatial color head
             'loss': 'l1',
-            'average_over_admin': True,
             "predict_log_values": False,
-    
             'optim': 'adam',
             'lr': 0.001,
-                    
-            'batch_size': 32,
-            'patch_size': 8,
-            #'iteration': 32768*20,
-            "epochs": 3,
-
+            "epochs": 25,
             'logstep': 1,
-            
-            'final_TGV' : False, # Total Generalized Variation in post-processing
-            'align': False, # Move image around for evaluation in case guide image and target image are not perfectly aligned
-            'delta_PBP': 1, # Delta for percentage of bad pixels 
+            'dataset_name': dataset_name,
+            'input_variables': list(cfg.input_paths[dataset_name].keys())
             }
+
+    wandb.init(project="HAC", entity="nandometzger", config=params)
 
     ####  load dataset  #############################################################
     # Read input data
@@ -98,7 +86,12 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     valid_data_mask = np.ones( (ih, iw), dtype=np.bool8)
     for i,name in enumerate(feature_names):
         features[i] = inputs[name]
-        valid_data_mask *= features[i]!=no_data_values[name] 
+        if name=='buildings':
+            features[i][features[i]==no_data_values[name] ] = 0
+        valid_data_mask *= features[i]!=no_data_values[name]
+    del inputs
+    
+    # also account for the invalid map ids
     valid_data_mask *= map_valid_ids.astype(bool)
     guide_res = features.shape[1:3]
 
@@ -120,16 +113,18 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
         cr_density_map_resamp = cr_density_map
 
     # target the log of population densities
-
     if params["predict_log_values"]:
         validation_map = np.log(fine_density_map_resamp)
         source_map = np.log(cr_density_map_resamp)
+        # fine_census = {key: np.log(value) for key,value in fine_census.items()}
+        cr_census = {key: np.log(value) for key,value in cr_census.items()}
+        replacement = -16
     else:
         validation_map = fine_density_map_resamp
         source_map = cr_density_map_resamp
-    
-    # replace -inf with 1e-16 ("-16" on log scale) is close enough to zero.
-    replacement = -16
+        replacement = 0
+
+    # replace -inf with 1e-16 ("-16" on log scale) is close enough to zero for the log scale, otherwise take 0
     np.nan_to_num(validation_map, copy=False, neginf=replacement)
     np.nan_to_num(source_map, copy=False, neginf=replacement)
     features_resamp[:,~valid_data_mask_resamp] = replacement
@@ -139,9 +134,9 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     # Guide are the high resolution features, read them here and sort them into the matrix
     # Source is the administrative population density map.
 
-    predicted_target_img = PixTransform(
+    predicted_target_img = PixAdminTransform(
         guide_img=features_resamp,
-        source_img=source_map,
+        source=(cr_census, cr_regions, source_map),
         valid_mask=valid_data_mask_resamp,
         params=params,
         validation_data=(fine_census, validation_map, fine_regions, valid_ids, map_valid_ids),
@@ -151,26 +146,9 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     #TODO: Backsample? the predicted target image to original resolution of the features for comparisons, fill eges
     #TODO: visualizations
 
-    if params['final_TGV'] :
-        print("applying TGV...")
-        predicted_target_img = tvgen(predicted_target_img,[0.1, 0.1],[1, 2],[1, 1])
-        
-    if params['align'] :
-        print("aligning...")
-        target_img,predicted_target_img = align_images(target_img,predicted_target_img)
-
     # TODO: visualizations
-    f, ax = plot_result(guide_img,source_img,predicted_target_img,bicubic_target_img,target_img)
+    f, ax = plot_result(guide_img,source_img,predicted_target_img,target_img)
     plt.show()
-
-    if target_img is not None:
-        # compute metrics and plot results
-        MSE = np.mean((predicted_target_img - target_img) ** 2)
-        MAE = np.mean(np.abs(predicted_target_img - target_img))
-        PBP = np.mean(np.abs(predicted_target_img - target_img) > params["delta_PBP"])
-
-        print("MSE: {:.3f}  ---  MAE: {:.3f}  ---  PBP: {:.3f}".format(MSE,MAE,PBP))
-        print("\n\n")
 
 
 def main():
