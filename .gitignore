@@ -3,3 +3,4 @@ HACenv/
 output_dir/
 __pycache__/
 wandb/
+data/
