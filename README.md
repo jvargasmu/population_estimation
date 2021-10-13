@@ -15,3 +15,7 @@ time python building_disagg_baseline.py preprocessed_data.pkl raster_world_pop_a
 - Example to run the WorldPop baseline:
 
 time python train_model_with_agg_data.py preprocessed_data.pkl raster_world_pop_admin_boundaries.tif output_dir/ tza
+
+- Example to run Superpixel script:
+
+time python superpixel_disagg_model.py preprocessed_data_3.pkl ../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif output_dir/ tza 
