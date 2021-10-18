@@ -14,8 +14,9 @@ for dir in root_paths:
 
 input_paths = {
     "tza": {
-        #"buildings": "{}OtherBuildings/TZA/tza_gbuildings.tif".format(root_path),
+        # "buildings_j": "{}OtherBuildings/TZA/tza_gbuildings.tif".format(root_path),
         "buildings": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
+        "buildings_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
         # "esaccilc_dst011_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst011_100m_2015.tif".format(
         #     root_path),
         # "esaccilc_dst040_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst040_100m_2015.tif".format(
@@ -29,21 +30,21 @@ input_paths = {
         # "esaccilc_dst160_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst160_100m_2015.tif".format(
         #     root_path),
         # "esaccilc_dst190_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst190_100m_2015.tif".format(
-        #     root_path),
+        #     root_path), # Urban Areas
         # "esaccilc_dst200_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst200_100m_2015.tif".format(
         #     root_path), 
         "tza_tt50k_100m_2000": "{}Covariates/TZA/Accessibility/tza_tt50k_100m_2000.tif".format(
             root_path), 
         "tza_dst_bsgme_100m_2015": "{}Covariates/TZA/BSGM/2015/DTE/tza_dst_bsgme_100m_2015.tif".format(
             root_path),
-        # "tza_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/TZA/BuiltSettlement/2014/DTE/tza_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
-        #     root_path),
-        # "tza_dst_coastline_100m_2000_2020": "{}Covariates/TZA/Coastline/DST/tza_dst_coastline_100m_2000_2020.tif".format(
-        #     root_path),
+        "tza_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/TZA/BuiltSettlement/2014/DTE/tza_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
+            root_path),
+        "tza_dst_coastline_100m_2000_2020": "{}Covariates/TZA/Coastline/DST/tza_dst_coastline_100m_2000_2020.tif".format(
+            root_path),
         "tza_dmsp_100m_2011": "{}Covariates/TZA/DMSP/tza_dmsp_100m_2011.tif".format(
             root_path),
-        # "tza_esaccilc_dst_water_100m_2000_2012": "{}Covariates/TZA/ESA_CCI_Water/DST/tza_esaccilc_dst_water_100m_2000_2012.tif".format(
-        #     root_path),
+        "tza_esaccilc_dst_water_100m_2000_2012": "{}Covariates/TZA/ESA_CCI_Water/DST/tza_esaccilc_dst_water_100m_2000_2012.tif".format(
+            root_path),
         "tza_osm_dst_roadintersec_100m_2016": "{}Covariates/TZA/OSM/DST/tza_osm_dst_roadintersec_100m_2016.tif".format(
             root_path),
         "tza_osm_dst_waterway_100m_2016": "{}Covariates/TZA/OSM/DST/tza_osm_dst_waterway_100m_2016.tif".format(
@@ -65,6 +66,7 @@ input_paths = {
 
 no_data_values = {
     "tza": {
+        "buildings_j": None,
         "buildings": -99999,
         "esaccilc_dst011_100m_2000": -99999,
         "esaccilc_dst040_100m_2000": -99999,
@@ -90,8 +92,33 @@ no_data_values = {
     }
 }
 
-
-
+norms = {
+    "tza": {
+        "buildings_j": (0.00089380914, 8.41622997e-03),
+        "buildings": (0.265996819, 1.83158563e+00),
+        "esaccilc_dst011_100m_2000": (2.81727052, 5.69885715e+00),
+        "esaccilc_dst040_100m_2000": (0.44520899, 2.72345595e+00),
+        "esaccilc_dst130_100m_2000": (3.09648584, 4.70480562e+00),
+        "esaccilc_dst140_100m_2000": (9.18009012, 9.85124076e+00),
+        "esaccilc_dst150_100m_2000": (108.52330299, 8.17261502e+01),
+        "esaccilc_dst160_100m_2000": (8.65616757, 9.26884634e+00),
+        "esaccilc_dst190_100m_2000": (37.38046272, 3.10730075e+01),
+        "esaccilc_dst200_100m_2000": (64.73759992, 4.46013049e+01),
+        "tza_tt50k_100m_2000": (3.76670969e+02, 3.24293088e+02),
+        "tza_dst_bsgme_100m_2015": (1.00138409e+01, 1.08199418e+01),
+        "tza_dst_ghslesaccilcgufghsll_100m_2014": (1.01325672e+01, 10.82786076),
+        "tza_dst_coastline_100m_2000_2020": (4.69711371e+02,  269.56063334),
+        "tza_dmsp_100m_2011": (9.96103462e+00 ,  133.46285072 ),
+        "tza_esaccilc_dst_water_100m_2000_2012":(2.27107890e+01, 19.28008101), 
+        "tza_osm_dst_roadintersec_100m_2016":(45.36450679, 43.17709196), 
+        "tza_osm_dst_waterway_100m_2016": (2.06357978e+01, 21.3063267),
+        "tza_osm_dst_road_100m_2016": (12.8190051,  15.32399314),
+        "tza_srtm_slope_100m": (3.44179414e+00 , 4.7920747),
+        "tza_srtm_topo_100m": (1.02034711e+03 , 483.97733166),
+        "tza_viirs_100m_2015": (9.87479157e-02 , 0.49287229),
+        "tza_wdpa_dst_cat1_100m_2015": (2.37557718e+02 , 122.54531703),
+    }
+}
 
 metadata = {
     "tza": {
@@ -103,7 +130,7 @@ metadata = {
 }
 
 input_paths["tza_f2"] = {
-    "buildings": input_paths["tza"]["buildings"],
+    # "buildings": input_paths["tza"]["buildings"],
     "tza_viirs_100m_2016" : "{}Covariates/TZA/VIIRS/tza_viirs_100m_2016.tif".format(root_path)
 }
 

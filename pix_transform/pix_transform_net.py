@@ -35,49 +35,175 @@ class PixTransformNet(nn.Module):
         # self.params_with_regularizer += [{'params':self.head_net.parameters(),'weight_decay':reg_head}]
 
 
-    def forward(self, input, norm,  mask=None, predict_map=False):
+    def forward(self, inputs, mask=None, predict_map=False):
 
-        if torch.tensor(input.shape[2:4]).prod()>150**2:
-            return self.forward_batchwise(input, norm, mask)
+        # Check if the image is too large for singe forward pass
+        if torch.tensor(inputs.shape[2:4]).prod()>400**2:
+            return self.forward_batchwise(inputs, mask)
 
-        mean, std = norm
-
-        input = input.to(self.device)
-
-        input = self.net(input)
+        # Apply network
+        inputs = self.net(inputs.to(self.device))
         
         # Check if masking should be applied
         if mask is not None:
-            #return ((std *  self.head_net(input)[:,mask] ) + mean).sum()
             mask = mask.to(self.device)
-            return input[:,mask].sum()
+            return inputs[:,mask].sum()
         else:
-            # input = ((std *  self.head_net(input) ) + mean)
-        
+
             # check if the output should be the map or the sum
             if not predict_map:
-                return input.sum()
+                return inputs.sum()
             else:
-                return input
+                return inputs
                 
 
-    def forward_batchwise(self, input, norm, mask=None, predict_map=False): 
+    def forward_batchwise(self, inputs,mask=None, predict_map=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
         PS = 150
-        oh, ow = input.shape[-2:]
+        oh, ow = inputs.shape[-2:]
         if not predict_map:
             outvar = 0
         else:
-            outvar = torch.zeros((1,1,oh, ow), dtype=input.dtype, device=input.device)
+            outvar = torch.zeros((1,1,oh, ow), dtype=inputs.dtype, device='cpu')
 
         sums = []
         for hi in range(0,oh,PS):
             for oi in range(0,ow,PS):
                 if not predict_map:
                     if mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
-                        outvar += self( input[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3), norm)
+                        outvar += self( inputs[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3))
                 else:
-                    outvar[:,:,hi:hi+PS,oi:oi+PS] = self( input[:,:,hi:hi+PS,oi:oi+PS], norm, predict_map=True)
+                    outvar[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True).cpu()
                     
-        return outvar
+        if not predict_map:    
+            return outvar
+        else:
+            return outvar.squeeze()
+
+    def forward_one_or_more(self, sample, mask=None):
+
+        total_sum = 0
+        valid_samples  = 0
+        for i, inp in enumerate(sample):
+            if inp[2].sum()>0:
+
+                total_sum += self(inp[0], inp[2])
+                valid_samples += 1
+
+        if valid_samples==0:
+            return None    
+        return total_sum
+
+
+
+
+
+
+
+class PixScaleNet(nn.Module):
+
+    def __init__(self, channels_in=5, kernel_size = 1, weights_regularizer = None, device="cuda" if torch.cuda.is_available() else "cpu"):
+        super(PixScaleNet, self).__init__()
+
+        self.channels_in = channels_in
+        self.device = device
+
+        n1 = 128
+        n2 = 128
+        n3 = 128
+        kernel_size = 1
+
+        self.scalenet = nn.Sequential(nn.Conv2d(channels_in-1,n1,(1,1),padding=0),
+                                      nn.ReLU(inplace=True),nn.Conv2d(n1, n2,(kernel_size,kernel_size),padding=(kernel_size-1)//2),
+                                      nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (kernel_size,kernel_size),padding=(kernel_size-1)//2),
+                                      nn.ReLU(inplace=True),nn.Conv2d(n3, 1, (1, 1),padding=0),
+                                      #nn.LeakyReLU(inplace=True)
+                                      )
+
+        if weights_regularizer is None:
+            regularizer = 0.001
+        else:
+            regularizer = weights_regularizer
+            # reg_head = weights_regularizer[2]
+        
+        self.params_with_regularizer = []
+        self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':regularizer}]
+
+
+    def forward(self, inputs, mask=None, predict_map=False):
+
+        # Check if the image is too large for singe forward pass
+        if torch.tensor(inputs.shape[2:4]).prod()>400**2:
+            return self.forward_batchwise(inputs, mask)
+
+        # Apply network
+        inputs = inputs.to(self.device)
+        buildings = inputs[:,0:1,:,:]
+        inputs = inputs[:,1:,:,:]
+
+
+        scale = self.scalenet(inputs) 
+
+
+        inputs = torch.mul(buildings, scale)
+        
+        # Check if masking should be applied
+        if mask is not None:
+            mask = mask.to(self.device)
+            return inputs[:,mask].sum()
+        else:
+
+            # check if the output should be the map or the sum
+            if not predict_map:
+                return inputs.sum()
+            else:
+                return inputs.cpu(), scale.cpu()
+                
+
+    def forward_batchwise(self, inputs,mask=None, predict_map=False): 
+
+        #choose a responsible patch that does not exceed the GPU memory
+        PS = 150
+        oh, ow = inputs.shape[-2:]
+        if not predict_map:
+            outvar = 0
+        else:
+            outvar = torch.zeros((1,1,oh, ow), dtype=inputs.dtype, device='cpu')
+            scale = torch.zeros((1,1,oh, ow), dtype=inputs.dtype, device='cpu')
+
+        sums = []
+        for hi in range(0,oh,PS):
+            for oi in range(0,ow,PS):
+                if not predict_map:
+                    if mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
+                        outvar += self( inputs[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3))
+                else:
+                    outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True)
+
+        if not predict_map:    
+            return outvar
+        else:
+            return outvar.squeeze()
+
+    def forward_one_or_more(self, sample, mask=None):
+
+        total_sum = 0
+        valid_samples  = 0
+        for i, inp in enumerate(sample):
+            if inp[2].sum()>0:
+
+                total_sum += self(inp[0], inp[2])
+                valid_samples += 1
+
+        if valid_samples==0:
+            return None    
+        return total_sum
+
+
+
+
+
+
+
+

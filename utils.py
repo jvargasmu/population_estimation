@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from tqdm import tqdm
 import copy
-from pylab import figure, imshow, grid
+from pylab import figure, imshow, matshow, grid
 import torch
 
 def get_properties_dict(data_dict_orig):
@@ -180,7 +180,7 @@ def plot_2dmatrix(matrix,fig=1):
             matrix = matrix.cpu()
         matrix = matrix.numpy()
     figure(fig)
-    imshow(matrix, interpolation='nearest')
+    matshow(matrix, interpolation='nearest')
     grid(True)
 
 
@@ -191,7 +191,6 @@ def accumulate_values_by_region(map, ids, regions):
     return sums
 
 
-
 def bbox2(img):
     rows = np.any(img, axis=1)
     cols = np.any(img, axis=0)
@@ -199,8 +198,6 @@ def bbox2(img):
     cmin, cmax = np.where(cols)[0][[0, -1]]
 
     return rmin, rmax, cmin, cmax
-
-
 
 
 class PatchDataset(torch.utils.data.Dataset):
@@ -215,6 +212,65 @@ class PatchDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         output = []
         for var in self.variables:
-            # output.append(var[idx].to(self.device))
+            output.append(var[idx])
+        return [output]
+
+
+class MultiPatchDataset(torch.utils.data.Dataset):
+    """Patch dataset."""
+    def __init__(self, *variables, device): 
+        self.variables = variables
+        self.device = device
+        num_single = len(variables[0])
+        indicies = range(num_single)
+        max_pix_forward = 8000
+
+        patchsize = [feats.numel() for feats in variables[0]]
+        pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
+        triplets = [[indicies[i],indicies[j],indicies[k]] for i in range(num_single) for j in range(i+1, num_single) for k in range(j+1, num_single)]
+
+        pairs = np.asarray(pairs, dtype=object)
+        triplets = np.asarray(triplets, dtype=object)
+
+        sumpixels_pairs = [(patchsize[id1]+patchsize[id2]) for id1,id2 in pairs ]
+        self.small_pairs = pairs[np.asarray(sumpixels_pairs)<max_pix_forward**2]
+
+        sumpixels_triplets = [(patchsize[id1]+patchsize[id2]+patchsize[id3]) for id1,id2,id3 in triplets ]
+        self.small_triplets = triplets[np.asarray(sumpixels_triplets)<max_pix_forward**2]
+
+        self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
+
+    def __len__(self):
+        return self.all_sample_ids.__len__()
+
+    def getsingleitem(self, idx):
+        output = []
+        for var in self.variables:
             output.append(var[idx])
         return output
+
+    def __getitem__(self,idx):
+        idxs = self.all_sample_ids[idx]
+
+        sample = []
+        for i in idxs:
+            sample.append(self.getsingleitem(i))
+        
+        return sample
+
+
+def NormL1(outputs, targets, eps=1e-8):
+    loss = torch.abs(outputs - targets) / torch.clip(outputs + targets, min=eps)
+    return loss.mean()
+
+def LogL1(outputs, targets, eps=1e-8):
+    loss = torch.abs(torch.log(outputs+1) - torch.log(targets+1))
+    return loss.mean()
+
+def expL1(outputs, targets, eps=1e-8):
+    loss = torch.abs(outputs - torch.log(targets))
+    return loss.mean()
+
+def LogL2(outputs, targets, eps=1e-8):
+    loss = (torch.log(outputs+1) - torch.log(targets+1))**2
+    return loss.mean()

@@ -3,6 +3,7 @@ os.environ["OMP_PROC_BIND"] = os.environ.get("OMP_PROC_BIND", "true")
 import argparse
 import pickle
 import numpy as np
+import torch
 import matplotlib.pyplot as plt 
 from osgeo import gdal
 import wandb
@@ -20,8 +21,6 @@ from pix_transform_utils.utils import downsample,align_images
 from pix_transform_utils.plots import plot_result
 
 
-
-
 def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
                              output_dir, dataset_name):
 
@@ -30,11 +29,17 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     params = {'feature_downsampling': 1,
             'spatial_features_input': False,
             'weights_regularizer': 0.001, # spatial color head
-            'loss': 'l1',
+            'loss': 'LogL1',
             "predict_log_values": False,
+
+            "admin_augment": True,
+            "load_state": None,#None, 'brisk-armadillo-86'
+            "Net": 'ScaleNet', # Choose between ScaleNet and PixNet
+
+
             'optim': 'adam',
-            'lr': 0.001,
-            "epochs": 25,
+            'lr': 0.0001,
+            "epochs": 100,
             'logstep': 1,
             'dataset_name': dataset_name,
             'input_variables': list(cfg.input_paths[dataset_name].keys())
@@ -63,7 +68,7 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     fine_area = dict(zip(wp_ids, areas))
     num_wp_ids = len(wp_ids)
     inputs = read_input_raster_data(input_paths)
-    input_buildings = inputs["buildings"]
+    # input_buildings = inputs["buildings"]
 
     # Binary map representing a pixel belong to a region with valid id
     map_valid_ids = create_map_of_valid_ids(fine_regions, no_valid_ids)
@@ -82,18 +87,33 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     feature_names = list(inputs.keys()) 
     ih, iw = inputs[feature_names[0]].shape
     num_feat = len(inputs.keys())
-    features = np.zeros( (len(inputs.keys()), ih, iw))
-    valid_data_mask = np.ones( (ih, iw), dtype=np.bool8)
+    features = torch.zeros( (len(inputs.keys()), ih, iw), dtype=torch.float32)
+    valid_data_mask = torch.ones( (ih, iw), dtype=torch.bool)
     for i,name in enumerate(feature_names):
-        features[i] = inputs[name]
+        features[i] = torch.from_numpy(inputs[name])
+        # features[i] = inputs[name]
         if name=='buildings':
             features[i][features[i]==no_data_values[name] ] = 0
-        valid_data_mask *= features[i]!=no_data_values[name]
+
+        this_mask = features[i]!=no_data_values[name]
+        valid_data_mask *= this_mask
+
+        # Normalize the features, execpt for the buildings layer when the scale Network is used
+        if (params['Net'] in ['ScaleNet']) and (name not in ['buildings', 'buildings_j']):
+            if dataset_name in cfg.norms.keys():
+                # normalize by known mean and std
+                features[i] = (features[i] - cfg.norms[dataset_name][name][0]) / cfg.norms[dataset_name][name][1]
+            else:
+                # calculate mean std your self...
+                fmean = features[i][this_mask].mean()
+                fstd = features[i][this_mask].std()
+                features[i] = (features[i] - fmean) / fstd
+
     del inputs
-    
+    guide_res = features.shape[1:3]
+
     # also account for the invalid map ids
     valid_data_mask *= map_valid_ids.astype(bool)
-    guide_res = features.shape[1:3]
 
     # Create dataformat with densities for administrative boundaries of level -1 and -2
     # Fills in the densities per pixel
@@ -127,6 +147,14 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     # replace -inf with 1e-16 ("-16" on log scale) is close enough to zero for the log scale, otherwise take 0
     np.nan_to_num(validation_map, copy=False, neginf=replacement)
     np.nan_to_num(source_map, copy=False, neginf=replacement)
+
+    source_map = torch.from_numpy(source_map)
+    validation_map = torch.from_numpy(validation_map).float()
+    valid_data_mask_resamp = valid_data_mask_resamp.to(torch.bool)
+    fine_regions = torch.from_numpy(fine_regions.astype(np.int16))
+    map_valid_ids = torch.from_numpy(map_valid_ids.astype(np.bool8))
+    # valid_ids = torch.tensor(valid_ids, dtype=torch.bool)
+
     features_resamp[:,~valid_data_mask_resamp] = replacement
     validation_map[~valid_data_mask_resamp] = replacement
     source_map[~valid_data_mask_resamp] = replacement
@@ -143,11 +171,8 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
         orig_guide_res=guide_res
     )
 
-    #TODO: Backsample? the predicted target image to original resolution of the features for comparisons, fill eges
-    #TODO: visualizations
-
-    # TODO: visualizations
-    f, ax = plot_result(guide_img,source_img,predicted_target_img,target_img)
+    
+    f, ax = plot_result(source_map.numpy(), predicted_target_img.numpy(), validation_map.numpy())
     plt.show()
 
 
