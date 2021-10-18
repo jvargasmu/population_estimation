@@ -267,10 +267,10 @@ def LogL1(outputs, targets, eps=1e-8):
     loss = torch.abs(torch.log(outputs+1) - torch.log(targets+1))
     return loss.mean()
 
-def expL1(outputs, targets, eps=1e-8):
+def LogoutputL1(outputs, targets, eps=1e-8):
     loss = torch.abs(outputs - torch.log(targets))
     return loss.mean()
 
-def LogL2(outputs, targets, eps=1e-8):
-    loss = (torch.log(outputs+1) - torch.log(targets+1))**2
+def LogoutputL2(outputs, targets, eps=1e-8):
+    loss = (outputs - torch.log(targets+1))**2
     return loss.mean()

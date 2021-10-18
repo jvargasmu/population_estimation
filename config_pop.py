@@ -16,7 +16,7 @@ input_paths = {
     "tza": {
         # "buildings_j": "{}OtherBuildings/TZA/tza_gbuildings.tif".format(root_path),
         "buildings": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
-        "buildings_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
+        # "buildings_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
         # "esaccilc_dst011_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst011_100m_2015.tif".format(
         #     root_path),
         # "esaccilc_dst040_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst040_100m_2015.tif".format(
@@ -68,6 +68,7 @@ no_data_values = {
     "tza": {
         "buildings_j": None,
         "buildings": -99999,
+        "buildings_mean_area": -99999,
         "esaccilc_dst011_100m_2000": -99999,
         "esaccilc_dst040_100m_2000": -99999,
         "esaccilc_dst130_100m_2000": -99999,

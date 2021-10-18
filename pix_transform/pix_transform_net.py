@@ -103,11 +103,12 @@ class PixTransformNet(nn.Module):
 
 class PixScaleNet(nn.Module):
 
-    def __init__(self, channels_in=5, kernel_size = 1, weights_regularizer = None, device="cuda" if torch.cuda.is_available() else "cpu"):
+    def __init__(self, channels_in=5, kernel_size = 1, weights_regularizer = None, device="cuda" if torch.cuda.is_available() else "cpu", loss=None):
         super(PixScaleNet, self).__init__()
 
         self.channels_in = channels_in
         self.device = device
+        self.exptransform_outputs = loss in ['LogoutputL1', 'LogoutputL2']
 
         n1 = 128
         n2 = 128
@@ -118,7 +119,7 @@ class PixScaleNet(nn.Module):
                                       nn.ReLU(inplace=True),nn.Conv2d(n1, n2,(kernel_size,kernel_size),padding=(kernel_size-1)//2),
                                       nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (kernel_size,kernel_size),padding=(kernel_size-1)//2),
                                       nn.ReLU(inplace=True),nn.Conv2d(n3, 1, (1, 1),padding=0),
-                                      #nn.LeakyReLU(inplace=True)
+                                      nn.ReLU(inplace=True)
                                       )
 
         if weights_regularizer is None:
@@ -148,6 +149,11 @@ class PixScaleNet(nn.Module):
 
         inputs = torch.mul(buildings, scale)
         
+
+        # backtransform if necessary before(!) summation
+        if self.exptransform_outputs:
+            inputs = inputs.exp() 
+                
         # Check if masking should be applied
         if mask is not None:
             mask = mask.to(self.device)
@@ -159,7 +165,7 @@ class PixScaleNet(nn.Module):
                 return inputs.sum()
             else:
                 return inputs.cpu(), scale.cpu()
-                
+
 
     def forward_batchwise(self, inputs,mask=None, predict_map=False): 
 

@@ -8,7 +8,7 @@ import sys
 import wandb
 
 from utils import plot_2dmatrix, accumulate_values_by_region, compute_performance_metrics, bbox2, \
-     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogL2
+     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 from pix_transform_utils.utils import upsample
@@ -88,6 +88,24 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
     ###############################################################################################
 
     #### setup network ############################################################################
+    ###############################################################################################
+
+    if params['loss'] == 'mse':
+        myloss = torch.nn.MSELoss()
+    elif params['loss'] == 'l1':
+        myloss = torch.nn.L1Loss()
+    elif params['loss'] == 'NormL1':
+        myloss = NormL1
+    elif params['loss'] == 'LogL1':
+        myloss = LogL1
+    elif params['loss'] == 'LogoutputL1':
+        myloss = LogoutputL1
+    elif params['loss'] == 'LogoutputL2':
+        myloss = LogoutputL2
+    else:
+        print("unknown loss!")
+        return
+        
     if params['Net']=='PixNet':
         mynet = PixTransformNet(channels_in=guide_img.shape[0],
                                 weights_regularizer=params['weights_regularizer'],
@@ -95,7 +113,7 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
     elif params['Net']=='ScaleNet':
             mynet = PixScaleNet(channels_in=guide_img.shape[0],
                             weights_regularizer=params['weights_regularizer'],
-                            device=device).train().to(device)
+                            device=device, loss=params['loss']).train().to(device)
 
     optimizer = optim.Adam(mynet.params_with_regularizer, lr=params['lr'])
 
@@ -106,25 +124,11 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
 
     wandb.watch(mynet)
 
-    if params['loss'] == 'mse':
-        myloss = torch.nn.MSELoss()
-    elif params['loss'] == 'l1':
-        myloss = torch.nn.L1Loss()
-    elif params['loss'] == 'NormL1':
-        myloss = NormL1
-    elif params['loss'] == 'LogL1':
-        myloss = LogL1
-    elif params['loss'] == 'LogL2':
-        myloss = LogL2
-    else:
-        print("unknown loss!")
-        return
-    ###############################################################################################
-
     epochs = params["epochs"]
     itercounter = 0
     with tqdm(range(0, epochs), leave=True) as tnr:
         best_r2=-1e12
+        best_mae=1e12
         for epoch in tnr:
             for sample in tqdm(train_loader):
                 optimizer.zero_grad()
@@ -166,6 +170,9 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
                             predict_map=True
                         )
 
+                        # if params['loss'] in ['LogoutputL1', 'LogoutputL2']:
+                        #     predicted_target_img = predicted_target_img.exp()
+
                         # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
                         predicted_target_img[~valid_mask] = 1e-10
 
@@ -196,6 +203,12 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
                                 log_dict["best_r2"] = best_r2
                                 torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
                                     'checkpoints/best_r2_{}.pth'.format(wandb.run.name) )
+                            
+                            if mae<best_mae:
+                                best_mae = mae
+                                log_dict["best_mae"] = best_mae
+                                torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
+                                    'checkpoints/best_mae_{}.pth'.format(wandb.run.name) )
                         
                         if target_img is not None:
                             tnr.set_postfix(R2=r2, zMAEc=mae)
@@ -215,4 +228,6 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
             predict_map=True
         )
 
+        # if params['loss'] in ['LogoutputL1', 'LogoutputL2']:
+        #     predicted_target_img = predicted_target_img.exp()
     return predicted_target_img

@@ -29,7 +29,7 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     params = {'feature_downsampling': 1,
             'spatial_features_input': False,
             'weights_regularizer': 0.001, # spatial color head
-            'loss': 'LogL1',
+            'loss': 'NormL1',
             "predict_log_values": False,
 
             "admin_augment": True,
