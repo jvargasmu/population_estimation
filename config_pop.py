@@ -15,8 +15,10 @@ for dir in root_paths:
 input_paths = {
     "tza": {
         # "buildings_j": "{}OtherBuildings/TZA/tza_gbuildings.tif".format(root_path),
-        "buildings": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
-        # "buildings_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
+        "buildings_google": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
+        "buildings_maxar": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_count.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
+        "buildings_maxar_mean_area": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_mean_area.tif".format(root_path),
         # "esaccilc_dst011_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst011_100m_2015.tif".format(
         #     root_path),
         # "esaccilc_dst040_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst040_100m_2015.tif".format(
@@ -67,8 +69,11 @@ input_paths = {
 no_data_values = {
     "tza": {
         "buildings_j": None,
-        "buildings": -99999,
-        "buildings_mean_area": -99999,
+        "buildings_google": -99999,
+        "buildings_maxar": -99999, 
+        "buildings_google_mean_area": -99999,
+        "buildings_merge_mean_area": -99999,
+        "buildings_maxar_mean_area": -99999,
         "esaccilc_dst011_100m_2000": -99999,
         "esaccilc_dst040_100m_2000": -99999,
         "esaccilc_dst130_100m_2000": -99999,
@@ -96,7 +101,7 @@ no_data_values = {
 norms = {
     "tza": {
         "buildings_j": (0.00089380914, 8.41622997e-03),
-        "buildings": (0.265996819, 1.83158563e+00),
+        # "buildings": (0.265996819, 1.83158563e+00),
         "esaccilc_dst011_100m_2000": (2.81727052, 5.69885715e+00),
         "esaccilc_dst040_100m_2000": (0.44520899, 2.72345595e+00),
         "esaccilc_dst130_100m_2000": (3.09648584, 4.70480562e+00),
@@ -126,6 +131,7 @@ metadata = {
         "wp_no_data": [0, 1],
         "wp_covariates_no_data": -9999,
         "hd_no_data": [0],
+        "scale_maxar_to_google": None,
 
     }
 }

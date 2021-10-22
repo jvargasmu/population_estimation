@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core.numeric import zeros_like
 
 import torch
 import torch.nn.functional as F
@@ -42,11 +43,13 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
         valid_mask = np.ones_like(guide_img)
 
     if validation_data is not None:
-        validation_census, target_img, validation_regions, validation_ids, valid_validation_ids = validation_data
+        validation_census, target_img, validation_regions, validation_ids, valid_validation_ids, target_to_source = validation_data
         num_validation_ids = np.unique(validation_regions).__len__()
-        target_img[~valid_mask] = target_img[valid_mask].mean()
+        target_img[~valid_mask] = 1e-10 #target_img[valid_mask].mean()
 
     source_census , source_regions, source_map = source
+    source_regions = source_regions.to(device)
+
     n_channels, hr_height, hr_width = guide_img.shape
 
     # source_img = source_img.squeeze()
@@ -57,6 +60,7 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
 
     source_arr = list(source_census.values())
 
+    # TODO: Remove!
     if params['spatial_features_input']:
         x = np.linspace(-0.5, 0.5, hr_height)
         y = np.linspace(-0.5, 0.5, hr_width)
@@ -71,13 +75,16 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
     #### prepare_patches #########################################################################
     
     # Iterate throuh the image an cut out examples
+    valid_mask = valid_mask.to(device)
     X,Y,Masks = [],[],[]
     for regid in tqdm(source_census.keys()):
-        mask = regid==source_regions
+        mask = (regid==source_regions) * valid_mask
         rmin, rmax, cmin, cmax = bbox2(mask)
         X.append(guide_img[:,rmin:rmax, cmin:cmax])
         Y.append(torch.tensor(source_census[regid]))
         Masks.append(torch.tensor(mask[rmin:rmax, cmin:cmax]))
+    valid_mask = valid_mask.cpu()
+    
 
 
     if params["admin_augment"]:
@@ -113,7 +120,8 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
     elif params['Net']=='ScaleNet':
             mynet = PixScaleNet(channels_in=guide_img.shape[0],
                             weights_regularizer=params['weights_regularizer'],
-                            device=device, loss=params['loss']).train().to(device)
+                            device=device, loss=params['loss'], kernel_size=params['kernel_size'],
+                            ).train().to(device)
 
     optimizer = optim.Adam(mynet.params_with_regularizer, lr=params['lr'])
 
@@ -129,6 +137,7 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
     with tqdm(range(0, epochs), leave=True) as tnr:
         best_r2=-1e12
         best_mae=1e12
+        best_r2_adj=-1e12
         for epoch in tnr:
             for sample in tqdm(train_loader):
                 optimizer.zero_grad()
@@ -150,7 +159,7 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
                     X,y,mask = sample
                     y_pred = mynet(X, mask)
 
-                loss = myloss(y_pred, y[0].to(device))
+                loss = myloss(y_pred, y[0])
 
                 loss.backward()
                 optimizer.step()
@@ -170,33 +179,53 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
                             predict_map=True
                         )
 
-                        # if params['loss'] in ['LogoutputL1', 'LogoutputL2']:
-                        #     predicted_target_img = predicted_target_img.exp()
-
                         # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
                         predicted_target_img[~valid_mask] = 1e-10
 
                         if target_img is not None:
-
-                            if params["predict_log_values"]:
-                                abs_predicted_target_img = torch.exp(abs_predicted_target_img)
-
-                            # convert resolution back to feature resolution
-                            if params["feature_downsampling"]!=1:
-                                full_res_predicted_target_image = upsample(predicted_target_img, params["feature_downsampling"], orig_guide_res=orig_guide_res)
-                            else:
-                                full_res_predicted_target_image = predicted_target_img
                             
                             # Aggregate by fine administrative boundary
                             agg_preds_arr = compute_accumulated_values_by_region(
                                 validation_regions.numpy().astype(np.uint32),
-                                full_res_predicted_target_image.cpu().numpy().astype(np.float32),
+                                predicted_target_img.cpu().numpy().astype(np.float32),
                                 valid_validation_ids.numpy().astype(np.uint32),
                                 num_validation_ids
                             )
                             agg_preds = {id: agg_preds_arr[id] for id in validation_ids}
                             r2, mae, mse = compute_performance_metrics(agg_preds, validation_census)
-                            log_dict={"r2": r2, "mae": mae, "mse": mse, "train/loss": loss}
+                            log_dict = {"r2": r2, "mae": mae, "mse": mse, 'train/loss': loss}
+
+                            compute_constrained_map = True
+                            if compute_constrained_map:
+                                predicted_target_img_adjusted = torch.zeros_like(predicted_target_img, device=device)
+                                predicted_target_img = predicted_target_img.to(device)
+
+                                agg_preds_cr_arr = np.zeros(len(target_to_source.unique()))
+                                for finereg in target_to_source.unique():
+                                    finregs_to_sum = torch.nonzero(target_to_source==finereg)
+                                    agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
+                                
+                                agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
+                                scalings = {id: source_census[id]/agg_preds_cr[id] for id in source_census.keys()}
+
+
+                                for idx in scalings.keys():
+                                    mask = [source_regions==idx]
+                                    predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
+
+                                # Aggregate by fine administrative boundary
+                                agg_preds_adj_arr = compute_accumulated_values_by_region(
+                                    validation_regions.numpy().astype(np.uint32),
+                                    predicted_target_img_adjusted.cpu().numpy().astype(np.float32),
+                                    valid_validation_ids.numpy().astype(np.uint32),
+                                    num_validation_ids
+                                )
+                                agg_preds_adj = {id: agg_preds_adj_arr[id] for id in validation_ids}
+                                r2_adj, mae_adj, mse_adj = compute_performance_metrics(agg_preds_adj, validation_census)
+                                log_dict.update( {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj} )
+
+                                predicted_target_img_adjusted = predicted_target_img_adjusted.cpu()
+                                predicted_target_img = predicted_target_img.cpu()
 
                             if r2>best_r2:
                                 best_r2 = r2
@@ -209,7 +238,13 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
                                 log_dict["best_mae"] = best_mae
                                 torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
                                     'checkpoints/best_mae_{}.pth'.format(wandb.run.name) )
-                        
+                            
+                            if r2_adj>best_r2_adj:
+                                best_r2_adj = r2_adj
+                                log_dict["adjusted/best_r2"] = best_r2_adj
+                                torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
+                                    'checkpoints/best_r2_adj_{}.pth'.format(wandb.run.name) )
+
                         if target_img is not None:
                             tnr.set_postfix(R2=r2, zMAEc=mae)
                             wandb.log(log_dict)
@@ -228,6 +263,20 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
             predict_map=True
         )
 
-        # if params['loss'] in ['LogoutputL1', 'LogoutputL2']:
-        #     predicted_target_img = predicted_target_img.exp()
-    return predicted_target_img
+        compute_constrained_map = True
+        if compute_constrained_map:
+            agg_preds_cr_arr = np.zeros(len(target_to_source.unique()))
+            for finereg in target_to_source.unique():
+                finregs_to_sum = torch.nonzero(target_to_source==finereg)
+                agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
+            
+            agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
+            scalings = {id: source_census[id]/agg_preds_cr[id] for id in source_census.keys()}
+
+            predicted_target_img_adjusted = torch.zeros_like(predicted_target_img)
+
+            for idx in tqdm(scalings.keys()):
+                mask = [source_regions==idx]
+                predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
+
+    return predicted_target_img, predicted_target_img_adjusted

@@ -192,10 +192,10 @@ def accumulate_values_by_region(map, ids, regions):
 
 
 def bbox2(img):
-    rows = np.any(img, axis=1)
-    cols = np.any(img, axis=0)
-    rmin, rmax = np.where(rows)[0][[0, -1]]
-    cmin, cmax = np.where(cols)[0][[0, -1]]
+    rows = torch.any(img, axis=1)
+    cols = torch.any(img, axis=0)
+    rmin, rmax = torch.where(rows)[0][[0, -1]]
+    cmin, cmax = torch.where(cols)[0][[0, -1]]
 
     return rmin, rmax, cmin, cmax
 

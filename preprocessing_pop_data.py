@@ -208,7 +208,7 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
         cr_census_arr[gid] = cr_census[gid]
 
     # Get geo spatial references
-    buildings_path = input_paths["buildings"]
+    buildings_path = input_paths["buildings_google"]
     source = gdal.Open(buildings_path)
     geo_transform = source.GetGeoTransform()
     projection = source.GetProjection()
