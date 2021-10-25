@@ -3,27 +3,26 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm 
 
 
-def plot_result(source_map, predicted_target_img, validation_map, fig_size=(16, 4)):
+def plot_result(source_map, predicted_target_img, predicted_target_img_adj, validation_map, fig_size=(16, 4)):
     # cmap = "Spectral"
 
 
-    vmin = np.min([0.0, np.min(source_map), np.min(predicted_target_img), np.min(validation_map)])
-    allmaxs = [np.max(source_map), np.max(predicted_target_img), np.max(validation_map)]
+    vmin = np.min([0.0, np.min(source_map), np.min(predicted_target_img), np.min(predicted_target_img_adj), np.min(validation_map)])
+    allmaxs = [np.max(source_map), np.max(predicted_target_img), np.max(predicted_target_img_adj), np.max(validation_map)]
     maxindex = np.argmax(allmaxs)
     vmax = allmaxs[maxindex]
 
     eps = 0.05
 
-    f, axarr = plt.subplots(1, 3, figsize=fig_size, num=102) 
+    f, axarr = plt.subplots(1, 4, figsize=fig_size, num=102) 
 
     a =[]
     a.append( axarr[0].matshow(source_map+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
-
     a.append( axarr[1].matshow(predicted_target_img+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
+    a.append( axarr[2].matshow(predicted_target_img_adj+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
+    a.append( axarr[3].matshow(validation_map+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
 
-    a.append( axarr[2].matshow(validation_map+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
-
-    titles = ['Source', 'Predicted Target', 'Target']
+    titles = ['Source (Admin2)', 'Predicted Target',  'Adj. Predicted Target', 'Target (Admin4)']
 
     for i, ax in enumerate(axarr):
         ax.set_axis_off()

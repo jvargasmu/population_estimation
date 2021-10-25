@@ -110,9 +110,9 @@ class PixScaleNet(nn.Module):
         self.device = device
         self.exptransform_outputs = loss in ['LogoutputL1', 'LogoutputL2']
 
-        n1 = 256
-        n2 = 256
-        n3 = 256
+        n1 = 128
+        n2 = 128
+        n3 = 128
         k1,k2,k3,k4 = kernel_size 
         self.convnet = torch.any(torch.tensor(kernel_size)>1)
 

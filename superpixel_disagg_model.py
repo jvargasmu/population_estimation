@@ -36,7 +36,8 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
             "predict_log_values": False,
 
             "admin_augment": True,
-            "load_state": None,#None, 'brisk-armadillo-86'
+            "load_state": 'vague-voice-185', # 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
+            'eval_only': True,
             "Net": 'ScaleNet', # Choose between ScaleNet and PixNet
 
             'PCA': None,
@@ -243,8 +244,12 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     )
 
     
-    f, ax = plot_result(source_map.numpy(), predicted_target_img.numpy(), validation_map.numpy())
+    f, ax = plot_result(source_map.numpy(), predicted_target_img.numpy(),
+        predicted_target_img_adj.numpy(), validation_map.numpy() )
     plt.show()
+
+    # TODO: save as geoTIFF files
+    return
 
 
 def main():
