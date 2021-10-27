@@ -145,12 +145,8 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
     hd_parents = {}
     cr_ids = []
     for b in hd_regions:
-        hd_parents[b[cfg.col_finest_level_seq_id]] = {cfg.col_finest_level_name: b[cfg.col_finest_level_name],
-                                                      cfg.col_finest_level_code: b[cfg.col_finest_level_code],
-                                                      cfg.col_coarse_level_name: b[cfg.col_coarse_level_name],
-                                                      cfg.col_coarse_level_code: b[cfg.col_coarse_level_code],
-                                                      cfg.col_coarse_level_seq_id: b[cfg.col_coarse_level_seq_id]
-                                                      }
+        hd_parents[b[cfg.col_finest_level_seq_id]] = b[cfg.col_coarse_level_seq_id]
+
         cr_ids.append(b[cfg.col_coarse_level_seq_id])
 
     cr_ids = np.unique(cr_ids).astype(np.uint32)
@@ -193,7 +189,7 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
     id_to_cr_id = np.zeros(num_wp_ids).astype(np.uint32)
     for id in valid_ids:
         hd_id = matches_wp_to_hd[id]
-        gid = hd_parents[hd_id][cfg.col_coarse_level_seq_id]
+        gid = hd_parents[hd_id]
         id_to_cr_id[id] = gid
 
     # Valid WorldPop census data

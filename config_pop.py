@@ -144,9 +144,5 @@ input_paths["tza_f2"] = {
 metadata["tza_f2"] = metadata["tza"]
 
 # Columns of shapefiles
-col_coarse_level_name = "ADM2_EN"
-col_coarse_level_code = "ADM2_PCODE"
-col_finest_level_name = "ADM3_EN"
-col_finest_level_code = "ADM3_PCODE"
 col_coarse_level_seq_id = "GR_SID"
 col_finest_level_seq_id = "SID"
