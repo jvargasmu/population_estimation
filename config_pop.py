@@ -61,7 +61,6 @@ input_paths = {
             root_path),
         "tza_wdpa_dst_cat1_100m_2015": "{}Covariates/TZA/WDPA/WDPA_1/tza_wdpa_dst_cat1_100m_2015.tif".format(
             root_path),
-
     }
 }
 

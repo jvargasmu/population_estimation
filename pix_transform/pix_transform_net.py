@@ -119,6 +119,8 @@ class PixScaleNet(nn.Module):
         self.scalenet = nn.Sequential(                      nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
                                       nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                                       nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
+                                    #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
+                                    #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
                                       nn.ReLU(inplace=True),nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2),
                                       nn.ReLU(inplace=True)
                                       )
@@ -142,11 +144,9 @@ class PixScaleNet(nn.Module):
         buildings = inputs[:,0:1,:,:]
         inputs = inputs[:,1:,:,:]
 
-
         scale = self.scalenet(inputs) 
         inputs = torch.mul(buildings, scale)
         
-
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
             inputs = inputs.exp() 
@@ -155,9 +155,7 @@ class PixScaleNet(nn.Module):
         if mask is not None:
             mask = mask.to(self.device)
             return inputs.sum().cpu()
-            # return inputs[:,mask].sum().cpu()
         else:
-
             # check if the output should be the map or the sum
             if not predict_map:
                 return inputs.sum().cpu()
@@ -165,7 +163,7 @@ class PixScaleNet(nn.Module):
                 return inputs.cpu(), scale.cpu()
 
 
-    def forward_batchwise(self, inputs,mask=None, predict_map=False): 
+    def forward_batchwise(self, inputs,mask=None, predict_map=False, return_scale=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
         PS = 1200
@@ -189,9 +187,14 @@ class PixScaleNet(nn.Module):
                     outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True)
 
         if not predict_map:    
-            return outvar
+            out = outvar
         else:
-            return outvar.squeeze()
+            out = outvar.squeeze()
+
+        if return_scale:
+            out = [out,scale]
+        
+        return out
 
     def forward_one_or_more(self, sample, mask=None):
 

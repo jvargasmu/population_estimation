@@ -14,17 +14,17 @@ def plot_result(source_map, predicted_target_img, predicted_target_img_adj, vali
 
     eps = 0.05
 
-    f, axarr = plt.subplots(1, 4, figsize=fig_size, num=102) 
+    f, axarr = plt.subplots(2, 2, figsize=fig_size, num=102) 
 
     a =[]
-    a.append( axarr[0].matshow(source_map+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
-    a.append( axarr[1].matshow(predicted_target_img+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
-    a.append( axarr[2].matshow(predicted_target_img_adj+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
-    a.append( axarr[3].matshow(validation_map+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
+    a.append( axarr[0,0].matshow(source_map+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
+    a.append( axarr[1,0].matshow(predicted_target_img+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
+    a.append( axarr[0,1].matshow(validation_map+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
+    a.append( axarr[1,1].matshow(predicted_target_img_adj+eps, vmin=eps, vmax=vmax, norm=LogNorm(vmin=eps, vmax=vmax)) )
 
-    titles = ['Source (Admin2)', 'Predicted Target',  'Adj. Predicted Target', 'Target (Admin4)']
+    titles = ['Source (Admin2)', 'Predicted Target',  'Target (Admin4)', 'Adj. Predicted Target',]
 
-    for i, ax in enumerate(axarr):
+    for i, ax in enumerate(axarr.flatten()):
         ax.set_axis_off()
         ax.set_title(titles[i])
 

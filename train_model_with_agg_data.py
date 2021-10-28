@@ -68,7 +68,7 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path,
     wp_ids = list(np.unique(wp_rst_regions))
     num_wp_ids = len(wp_ids)
     inputs = read_input_raster_data(input_paths)
-    input_buildings = inputs["buildings"]
+    input_buildings = inputs["buildings_google"]
 
     # Binary map representing a pixel belong to a region with valid id
     map_valid_ids = create_map_of_valid_ids(wp_rst_regions, no_valid_ids)
@@ -91,7 +91,7 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path,
     cr_log_density_arr = np.log(cr_density_arr)
 
     # Create model
-    model = RandomForestRegressor(random_state=42, n_jobs=4, n_estimators=1)
+    model = RandomForestRegressor(random_state=42, n_jobs=4, n_estimators=50)
 
     # Fit model
     model.fit(cr_features_arr, cr_log_density_arr)

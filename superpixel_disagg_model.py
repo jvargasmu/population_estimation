@@ -12,7 +12,7 @@ import wandb
 
 import config_pop as cfg
 from utils import read_input_raster_data, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
-    compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix
+    compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, save_as_geoTIFF
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 
@@ -168,6 +168,8 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     if params["Net"]=='ScaleNet':
         valid_data_mask *= features[0]>0
 
+        #TODO: distribute sourcemap and target map according to the building pixels!
+
     guide_res = features.shape[1:3]
 
     if params['PCA'] is not None:
@@ -180,7 +182,6 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
         # features = new_features
         # del new_features
         print("Finished PCA.")
-
 
     # also account for the invalid map ids
     valid_data_mask *= map_valid_ids.astype(bool)
@@ -234,7 +235,7 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     # Guide are the high resolution features, read them here and sort them into the matrix
     # Source is the administrative population density map.
 
-    predicted_target_img, predicted_target_img_adj = PixAdminTransform(
+    predicted_target_img, predicted_target_img_adj, scales = PixAdminTransform(
         guide_img=features_resamp,
         source=(cr_census, cr_regions, source_map),
         valid_mask=valid_data_mask_resamp,
@@ -244,11 +245,37 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     )
 
     
-    f, ax = plot_result(source_map.numpy(), predicted_target_img.numpy(),
+    f, ax = plot_result(
+        source_map.numpy(), predicted_target_img.numpy(),
         predicted_target_img_adj.numpy(), validation_map.numpy() )
     plt.show()
 
     # TODO: save as geoTIFF files
+    save_files = True
+    if save_files:
+        source_map[~valid_data_mask_resamp]= np.nan
+        predicted_target_img[~valid_data_mask_resamp]= np.nan
+        predicted_target_img_adj[~valid_data_mask_resamp]= np.nan
+        validation_map[~valid_data_mask_resamp]= np.nan
+        dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
+        if not os.path.exists(dest_folder):
+            os.makedirs(dest_folder)
+
+        write_geolocated_image( source_map.numpy(), dest_folder+'/source_map.tiff'.format(wandb.run.name),
+            geo_metadata["geo_transform"], geo_metadata["projection"] )
+        write_geolocated_image( predicted_target_img.numpy(), dest_folder+'/predicted_target_img.tiff'.format(wandb.run.name),
+            geo_metadata["geo_transform"], geo_metadata["projection"] )
+        write_geolocated_image( predicted_target_img_adj.numpy(), dest_folder+'/predicted_target_img_adj.tiff'.format(wandb.run.name),
+            geo_metadata["geo_transform"], geo_metadata["projection"] )
+        write_geolocated_image( validation_map.numpy(), dest_folder+'/validation_map.tiff'.format(wandb.run.name),
+            geo_metadata["geo_transform"], geo_metadata["projection"] )
+        write_geolocated_image( scales.numpy(), dest_folder+'/scales.tiff'.format(wandb.run.name),
+            geo_metadata["geo_transform"], geo_metadata["projection"] )
+
+    # save_as_geoTIFF(
+    #     src_filename=input_paths[list(input_paths.keys())[0]],
+    #     dst_filename='outputs/predicted_target_img_{}.pth'.format(wandb.run.name),
+    #     raster=predicted_target_img )
     return
 
 
