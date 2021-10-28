@@ -37,7 +37,7 @@ else:
 def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
     valid_validation_ids, num_validation_ids, validation_ids, validation_census, 
     target_img, device, target_to_source, source_census, source_regions,
-    best_r2=1, best_mae=0, best_r2_adj=1, optimizer=None, epoch=0, return_scale=True):
+    best_r2=1, best_mae=0, best_r2_adj=1, optimizer=None, epoch=0, return_scale=False):
 
     with torch.no_grad():
         mynet.eval()

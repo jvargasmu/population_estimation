@@ -118,15 +118,44 @@ no_data_values = {
         "tza_dst_bsgme_100m_2015": -99999,
         "tza_dst_ghslesaccilcgufghsll_100m_2014": -99999,
         "tza_dst_coastline_100m_2000_2020": -99999,
-        "tza_dmsp_100m_2011": -99999,
+        "tza_dmsp_100m_2011": -99999, #32767
         "tza_esaccilc_dst_water_100m_2000_2012":-99999, 
         "tza_osm_dst_roadintersec_100m_2016":-99999, 
         "tza_osm_dst_waterway_100m_2016": -99999,
         "tza_osm_dst_road_100m_2016": -99999,
-        "tza_srtm_slope_100m": -99999,
-        "tza_srtm_topo_100m": -99999,
-        "tza_viirs_100m_2015": -99999,
+        "tza_srtm_slope_100m": -99999, #255
+        "tza_srtm_topo_100m": -99999, #32767.
+        "tza_viirs_100m_2015": -99999, #3.4028e+38
         "tza_wdpa_dst_cat1_100m_2015": -99999,
+    },
+    "uga":{
+        "buildings_j": None,
+        "buildings_google": -99999,
+        "buildings_maxar": -99999, 
+        "buildings_google_mean_area": -99999,
+        "buildings_merge_mean_area": -99999,
+        "buildings_maxar_mean_area": -99999,
+        "esaccilc_dst011_100m_2000": -99999,
+        "esaccilc_dst040_100m_2000": -99999,
+        "esaccilc_dst130_100m_2000": -99999,
+        "esaccilc_dst140_100m_2000": -99999,
+        "esaccilc_dst150_100m_2000": -99999,
+        "esaccilc_dst160_100m_2000": -99999,
+        "esaccilc_dst190_100m_2000": -99999,
+        "esaccilc_dst200_100m_2000": -99999,
+        "uga_tt50k_100m_2000": -99999,
+        "uga_dst_bsgme_100m_2015": -99999,
+        "uga_dst_ghslesaccilcgufghsll_100m_2014": -99999,
+        "uga_dst_coastline_100m_2000_2020": -99999,
+        "uga_dmsp_100m_2011": 32767.,
+        "uga_esaccilc_dst_water_100m_2000_2012":-99999, 
+        "uga_osm_dst_roadintersec_100m_2016":-99999, 
+        "uga_osm_dst_waterway_100m_2016": -99999,
+        "uga_osm_dst_road_100m_2016": -99999,
+        "uga_srtm_slope_100m": 255.,
+        "uga_srtm_topo_100m": 32767.,
+        "uga_viirs_100m_2015": 3.4028e+38,
+        "uga_wdpa_dst_cat1_100m_2015": -99999,
     }
 }
 
@@ -155,7 +184,8 @@ norms = {
         "tza_srtm_topo_100m": (1.02034711e+03 , 483.97733166),
         "tza_viirs_100m_2015": (9.87479157e-02 , 0.49287229),
         "tza_wdpa_dst_cat1_100m_2015": (2.37557718e+02 , 122.54531703),
-    }
+    },
+    "uga":{}
 }
 
 metadata = {
@@ -164,8 +194,10 @@ metadata = {
         "wp_covariates_no_data": -9999,
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
-
-    }
+    },
+    "tza":{
+        "scale_maxar_to_google": None
+        }
 }
 
 input_paths["tza_f2"] = {
