@@ -61,6 +61,39 @@ input_paths = {
             root_path),
         "tza_wdpa_dst_cat1_100m_2015": "{}Covariates/TZA/WDPA/WDPA_1/tza_wdpa_dst_cat1_100m_2015.tif".format(
             root_path),
+    },
+    
+    "uga": {
+        "buildings_google": "{}OtherBuildings/UGA/UGA_gbp_BCB_v1_count.tif".format(root_path),
+        "buildings_maxar": "{}OtherBuildings/UGA/UGA_mbp_BCB_v3_count.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/UGA/UGA_gbp_BCB_v1_mean_area.tif".format(root_path),
+        "buildings_maxar_mean_area": "{}OtherBuildings/UGA/UGA_mbp_BCB_v3_mean_area.tif".format(root_path),
+        "uga_tt50k_100m_2000": "{}Covariates/UGA/Accessibility/uga_tt50k_100m_2000.tif".format(
+            root_path),
+        "uga_dst_bsgme_100m_2015": "{}Covariates/UGA/BSGM/2015/DTE/uga_dst_bsgme_100m_2015.tif".format(
+            root_path),
+        "uga_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/UGA/BuiltSettlement/2014/DTE/uga_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
+            root_path),
+        "uga_dst_coastline_100m_2000_2020": "{}Covariates/UGA/Coastline/DST/uga_dst_coastline_100m_2000_2020.tif".format(
+            root_path),
+        "uga_dmsp_100m_2011": "{}Covariates/UGA/DMSP/uga_dmsp_100m_2011.tif".format(
+            root_path),
+        "uga_esaccilc_dst_water_100m_2000_2012": "{}Covariates/UGA/ESA_CCI_Water/DST/uga_esaccilc_dst_water_100m_2000_2012.tif".format(
+            root_path),
+        "uga_osm_dst_roadintersec_100m_2016": "{}Covariates/UGA/OSM/DST/uga_osm_dst_roadintersec_100m_2016.tif".format(
+            root_path),
+        "uga_osm_dst_waterway_100m_2016": "{}Covariates/UGA/OSM/DST/uga_osm_dst_waterway_100m_2016.tif".format(
+            root_path),
+        "uga_osm_dst_road_100m_2016": "{}Covariates/UGA/OSM/DST/uga_osm_dst_road_100m_2016.tif".format(
+            root_path),
+        "uga_srtm_slope_100m": "{}Covariates/UGA/Slope/uga_srtm_slope_100m.tif".format(
+            root_path),
+        "uga_srtm_topo_100m": "{}Covariates/UGA/Topo/uga_srtm_topo_100m.tif".format(
+            root_path),
+        "uga_viirs_100m_2015": "{}Covariates/UGA/VIIRS/uga_viirs_100m_2015.tif".format(
+            root_path),
+        "uga_wdpa_dst_cat1_100m_2015": "{}Covariates/UGA/WDPA/WDPA_1/uga_wdpa_dst_cat1_100m_2015.tif".format(
+            root_path),
     }
 }
 
@@ -141,6 +174,7 @@ input_paths["tza_f2"] = {
 }
 
 metadata["tza_f2"] = metadata["tza"]
+metadata["uga"] = metadata["tza"]
 
 # Columns of shapefiles
 col_coarse_level_seq_id = "GR_SID"
