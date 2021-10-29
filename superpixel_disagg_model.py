@@ -150,8 +150,7 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
         else:
             this_mask = features[i]!=no_data_values[name]
             if no_data_values[name]>1e30:
-                # this_mask *= ~torch.from_numpy(np.isclose(features[i],3.4028e+38))
-                pass
+                this_mask *= ~torch.from_numpy(np.isclose(features[i],no_data_values[name]))
             valid_data_mask *= this_mask
 
         # Normalize the features, execpt for the buildings layer when the scale Network is used

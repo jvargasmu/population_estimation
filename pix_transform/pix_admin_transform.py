@@ -45,7 +45,7 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         # batchwise passing for whole image
         return_vals = mynet.forward_batchwise(guide_img.unsqueeze(0),
             predict_map=True,
-            return_scale=True
+            return_scale=return_scale
         )
         if return_scale:
             predicted_target_img, scales = return_vals
@@ -72,7 +72,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 predicted_target_img_adjusted = torch.zeros_like(predicted_target_img, device=device)
                 predicted_target_img = predicted_target_img.to(device)
 
-                agg_preds_cr_arr = np.zeros(len(target_to_source.unique()))
+                # agg_preds_cr_arr = np.zeros(len(target_to_source.unique()))
+                agg_preds_cr_arr = np.zeros(target_to_source.unique().max()+1)
                 for finereg in target_to_source.unique():
                     finregs_to_sum = torch.nonzero(target_to_source==finereg)
                     agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
