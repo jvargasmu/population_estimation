@@ -99,26 +99,18 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
         # Only considering pixels that contain buildings in both patches
 
         scale_maxar_to_google = cfg.metadata[dataset_name]['scale_maxar_to_google']
-        if cfg.metadata[dataset_name]['scale_maxar_to_google'] is None:
+        if scale_maxar_to_google is None and (scale_maxar_to_google!=1):
             valid_build_mask = np.logical_and(inputs['buildings_google']>0, inputs['buildings_maxar']>0)
-
-            # heatmap, xedges, yedges = np.histogram2d(inputs['buildings_maxar'][valid_build_mask],  inputs['buildings_google'][valid_build_mask],
-            #                                         bins=(int(inputs['buildings_maxar'].max()),int(inputs['buildings_google'].max())))
-            # extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
-            # plt.clf()
-            # plt.imshow(np.log(heatmap.T), extent=extent, origin='lower')
-            # plt.xlabel('Maxar')
-            # plt.ylabel('Google')
-            # plt.show()
-            # corrMat = np.corrcoef(inputs['buildings_maxar'][valid_build_mask], inputs['buildings_google'][valid_build_mask])
 
             scale_maxar_to_google = LinearRegression().fit(inputs['buildings_maxar'][valid_build_mask].reshape(-1, 1),
                                                         inputs['buildings_google'][valid_build_mask].reshape(-1, 1)).coef_
+        else:
+            scale_maxar_to_google = 1.
         
         inputs['buildings_maxar'] *= scale_maxar_to_google
 
-         # Taking the max over both available features
-        # TODO: max operation for mean buildings, too?
+        # Taking the max over both available features
+        #  max operation for mean building areas
         maxargs = np.argmax( np.concatenate([inputs['buildings_google'][:,:,None], inputs['buildings_maxar'][:,:,None]],2),2 ).astype(bool)
         inputs['buildings_merge'] = inputs['buildings_google'].copy()
         inputs['buildings_merge'][maxargs] =  inputs['buildings_maxar'][maxargs]
@@ -174,16 +166,16 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
 
     guide_res = features.shape[1:3]
 
-    if params['PCA'] is not None:
-        print("Executing dimension reduction using PCA.")
-        # pca = PCA(n_components=14).fit(features[1:,valid_data_mask].T)
-        # print(pca.explained_variance_ratio_)
-        after_PCA = torch.zeros((params['PCA'],guide_res[0],guide_res[1]), )
-        after_PCA[:,valid_data_mask] = torch.from_numpy(PCA(n_components=params['PCA']).fit_transform(features[1:,valid_data_mask].T).T.astype(np.float32))
-        features = torch.cat([features[0:1], after_PCA])
-        # features = new_features
-        # del new_features
-        print("Finished PCA.")
+    # if params['PCA'] is not None:
+    #     print("Executing dimension reduction using PCA.")
+    #     # pca = PCA(n_components=14).fit(features[1:,valid_data_mask].T)
+    #     # print(pca.explained_variance_ratio_)
+    #     after_PCA = torch.zeros((params['PCA'],guide_res[0],guide_res[1]), )
+    #     after_PCA[:,valid_data_mask] = torch.from_numpy(PCA(n_components=params['PCA']).fit_transform(features[1:,valid_data_mask].T).T.astype(np.float32))
+    #     features = torch.cat([features[0:1], after_PCA])
+    #     # features = new_features
+    #     # del new_features
+    #     print("Finished PCA.")
 
     # also account for the invalid map ids
     valid_data_mask *= map_valid_ids.astype(bool)
