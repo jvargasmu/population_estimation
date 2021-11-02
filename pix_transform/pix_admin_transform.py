@@ -226,6 +226,9 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
             valid_validation_ids, num_validation_ids, validation_ids, validation_census, 
             target_img, device, target_to_source, source_census, source_regions, return_scale=True
         )
+
+        wandb.log(log_dict)
+            
         return predicted_target_img, predicted_target_img_adjusted, scales
 
     epochs = params["epochs"]
