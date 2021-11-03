@@ -36,8 +36,8 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
             "predict_log_values": False,
 
             "admin_augment": True,
-            "load_state": None, # 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
-            'eval_only': False,
+            "load_state": 'fluent-star-258', #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
+            'eval_only': True,
             "Net": 'ScaleNet', # Choose between ScaleNet and PixNet
 
             'PCA': None,
@@ -197,7 +197,7 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
         fine_density_map_resamp = fine_density_map
         cr_density_map_resamp = cr_density_map
 
-    #TODO: Remove! target the log of population densities
+    #TODO: Remove! target the log of population densities, this is already handled in the loss function and NN model.
     if params["predict_log_values"]:
         validation_map = np.log(fine_density_map_resamp)
         source_map = np.log(cr_density_map_resamp)
@@ -219,8 +219,7 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     fine_regions = torch.from_numpy(fine_regions.astype(np.int16))
     map_valid_ids = torch.from_numpy(map_valid_ids.astype(np.bool8))
     id_to_cr_id = torch.from_numpy(id_to_cr_id.astype(np.int32))
-    cr_regions = torch.from_numpy(cr_regions.astype(np.int32))
-    # valid_ids = torch.tensor(valid_ids, dtype=torch.bool)
+    cr_regions = torch.from_numpy(cr_regions.astype(np.int32)) 
 
     features_resamp[:,~valid_data_mask_resamp] = replacement
     validation_map[~valid_data_mask_resamp] = replacement
@@ -244,7 +243,7 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
         predicted_target_img_adj.numpy(), validation_map.numpy() )
     plt.show()
 
-    # TODO: save as geoTIFF files
+    # save as geoTIFF files
     save_files = True
     if save_files:
         source_map[~valid_data_mask_resamp]= np.nan
@@ -266,10 +265,6 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
         write_geolocated_image( scales.numpy(), dest_folder+'/scales.tiff'.format(wandb.run.name),
             geo_metadata["geo_transform"], geo_metadata["projection"] )
 
-    # save_as_geoTIFF(
-    #     src_filename=input_paths[list(input_paths.keys())[0]],
-    #     dst_filename='outputs/predicted_target_img_{}.pth'.format(wandb.run.name),
-    #     raster=predicted_target_img )
     return
 
 
