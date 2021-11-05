@@ -230,16 +230,16 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
         patchsize = [feats.numel() for feats in variables[0]]
         pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
-        triplets = [[indicies[i],indicies[j],indicies[k]] for i in range(num_single) for j in range(i+1, num_single) for k in range(j+1, num_single)]
-
         pairs = np.asarray(pairs, dtype=object)
-        triplets = np.asarray(triplets, dtype=object)
-
         sumpixels_pairs = [(patchsize[id1]+patchsize[id2]) for id1,id2 in pairs ]
         self.small_pairs = pairs[np.asarray(sumpixels_pairs)<max_pix_forward**2]
 
-        sumpixels_triplets = [(patchsize[id1]+patchsize[id2]+patchsize[id3]) for id1,id2,id3 in triplets ]
-        self.small_triplets = triplets[np.asarray(sumpixels_triplets)<max_pix_forward**2]
+
+
+        # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
+        # triplets = np.asarray(triplets, dtype=object)
+        # sumpixels_triplets = [(patchsize[id1]+patchsize[id2]+patchsize[id3]) for id1,id2,id3 in triplets ]
+        # self.small_triplets = triplets[np.asarray(sumpixels_triplets)<max_pix_forward**2]
 
         self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
 
