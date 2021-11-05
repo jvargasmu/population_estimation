@@ -16,11 +16,9 @@ from pix_transform_utils.utils import upsample
 
 from pix_transform.pix_transform_net import PixTransformNet, PixScaleNet
 
-DEFAULT_PARAMS = {'feature_downsampling': 1,
-            'spatial_features_input': False,
+DEFAULT_PARAMS = {
             'weights_regularizer': 0.001, # spatial color head
             'loss': 'l1',
-            "predict_log_values": False,
             'optim': 'adam',
             'lr': 0.001,
             "epochs": 25,
@@ -31,7 +29,6 @@ if 'ipykernel' in sys.modules:
     from tqdm import tqdm_notebook as tqdm
 else:
     from tqdm import tqdm as tqdm
-
 
 
 def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
@@ -136,32 +133,10 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
     if validation_data is not None:
         validation_census, target_img, validation_regions, validation_ids, valid_validation_ids, target_to_source = validation_data
         num_validation_ids = np.unique(validation_regions).__len__()
-        target_img[~valid_mask] = 1e-10 #target_img[valid_mask].mean()
+        target_img[~valid_mask] = 1e-10 
 
     source_census , source_regions, source_map = source
     source_regions = source_regions.to(device)
-
-    n_channels, hr_height, hr_width = guide_img.shape
-
-    # source_img = source_img.squeeze()
-    lr_height, lr_width = source_regions.shape
-
-    # TODO: also try with the downsampled version, for this we also need to downsample the regions which might be tricky/expensive (categorical labels), or we just divide the bounding box coordinates by the factor
-    assert (params["feature_downsampling"]==1)
-
-    source_arr = list(source_census.values())
-
-    # TODO: Remove!
-    if params['spatial_features_input']:
-        x = np.linspace(-0.5, 0.5, hr_height)
-        y = np.linspace(-0.5, 0.5, hr_width)
-        x_grid, y_grid = np.meshgrid(x, y, indexing='ij')
-
-        x_grid = np.expand_dims(x_grid, axis=0)
-        y_grid = np.expand_dims(y_grid, axis=0)
-
-        guide_img = np.concatenate([guide_img, x_grid, y_grid], axis=0)
-        n_channels += 2
 
     #### prepare_patches #########################################################################
     
@@ -181,10 +156,8 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
     else:
         train_data = PatchDataset(X, Y, Masks, device=device)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
-    ###############################################################################################
 
     #### setup network ############################################################################
-    ###############################################################################################
 
     if params['loss'] == 'mse':
         myloss = torch.nn.MSELoss()
@@ -230,36 +203,31 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
         wandb.log(log_dict)
             
         return predicted_target_img, predicted_target_img_adjusted, scales
+    
+    #### train network ############################################################################
 
     epochs = params["epochs"]
     itercounter = 0
     with tqdm(range(0, epochs), leave=True) as tnr:
-        best_r2=-1e12
-        best_mae=1e12
-        best_r2_adj=-1e12
+        best_r2 = -1e12
+        best_mae = 1e12
+        best_r2_adj = -1e12
         for epoch in tnr:
             for sample in tqdm(train_loader):
                 optimizer.zero_grad()
                 
-                if isinstance(sample, list):
-                    y_pred = mynet.forward_one_or_more(sample)
-                     #check if any valid values are there, else skip   
-                    if y_pred is None:
-                        continue
-                    
-                    # Sum over the census data per patch
-                    y = [torch.sum(torch.tensor([samp[1] for samp in sample]))]
-
-                else:
-                     #check if any valid values are there, else skip   
-                    if sample[2].sum()<1:
-                        continue
-                    
-                    X,y,mask = sample
-                    y_pred = mynet(X, mask)
-
+                # Feed forward the network
+                y_pred = mynet.forward_one_or_more(sample)
+                
+                #check if any valid values are there, else skip   
+                if y_pred is None:
+                    continue
+                
+                # Sum over the census data per patch
+                y = [torch.sum(torch.tensor([samp[1] for samp in sample]))]
+                
+                # Backwards
                 loss = myloss(y_pred, y[0])
-
                 loss.backward()
                 optimizer.step()
 
@@ -295,46 +263,10 @@ def PixAdminTransform(guide_img, source, valid_mask=None, params=DEFAULT_PARAMS,
         checkpoint = torch.load('checkpoints/best_r2_{}.pth'.format(wandb.run.name) )
         mynet.load_state_dict(checkpoint['model_state_dict'])
 
-        # predicted_target_img, scales = mynet.forward_batchwise(guide_img.unsqueeze(0),
-        #     predict_map=True,
-        #     return_scale=True
-        # )
-
-
         predicted_target_img, predicted_target_img_adjusted, log_dict, best_scores, scales = eval_my_model(
             mynet, guide_img, valid_mask, validation_regions,
             valid_validation_ids, num_validation_ids, validation_ids, validation_census, 
             target_img, device, target_to_source, source_census, source_regions,
             best_r2, best_mae, best_r2_adj, optimizer
         )
-
-
-        # # Aggregate by fine administrative boundary
-        # agg_preds_arr = compute_accumulated_values_by_region(
-        #     validation_regions.numpy().astype(np.uint32),
-        #     predicted_target_img.cpu().numpy().astype(np.float32),
-        #     valid_validation_ids.numpy().astype(np.uint32),
-        #     num_validation_ids
-        # )
-        # # agg_preds = {id: agg_preds_arr[id] for id in validation_ids}
-        # # r2, mae, mse = compute_performance_metrics(agg_preds, validation_census)
-        # # log_dict = {"r2": r2, "mae": mae, "mse": mse, 'train/loss': loss}
-
-
-        # compute_constrained_map = True
-        # if compute_constrained_map:
-        #     agg_preds_cr_arr = np.zeros(len(target_to_source.unique()))
-        #     for finereg in target_to_source.unique():
-        #         finregs_to_sum = torch.nonzero(target_to_source==finereg)
-        #         agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
-            
-        #     agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
-        #     scalings = {id: source_census[id]/agg_preds_cr[id] for id in source_census.keys()}
-
-        #     predicted_target_img_adjusted = torch.zeros_like(predicted_target_img)
-
-        #     for idx in tqdm(scalings.keys()):
-        #         mask = [source_regions==idx]
-        #         predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
-
     return predicted_target_img, predicted_target_img_adjusted, scales

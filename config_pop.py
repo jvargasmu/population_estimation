@@ -218,10 +218,17 @@ metadata = {
         "wp_covariates_no_data": -9999,
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
+        "preproc_data_path": 'preprocessed_data_3_tza.pkl',
+        "rst_wp_regions_path": '{}OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif'.format(root_path)
     },
-    "tza":{
-        "scale_maxar_to_google": None
-        }
+    "uga":{
+        "wp_no_data": [0, 1],
+        "wp_covariates_no_data": -9999,
+        "hd_no_data": [0],
+        "scale_maxar_to_google": None,
+        "preproc_data_path": 'preprocessed_data_3_uga.pkl',
+        "rst_wp_regions_path": '{}OtherBuildings/UGA/uga_wpop_regions.tif'.format(root_path)
+    }
 }
 
 input_paths["tza_f2"] = {
@@ -230,7 +237,7 @@ input_paths["tza_f2"] = {
 }
 
 metadata["tza_f2"] = metadata["tza"]
-metadata["uga"] = metadata["tza"]
+# metadata["uga"] = metadata["tza"]
 
 # Columns of shapefiles
 col_coarse_level_seq_id = "GR_SID"

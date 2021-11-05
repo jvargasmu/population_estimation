@@ -23,39 +23,12 @@ from pix_transform_utils.utils import downsample,align_images
 from pix_transform_utils.plots import plot_result
 
 
-def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
-                             output_dir, dataset_name):
+def get_dataset(dataset_name, params, building_features, related_building_features):
 
-    ####  define parameters  ########################################################
+    # configure paths
+    rst_wp_regions_path = cfg.metadata[dataset_name]["rst_wp_regions_path"]
+    preproc_data_path = cfg.metadata[dataset_name]["preproc_data_path"]
 
-    params = {'feature_downsampling': 1,
-            'spatial_features_input': False,
-            'weights_regularizer': 0.001, # spatial color head
-            'kernel_size': [1,1,1,1],
-            'loss': 'NormL1',
-            "predict_log_values": False,
-
-            "admin_augment": True,
-            "load_state": 'fluent-star-258', #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
-            'eval_only': True,
-            "Net": 'ScaleNet', # Choose between ScaleNet and PixNet
-
-            'PCA': None,
-
-            'optim': 'adam',
-            'lr': 0.0001,
-            "epochs": 100,
-            'logstep': 1,
-            'dataset_name': dataset_name,
-            'input_variables': list(cfg.input_paths[dataset_name].keys())
-            }
-
-    building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
-    related_building_features = ['buildings_google_mean_area', 'buildings_maxar_mean_area', 'buildings_merge_mean_area']
-
-    wandb.init(project="HAC", entity="nandometzger", config=params)
-
-    ####  load dataset  #############################################################
     # Read input data
     input_paths = cfg.input_paths[dataset_name]
     no_data_values = cfg.no_data_values[dataset_name]
@@ -158,56 +131,25 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
 
     del inputs
 
+
     # this_mask = features[0]!=no_data_values[name]
     if params["Net"]=='ScaleNet':
         valid_data_mask *= features[0]>0
 
-        #TODO: distribute sourcemap and target map according to the building pixels!
-
     guide_res = features.shape[1:3]
-
-    # if params['PCA'] is not None:
-    #     print("Executing dimension reduction using PCA.")
-    #     # pca = PCA(n_components=14).fit(features[1:,valid_data_mask].T)
-    #     # print(pca.explained_variance_ratio_)
-    #     after_PCA = torch.zeros((params['PCA'],guide_res[0],guide_res[1]), )
-    #     after_PCA[:,valid_data_mask] = torch.from_numpy(PCA(n_components=params['PCA']).fit_transform(features[1:,valid_data_mask].T).T.astype(np.float32))
-    #     features = torch.cat([features[0:1], after_PCA])
-    #     # features = new_features
-    #     # del new_features
-    #     print("Finished PCA.")
 
     # also account for the invalid map ids
     valid_data_mask *= map_valid_ids.astype(bool)
 
     # Create dataformat with densities for administrative boundaries of level -1 and -2
     # Fills in the densities per pixel
+    #TODO: distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
     fine_density, fine_density_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
     cr_density, cr_density_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
 
-    #TODO: Remove! downsample the features to target resolution
-    if params['feature_downsampling']!=1:
-        valid_data_mask_resamp = downsample(valid_data_mask, params['feature_downsampling'])==1
-        features_resamp = downsample(features, params['feature_downsampling'])
-        fine_density_map_resamp = downsample(fine_density_map, params['feature_downsampling'])
-        cr_density_map_resamp = downsample(cr_density_map, params['feature_downsampling'])
-    else:
-        valid_data_mask_resamp = valid_data_mask
-        features_resamp = features
-        fine_density_map_resamp = fine_density_map
-        cr_density_map_resamp = cr_density_map
-
-    #TODO: Remove! target the log of population densities, this is already handled in the loss function and NN model.
-    if params["predict_log_values"]:
-        validation_map = np.log(fine_density_map_resamp)
-        source_map = np.log(cr_density_map_resamp)
-        # fine_census = {key: np.log(value) for key,value in fine_census.items()}
-        cr_census = {key: np.log(value) for key,value in cr_census.items()}
-        replacement = -16
-    else:
-        validation_map = fine_density_map_resamp
-        source_map = cr_density_map_resamp
-        replacement = 0
+    validation_map = fine_density_map
+    source_map = cr_density_map
+    replacement = 0
 
     # replace -inf with 1e-16 ("-16" on log scale) is close enough to zero for the log scale, otherwise take 0
     np.nan_to_num(validation_map, copy=False, neginf=replacement)
@@ -215,29 +157,103 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
 
     source_map = torch.from_numpy(source_map)
     validation_map = torch.from_numpy(validation_map).float()
-    valid_data_mask_resamp = valid_data_mask_resamp.to(torch.bool)
+    valid_data_mask = valid_data_mask.to(torch.bool)
     fine_regions = torch.from_numpy(fine_regions.astype(np.int16))
     map_valid_ids = torch.from_numpy(map_valid_ids.astype(np.bool8))
     id_to_cr_id = torch.from_numpy(id_to_cr_id.astype(np.int32))
     cr_regions = torch.from_numpy(cr_regions.astype(np.int32)) 
 
-    features_resamp[:,~valid_data_mask_resamp] = replacement
-    validation_map[~valid_data_mask_resamp] = replacement
-    source_map[~valid_data_mask_resamp] = replacement
+    features[:,~valid_data_mask] = replacement
+    validation_map[~valid_data_mask] = replacement
+    source_map[~valid_data_mask] = replacement
+
+    dataset = {
+        "features": features,
+        "source_map": source_map,
+        "validation_map": validation_map,
+        "valid_data_mask": valid_data_mask,
+        "fine_regions": fine_regions,
+        "map_valid_ids": map_valid_ids,
+        "id_to_cr_id": id_to_cr_id,
+        "cr_regions": cr_regions,
+        "cr_census": cr_census,
+        "fine_census": fine_census,
+        "valid_ids": valid_ids,
+        "guide_res": guide_res,
+        "geo_metadata": geo_metadata,
+    }
+    
+    return dataset
+
+
+
+def superpixel_with_pix_data(output_dir, train_dataset_name, test_dataset_name):
+
+    ####  define parameters  ########################################################
+
+    params = {
+            'weights_regularizer': 0.001, # spatial color head
+            'kernel_size': [1,1,1,1],
+            'loss': 'NormL1',
+
+            "admin_augment": True,
+            "load_state": 'vague-voice-185', #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
+            "eval_only": False,
+            "Net": 'ScaleNet', # Choose between ScaleNet and PixNet
+
+            'PCA': None,
+
+            'optim': 'adam',
+            'lr': 0.0001,
+            "epochs": 100,
+            'logstep': 1,
+            'train_dataset_name': train_dataset_name,
+            'test_dataset_name': test_dataset_name,
+            'input_variables': list(cfg.input_paths[train_dataset_name].keys())
+            }
+
+    building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
+    related_building_features = ['buildings_google_mean_area', 'buildings_maxar_mean_area', 'buildings_merge_mean_area']
+
+    wandb.init(project="HAC", entity="nandometzger", config=params)
+
+    ####  load dataset  #############################################################
+    # TODO: create a custom dataset creator function
+
+    train_dataset = get_dataset(train_dataset_name, params, building_features, related_building_features)
+    if train_dataset_name!=test_dataset_name:
+        test_dataset = get_dataset(test_dataset_name, params, building_features, related_building_features)
+    else:
+        test_dataset = train_dataset 
+
+    ##################################################
 
     # Guide are the high resolution features, read them here and sort them into the matrix
     # Source is the administrative population density map.
 
+    features = train_dataset["features"]
+    cr_census = train_dataset["cr_census"]
+    cr_regions = train_dataset["cr_regions"]
+    source_map = train_dataset["source_map"]
+    valid_data_mask = train_dataset["valid_data_mask"]
+    fine_census = train_dataset["fine_census"]
+    validation_map = train_dataset["validation_map"]
+    fine_regions = train_dataset["fine_regions"]
+    valid_ids = train_dataset["valid_ids"]
+    map_valid_ids = train_dataset["map_valid_ids"]
+    id_to_cr_id = train_dataset["id_to_cr_id"]
+    guide_res = train_dataset["guide_res"]
+    geo_metadata = train_dataset["geo_metadata"]
+
     predicted_target_img, predicted_target_img_adj, scales = PixAdminTransform(
-        guide_img=features_resamp,
+        guide_img=features,
         source=(cr_census, cr_regions, source_map),
-        valid_mask=valid_data_mask_resamp,
+        valid_mask=valid_data_mask,
         params=params,
         validation_data=(fine_census, validation_map, fine_regions, valid_ids, map_valid_ids, id_to_cr_id),
         orig_guide_res=guide_res
     )
 
-    
     f, ax = plot_result(
         source_map.numpy(), predicted_target_img.numpy(),
         predicted_target_img_adj.numpy(), validation_map.numpy() )
@@ -246,10 +262,10 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
     # save as geoTIFF files
     save_files = True
     if save_files:
-        source_map[~valid_data_mask_resamp]= np.nan
-        predicted_target_img[~valid_data_mask_resamp]= np.nan
-        predicted_target_img_adj[~valid_data_mask_resamp]= np.nan
-        validation_map[~valid_data_mask_resamp]= np.nan
+        source_map[~valid_data_mask]= np.nan
+        predicted_target_img[~valid_data_mask]= np.nan
+        predicted_target_img_adj[~valid_data_mask]= np.nan
+        validation_map[~valid_data_mask]= np.nan
         dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
         if not os.path.exists(dest_folder):
             os.makedirs(dest_folder)
@@ -270,15 +286,15 @@ def superpixel_with_pix_data(preproc_data_path, rst_wp_regions_path,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("preproc_data_path", type=str, help="Preprocessed data of regions (pickle file)")
-    parser.add_argument("rst_wp_regions_path", type=str,
-                        help="Raster of WorldPop administrative boundaries information")
+    # parser.add_argument("preproc_data_path", type=str, help="Preprocessed data of regions (pickle file)")
+    # parser.add_argument("rst_wp_regions_path", type=str,
+                        # help="Raster of WorldPop administrative boundaries information")
     parser.add_argument("output_dir", type=str, help="Output dir ")
-    parser.add_argument("dataset_name", type=str, help="Dataset name")
+    parser.add_argument("train_dataset_name", type=str, help="Dataset name")
+    parser.add_argument("test_dataset_name", type=str, help="Dataset name")
     args = parser.parse_args()
 
-    superpixel_with_pix_data(args.preproc_data_path, args.rst_wp_regions_path,
-                             args.output_dir, args.dataset_name)
+    superpixel_with_pix_data(args.output_dir, args.train_dataset_name, args.test_dataset_name)
 
 
 if __name__ == "__main__":
