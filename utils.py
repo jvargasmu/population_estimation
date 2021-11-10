@@ -234,8 +234,6 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         sumpixels_pairs = [(patchsize[id1]+patchsize[id2]) for id1,id2 in pairs ]
         self.small_pairs = pairs[np.asarray(sumpixels_pairs)<max_pix_forward**2]
 
-
-
         # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
         # triplets = np.asarray(triplets, dtype=object)
         # sumpixels_triplets = [(patchsize[id1]+patchsize[id2]+patchsize[id3]) for id1,id2,id3 in triplets ]

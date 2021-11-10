@@ -34,9 +34,12 @@ else:
 def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
     valid_validation_ids, num_validation_ids, validation_ids, validation_census, 
     target_img, device, 
-    best_r2=1, best_mae=0, best_r2_adj=1,
+    best_scores=[1.,0.,1.],
     optimizer=None, epoch=0,
-    disaggregation_data=None, return_scale=False):
+    disaggregation_data=None, return_scale=False,
+    dataset_name="unspecifed_dataset"):
+
+    best_r2, best_mae, best_r2_adj = best_scores
 
     res = {}
 
@@ -140,41 +143,44 @@ def PixAdminTransform(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask = training_source
-    # source_census , source_regions, source_map = source
-    tr_regions = tr_regions.to(device)
+    # if validation_data is not None: 
 
-    if validation_data is not None:
-        # validation_census, target_img, validation_regions, validation_ids, valid_validation_ids, target_to_source 
+        # val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data
         
-        val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data
-        
-        num_validation_ids = np.unique(val_regions).__len__()
-        val_map[~val_valid_data_mask] = 1e-10 
+        # num_validation_ids = np.unique(val_regions).__len__()
+        # val_map[~val_valid_data_mask] = 1e-10 
 
-    if disaggregation_data is not None:
-        fine_to_cr, val_cr_census, val_cr_regions = disaggregation_data
+    # if disaggregation_data is not None:
+    #     fine_to_cr, val_cr_census, val_cr_regions = disaggregation_data
 
     #### prepare_patches #########################################################################
     
     # Iterate throuh the image an cut out examples
-    tr_valid_data_mask = tr_valid_data_mask.to(device)
+
     X,Y,Masks = [],[],[]
-    for regid in tqdm(tr_census.keys()):
-        mask = (regid==tr_regions) * tr_valid_data_mask
-        rmin, rmax, cmin, cmax = bbox2(mask)
-        X.append(tr_features[:,rmin:rmax, cmin:cmax])
-        Y.append(torch.tensor(tr_census[regid]))
-        Masks.append(torch.tensor(mask[rmin:rmax, cmin:cmax]))
-    tr_valid_data_mask = tr_valid_data_mask.cpu()
-    
+    for train_dataset_name in training_source.keys():
+        tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask = training_source[train_dataset_name] 
+        
+        tr_regions = tr_regions.to(device)
+        tr_valid_data_mask = tr_valid_data_mask.to(device)
+        
+        for regid in tqdm(tr_census.keys()):
+            mask = (regid==tr_regions) * tr_valid_data_mask
+            rmin, rmax, cmin, cmax = bbox2(mask)
+            X.append(tr_features[:,rmin:rmax, cmin:cmax])
+            Y.append(torch.tensor(tr_census[regid]))
+            Masks.append(torch.tensor(mask[rmin:rmax, cmin:cmax]))
+            
+        tr_regions = tr_regions.cpu()
+        tr_valid_data_mask = tr_valid_data_mask.cpu()
+        
     if params["admin_augment"]:
         train_data = MultiPatchDataset(X, Y, Masks, device=device)
     else:
         train_data = PatchDataset(X, Y, Masks, device=device)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
 
-    #### setup network ############################################################################
+    #### setup loss/network ############################################################################
 
     if params['loss'] == 'mse':
         myloss = torch.nn.MSELoss()
@@ -189,8 +195,7 @@ def PixAdminTransform(
     elif params['loss'] == 'LogoutputL2':
         myloss = LogoutputL2
     else:
-        print("unknown loss!")
-        return
+        raise Exception("unknown loss!")
         
     if params['Net']=='PixNet':
         mynet = PixTransformNet(channels_in=tr_features.shape[0],
@@ -213,19 +218,24 @@ def PixAdminTransform(
     if params['eval_only']:
 
         #TODO: if we do not cross validation we can do disagregation,
+        
+        log_dict = {}
+        for test_dataset_name in validation_data.keys():
+            val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]
 
-
-        res, log_dict, best_scores = eval_my_model(
-            mynet, val_features, val_valid_data_mask, val_regions,
-            val_map_valid_ids, num_validation_ids, val_valid_ids, val_census, 
-            val_map, device,
-            disaggregation_data=disaggregation_data,
-            # fine_to_cr, val_cr_census, val_cr_regions,
-            return_scale=True
-        )
+            res, this_log_dict, best_scores = eval_my_model(
+                mynet, val_features, val_valid_data_mask, val_regions,
+                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
+                val_map, device,
+                disaggregation_data=disaggregation_data[test_dataset_name],
+                # fine_to_cr, val_cr_census, val_cr_regions,
+                return_scale=True, dataset_name=test_dataset_name
+            )
+            for key in this_log_dict.keys():
+                log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
 
         wandb.log(log_dict)
-            
+                
         return res
     
     #### train network ############################################################################
@@ -233,9 +243,12 @@ def PixAdminTransform(
     epochs = params["epochs"]
     itercounter = 0
     with tqdm(range(0, epochs), leave=True) as tnr:
-        best_r2 = -1e12
-        best_mae = 1e12
-        best_r2_adj = -1e12
+
+        # initialize the best score variables
+        best_scores = {}
+        for test_dataset_name in validation_data.keys():
+            best_scores[train_dataset_name] = [-1e12, 1e12, -1e12]
+
         for epoch in tnr:
             for sample in tqdm(train_loader):
                 optimizer.zero_grad()
@@ -259,23 +272,35 @@ def PixAdminTransform(
                 torch.cuda.empty_cache()
 
                 # if epoch % params['logstep'] == 0:
-                if itercounter>=( tr_census.keys().__len__() * params['logstep'] ):
+                # if itercounter>=( tr_census.keys().__len__() * params['logstep'] ):
+                if itercounter>=( 2000*params['logstep'] ):
                     itercounter = 0
 
                     # Evaluate Model and save model
-                    res, log_dict, best_scores = eval_my_model(
-                        mynet, val_features, val_valid_data_mask, val_regions,
-                        val_map_valid_ids, num_validation_ids, val_valid_ids, val_census, 
-                        val_map, device, 
-                        best_r2, best_mae, best_r2_adj, optimizer=optimizer,
-                        disaggregation_data=disaggregation_data, epoch=epoch
-                    )
 
-                    best_r2, best_mae, best_r2_adj = best_scores  
+                    log_dict = {}
+                    for test_dataset_name in validation_data.keys():
+                        val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]
+
+
+                        res, this_log_dict, this_best_scores = eval_my_model(
+                            mynet, val_features, val_valid_data_mask, val_regions,
+                            val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
+                            val_map, device, 
+                            best_scores[train_dataset_name], optimizer=optimizer,
+                            disaggregation_data=disaggregation_data[test_dataset_name], epoch=epoch,
+                            dataset_name=test_dataset_name
+                        )
+                        for key in this_log_dict.keys():
+                            log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
+
+                        best_scores[test_dataset_name] = this_best_scores
+
                     log_dict['train/loss'] = loss 
 
                     # if val_fine_map is not None:
-                    tnr.set_postfix(R2=log_dict['r2'], zMAEc=log_dict['mae'])
+                    tnr.set_postfix(R2=log_dict[list(validation_data.keys())[0]+'/r2'],
+                                    zMAEc=log_dict[list(validation_data.keys())[0]+'/mae'])
                     wandb.log(log_dict)
                         
                     mynet.train() 
@@ -288,11 +313,22 @@ def PixAdminTransform(
         checkpoint = torch.load('checkpoints/best_r2_{}.pth'.format(wandb.run.name) )
         mynet.load_state_dict(checkpoint['model_state_dict'])
 
-        res, log_dict, best_scores = eval_my_model(
-            mynet, val_features, val_valid_data_mask, val_regions,
-            val_map_valid_ids, num_validation_ids, val_valid_ids, val_census, 
-            val_map, device,
-            best_r2, best_mae, best_r2_adj, optimizer=optimizer,
-            disaggregation_data=disaggregation_data, return_scale=True
-        )
+        log_dict = {}
+        res = {}
+        for test_dataset_name in validation_data.keys():
+            val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]
+
+            this_res, log_dict, best_scores = eval_my_model(
+                mynet, val_features, val_valid_data_mask, val_regions,
+                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
+                val_map, device,
+                best_scores[train_dataset_name], optimizer=optimizer,
+                disaggregation_data=disaggregation_data[test_dataset_name], return_scale=True,
+                dataset_name=test_dataset_name
+            )
+            for key in this_log_dict.keys():
+                log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
+            res[test_dataset_name] = this_res
+            
+
     return res
