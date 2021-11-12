@@ -262,7 +262,7 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
         train_level_dict[ds] = train_level[i]
         train_dataset[ds] = get_dataset(ds, params, building_features, related_building_features) 
 
-    calculate_norm = False
+    calculate_norm = True
     if calculate_norm:
         feats = torch.zeros((train_dataset[ds]["features"].shape[0],0))
         for i,ds in enumerate(train_dataset_name):
@@ -271,7 +271,7 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
         print("stds", feats.std(1))
 
 
-    for ds in train_dataset_name:
+    for ds in test_dataset_name:
         if ds in list(train_dataset.keys()):
             test_dataset[ds] = train_dataset[ds]
         else:
