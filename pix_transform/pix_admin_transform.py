@@ -207,7 +207,10 @@ def PixAdminTransform(
                             device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                             ).train().to(device)
 
-    optimizer = optim.Adam(mynet.params_with_regularizer, lr=params['lr'])
+    if params["optim"]=="adam":
+        optimizer = optim.Adam(mynet.params_with_regularizer, lr=params['lr'])
+    elif params["optim"]=="adamw":
+        optimizer = optim.AdamW(mynet.params_with_regularizer, lr=params['lr'], weight_decay=params["weights_regularizer_adamw"])
 
     if params["load_state"] is not None:
         checkpoint = torch.load('checkpoints/best_r2_{}.pth'.format(params["load_state"]))

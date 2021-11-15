@@ -213,7 +213,8 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
     ####  define parameters  ########################################################
 
     params = {
-            'weights_regularizer': 0.0001, # spatial color head
+            'weights_regularizer': 0,#0.001, # spatial color head
+            'weights_regularizer_adamw': 0.001,
             'kernel_size': [1,1,1,1],
             'loss': 'NormL1',
 
@@ -224,7 +225,7 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
 
             'PCA': None,
 
-            'optim': 'adam',
+            'optim': 'adamw',
             'lr': 0.00001,
             "epochs": 100,
             'logstep': 1,
