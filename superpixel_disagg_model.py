@@ -208,12 +208,17 @@ def build_variable_list(dataset: dict, var_list: list) -> list:
     return outlist
 
 
-def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_dataset_name):
+def superpixel_with_pix_data(output_dir,
+    train_dataset_name,
+    train_level,
+    test_dataset_name,
+    lr,
+    wr):
 
     ####  define parameters  ########################################################
 
     params = {
-            'weights_regularizer': 0.001, # spatial color head
+            'weights_regularizer': wr, 
             'kernel_size': [1,1,1,1],
             'loss': 'NormL1',
 
@@ -225,7 +230,7 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
             'PCA': None,
 
             'optim': 'adam',
-            'lr': 0.00001,
+            'lr': lr,
             "epochs": 100,
             'logstep': 1,
             'train_dataset_name': train_dataset_name,
@@ -245,14 +250,8 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
     wandb.init(project="HAC", entity="nandometzger", config=params)
 
     ####  load dataset  #############################################################
-    # 
-
-    assert(all(elem=="c" or elem=="f" for elem in train_level))
-    # assert(all(elem=="c" or elem=="f" for elem in test_level))
-
-    # unique_sets = set(test_dataset_name + train_dataset_name)
     
-    # cross_val = train_dataset_name!=test_dataset_name
+    assert(all(elem=="c" or elem=="f" for elem in train_level))
 
     train_dataset = {}
     test_dataset = {}
@@ -293,67 +292,6 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
     for ds in test_dataset_name:
         validation_data[ds] = build_variable_list(test_dataset[ds], fine_val_data_vars)
         disaggregation_data[ds] = build_variable_list(test_dataset[ds], cr_disaggregation_data_vars)
-
-
-
-
-    # if cross_val:
-    #     #TODO: Adjust this part here, make it functions
-
-
-    #     training_source = [
-    #         train_dataset["features"],
-    #         train_dataset["fine_census"],
-    #         train_dataset["fine_regions"],
-    #         train_dataset["fine_map"],
-    #         train_dataset["guide_res"],
-    #         train_dataset["valid_data_mask"]
-    #     ]
-
-    #     validation_data =[
-    #         test_dataset["features"],
-    #         test_dataset["fine_census"],
-    #         test_dataset["fine_regions"],
-    #         test_dataset["fine_map"],
-    #         test_dataset["valid_ids"],
-    #         test_dataset["map_valid_ids"],
-    #         test_dataset["guide_res"],
-    #         test_dataset["valid_data_mask"]
-    #     ]
-
-    #     disaggregation_data = [
-    #         test_dataset["id_to_cr_id"],
-    #         test_dataset["cr_census"],
-    #         test_dataset["cr_regions"],
-    #     ]
-
-    # else:
-
-    #     training_source = [
-    #         train_dataset["features"],
-    #         train_dataset["cr_census"],
-    #         train_dataset["cr_regions"],
-    #         train_dataset["cr_map"],
-    #         train_dataset["guide_res"],
-    #         train_dataset["valid_data_mask"]
-    #     ]
-
-    #     validation_data =[
-    #         train_dataset["features"],
-    #         train_dataset["fine_census"],
-    #         train_dataset["fine_regions"],
-    #         train_dataset["fine_map"],
-    #         train_dataset["valid_ids"],
-    #         train_dataset["map_valid_ids"],
-    #         train_dataset["guide_res"],
-    #         train_dataset["valid_data_mask"]
-    #     ]
-
-    #     disaggregation_data = [
-    #         train_dataset["id_to_cr_id"],
-    #         train_dataset["cr_census"],
-    #         train_dataset["cr_regions"],
-    #     ]
 
 
     res = PixAdminTransform(
@@ -402,6 +340,8 @@ def main():
     parser.add_argument("--train_dataset_name", "-train", nargs='+', help="Train Dataset name (separated by commas)", required=True)
     parser.add_argument("--train_level", "-train_lvl", nargs='+', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
     parser.add_argument("--test_dataset_name", "-test", nargs='+', help="Test Dataset name (separated by commas)", required=True)
+    parser.add_argument("--learning_rate", "-lr", default=0.00001, type=float, help="", )
+    parser.add_argument("--weights_regularizer", "-wr", default=0.00001, type=float,  help="", ) 
     # parser.add_argument("--test_level", "-test_lvl", nargs='+', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
     args = parser.parse_args()
 
@@ -414,6 +354,8 @@ def main():
         args.train_dataset_name,
         args.train_level,
         args.test_dataset_name,
+        lr=args.learning_rate,
+        wr=args.weights_regularizer
     )
 
 

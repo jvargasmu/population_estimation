@@ -126,6 +126,7 @@ class PixScaleNet(nn.Module):
                                       )
         
         self.params_with_regularizer = []
+        print("weight reg: ", weights_regularizer)
         self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]
 
 
