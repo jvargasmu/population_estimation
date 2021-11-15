@@ -79,10 +79,12 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [
-                "output_dir/",
                 "-train", "tza",
                 "-train_lvl", "c",
-                "-test", "tza,uga"
+                "-test", "tza,uga",
+                "-optim", "adamw",
+                "-wr", "0.",
+                "-adamwr", "0.001",
             ]
         },
         {
@@ -94,11 +96,13 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "args": [
-                "output_dir/",
+            "args": [ 
                 "-train", "uga",
                 "-train_lvl", "c",
-                "-test", "tza,uga"
+                "-test", "tza,uga",
+                "-optim", "adamw",
+                "-wr", "0.",
+                "-adamwr", "0.001",
             ]
         },
         {
@@ -110,11 +114,13 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "args": [
-                "output_dir/",
+            "args": [ 
                 "-train", "cod",
                 "-train_lvl", "c",
-                "-test", "tza,uga,cod"
+                "-test", "tza,uga,cod",
+                "-optim", "adamw",
+                "-wr", "0.",
+                "-adamwr", "0.001",
             ]
         },
         {
@@ -126,13 +132,14 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "args": [
-                "output_dir/",
+            "args": [ 
                 "-train", "uga",
                 "-train_lvl", "f",
                 "-test", "tza,uga",
                 "-lr", "0.00001",
-                "-wr", "0.01",
+                "-optim", "adamw",
+                "-wr", "0.",
+                "-adamwr", "0.001",
             ]
         },
         {
@@ -144,13 +151,14 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "args": [
-                "output_dir/",
+            "args": [ 
                 "-train", "tza",
                 "-train_lvl", "f",
-                "-test", "uga,tza",
+                "-test", "uga,tza,cod",
                 "-lr", "0.00001",
-                "-wr", "0.00001",
+                "-optim", "adamw",
+                "-wr", "0.",
+                "-adamwr", "0.001",
             ]
         },
         {
@@ -162,11 +170,13 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "args": [
-                "output_dir/",
+            "args": [ 
                 "-train", "tza,uga",
                 "-train_lvl", "f,c",
-                "-test", "uga,tza"
+                "-test", "uga,tza",
+                "-optim", "adamw",
+                "-wr", "0.",
+                "-adamwr", "0.001",
             ]
         },
         {
@@ -178,11 +188,13 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "args": [
-                "output_dir/",
+            "args": [ 
                 "-train", "uga,tza",
                 "-train_lvl", "f,c",
-                "-test", "tza,uga"
+                "-test", "tza,uga",
+                "-optim", "adamw",
+                "-wr", "0.",
+                "-adamwr", "0.001",
             ]
         }
     ]
