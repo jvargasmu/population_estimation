@@ -1,0 +1,189 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Py: TZA preprocessing_pop_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "preprocessing_pop_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "../../../data/OtherBuildings/TZA/tza_admbnda_adm3_20181019/tza_admbnda_adm3_20181019.shp",
+                "../../../data/OtherBuildings/TZA/tza_adm3_sid.tif",
+                "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "../../../data/OtherBuildings/TZA/tza_population_2000_2020_sid.csv",
+                "preprocessed_data_3.pkl",
+                "tza",
+                "P_2020"
+            ]
+        },
+        {
+            "name": "Py: UGA preprocessing_pop_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "preprocessing_pop_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "../../../data/OtherBuildings/UGA/uga_humdata_regions_shapefile/uga_humdata_regions.shp",
+                "../../../data/OtherBuildings/UGA/uga_humdata_regions.tif",
+                "../../../data/OtherBuildings/UGA/uga_wpop_regions.tif",
+                "../../../data/OtherBuildings/UGA/uga_wpop_census.csv",
+                "preprocessed_data_3_uga.pkl",
+                "uga",
+                "P_2020"
+            ]
+        }, 
+        {
+            "name": "Py: COD preprocessing_pop_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "preprocessing_pop_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "../../../data/OtherBuildings/COD/cod_humdata_regions_shapefile/cod_humdata_regions.shp",
+                "../../../data/OtherBuildings/COD/cod_humdata_regions.tif",
+                "../../../data/OtherBuildings/COD/cod_wpop_regions.tif",
+                "../../../data/OtherBuildings/COD/cod_wpop_census.csv",
+                "preprocessed_data_3_cod.pkl",
+                "cod",
+                "P_2020"
+            ]
+        }, 
+        {
+            "name": "Py: train_model_with_agg_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "train_model_with_agg_data.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "preprocessed_data_3.pkl",
+                "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "output_dir/",
+                //"P_2020",
+                "tza"
+            ]
+        },
+        {
+            "name": "TZA superpixel_disagg_model.py",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "output_dir/",
+                "-train", "tza",
+                "-train_lvl", "c",
+                "-test", "tza,uga"
+            ]
+        },
+        {
+            "name": "UGA superpixel_disagg_model.py",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "output_dir/",
+                "-train", "uga",
+                "-train_lvl", "c",
+                "-test", "tza,uga"
+            ]
+        },
+        {
+            "name": "COD superpixel_disagg_model.py",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "output_dir/",
+                "-train", "cod",
+                "-train_lvl", "c",
+                "-test", "tza,uga,cod"
+            ]
+        },
+        {
+            "name": "UGA->TZA superpixel_disagg_model.py",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "output_dir/",
+                "-train", "uga",
+                "-train_lvl", "f",
+                "-test", "tza,uga",
+                "-lr", "0.00001",
+                "-wr", "0.01",
+            ]
+        },
+        {
+            "name": "TZA->UGA superpixel_disagg_model.py",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "output_dir/",
+                "-train", "tza",
+                "-train_lvl", "f",
+                "-test", "uga,tza",
+                "-lr", "0.00001",
+                "-wr", "0.00001",
+            ]
+        },
+        {
+            "name": "TZA&UGA->UGA superpixel_disagg_model.py",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "output_dir/",
+                "-train", "tza,uga",
+                "-train_lvl", "f,c",
+                "-test", "uga,tza"
+            ]
+        },
+        {
+            "name": "TZA&UGA->TZA superpixel_disagg_model.py",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "output_dir/",
+                "-train", "uga,tza",
+                "-train_lvl", "f,c",
+                "-test", "tza,uga"
+            ]
+        }
+    ]
+}

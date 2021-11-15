@@ -1,5 +1,5 @@
 HACenv/
-.vscode/
+# .vscode/
 output_dir/
 __pycache__/
 wandb/
