@@ -213,7 +213,7 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
     ####  define parameters  ########################################################
 
     params = {
-            'weights_regularizer': 0.001, # spatial color head
+            'weights_regularizer': 0.00001, # spatial color head
             'kernel_size': [1,1,1,1],
             'loss': 'NormL1',
 
