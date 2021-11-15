@@ -208,12 +208,16 @@ def build_variable_list(dataset: dict, var_list: list) -> list:
     return outlist
 
 
-def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_dataset_name):
+def superpixel_with_pix_data(
+    train_dataset_name,
+    train_level,
+    test_dataset_name
+    ):
 
     ####  define parameters  ########################################################
 
     params = {
-            'weights_regularizer': 0,#0.001, # spatial color head
+            'weights_regularizer': 0.,#0.001, # spatial color head
             'weights_regularizer_adamw': 0.001,
             'kernel_size': [1,1,1,1],
             'loss': 'NormL1',
@@ -336,6 +340,10 @@ def main():
     parser.add_argument("--train_dataset_name", "-train", nargs='+', help="Train Dataset name (separated by commas)", required=True)
     parser.add_argument("--train_level", "-train_lvl", nargs='+', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
     parser.add_argument("--test_dataset_name", "-test", nargs='+', help="Test Dataset name (separated by commas)", required=True)
+    parser.add_argument("--optimizer", "-optim", type=str, default="adamw", help=" ")
+    parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
+    parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
+    parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
     # parser.add_argument("--test_level", "-test_lvl", nargs='+', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
     args = parser.parse_args()
 
@@ -344,12 +352,14 @@ def main():
     args.test_dataset_name = args.test_dataset_name[0].split(",")
 
     superpixel_with_pix_data(
-        args.output_dir,
         args.train_dataset_name,
         args.train_level,
         args.test_dataset_name,
+        args.optimizer,
+        args.learning_rate,
+        args.weights_regularizer,
+        args.weights_regularizer_adamw, 
     )
-
 
 if __name__ == "__main__":
     main()
