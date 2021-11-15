@@ -126,11 +126,6 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             log_dict["adjusted/best_r2"] = best_r2_adj
             torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
                 'checkpoints/best_r2_adj_{}.pth'.format(wandb.run.name) )
-    
-    # if return_scale:
-    #     return predicted_target_img, predicted_target_img_adjusted, log_dict, [best_r2, best_mae, best_r2_adj], scales.squeeze()
-    # else:
-    #     return predicted_target_img, predicted_target_img_adjusted, log_dict, [best_r2, best_mae, best_r2_adj]
 
     return res, log_dict, [best_r2, best_mae, best_r2_adj]
 
@@ -143,20 +138,9 @@ def PixAdminTransform(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # if validation_data is not None: 
-
-        # val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data
-        
-        # num_validation_ids = np.unique(val_regions).__len__()
-        # val_map[~val_valid_data_mask] = 1e-10 
-
-    # if disaggregation_data is not None:
-    #     fine_to_cr, val_cr_census, val_cr_regions = disaggregation_data
-
     #### prepare_patches #########################################################################
     
     # Iterate throuh the image an cut out examples
-
     X,Y,Masks = [],[],[]
     for train_dataset_name in training_source.keys():
         tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask = training_source[train_dataset_name] 

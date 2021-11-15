@@ -249,11 +249,6 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
     # 
 
     assert(all(elem=="c" or elem=="f" for elem in train_level))
-    # assert(all(elem=="c" or elem=="f" for elem in test_level))
-
-    # unique_sets = set(test_dataset_name + train_dataset_name)
-    
-    # cross_val = train_dataset_name!=test_dataset_name
 
     train_dataset = {}
     test_dataset = {}
@@ -294,68 +289,6 @@ def superpixel_with_pix_data(output_dir, train_dataset_name, train_level, test_d
     for ds in test_dataset_name:
         validation_data[ds] = build_variable_list(test_dataset[ds], fine_val_data_vars)
         disaggregation_data[ds] = build_variable_list(test_dataset[ds], cr_disaggregation_data_vars)
-
-
-
-
-    # if cross_val:
-    #     #TODO: Adjust this part here, make it functions
-
-
-    #     training_source = [
-    #         train_dataset["features"],
-    #         train_dataset["fine_census"],
-    #         train_dataset["fine_regions"],
-    #         train_dataset["fine_map"],
-    #         train_dataset["guide_res"],
-    #         train_dataset["valid_data_mask"]
-    #     ]
-
-    #     validation_data =[
-    #         test_dataset["features"],
-    #         test_dataset["fine_census"],
-    #         test_dataset["fine_regions"],
-    #         test_dataset["fine_map"],
-    #         test_dataset["valid_ids"],
-    #         test_dataset["map_valid_ids"],
-    #         test_dataset["guide_res"],
-    #         test_dataset["valid_data_mask"]
-    #     ]
-
-    #     disaggregation_data = [
-    #         test_dataset["id_to_cr_id"],
-    #         test_dataset["cr_census"],
-    #         test_dataset["cr_regions"],
-    #     ]
-
-    # else:
-
-    #     training_source = [
-    #         train_dataset["features"],
-    #         train_dataset["cr_census"],
-    #         train_dataset["cr_regions"],
-    #         train_dataset["cr_map"],
-    #         train_dataset["guide_res"],
-    #         train_dataset["valid_data_mask"]
-    #     ]
-
-    #     validation_data =[
-    #         train_dataset["features"],
-    #         train_dataset["fine_census"],
-    #         train_dataset["fine_regions"],
-    #         train_dataset["fine_map"],
-    #         train_dataset["valid_ids"],
-    #         train_dataset["map_valid_ids"],
-    #         train_dataset["guide_res"],
-    #         train_dataset["valid_data_mask"]
-    #     ]
-
-    #     disaggregation_data = [
-    #         train_dataset["id_to_cr_id"],
-    #         train_dataset["cr_census"],
-    #         train_dataset["cr_regions"],
-    #     ]
-
 
     res = PixAdminTransform(
         training_source=training_source,
