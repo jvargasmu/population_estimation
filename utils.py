@@ -18,10 +18,14 @@ def get_properties_dict(data_dict_orig):
 
 
 def read_input_raster_data(input_paths):
-    inputs = {}
-    for kinp in input_paths.keys():
+    #assuming every covariate has same dimensions
+    first_name = list(input_paths.keys())[0]
+    hwdims = gdal.Open(input_paths[first_name]).ReadAsArray().astype(np.float32).shape
+    fdim = input_paths.__len__()
+    inputs = np.zeros((fdim,) + hwdims, dtype=np.float32) 
+    for i,kinp in enumerate(input_paths.keys()):
         print("read {}".format(input_paths[kinp]))
-        inputs[kinp] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
+        inputs[i] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
     return inputs
 
 
@@ -224,11 +228,12 @@ class MultiPatchDataset(torch.utils.data.Dataset):
     def __init__(self, *variables, device): 
         self.variables = variables
         self.device = device
-        num_single = len(variables[0])
+        
+        num_single = len(self.variables[0])
         indicies = range(num_single)
-        max_pix_forward = 8000
+        max_pix_forward = 16000
 
-        patchsize = [feats.numel() for feats in variables[0]]
+        patchsize = [feats.numel() for feats in self.variables[0]]
         pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
         pairs = np.asarray(pairs, dtype=object)
         sumpixels_pairs = [(patchsize[id1]+patchsize[id2]) for id1,id2 in pairs ]

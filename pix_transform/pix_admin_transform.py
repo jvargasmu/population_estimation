@@ -7,6 +7,9 @@ import torch.optim as optim
 import torch.utils.data
 import sys
 import wandb
+import h5py
+import pickle
+from pathlib import Path
 
 from utils import plot_2dmatrix, accumulate_values_by_region, compute_performance_metrics, bbox2, \
      PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2
@@ -133,31 +136,60 @@ def PixAdminTransform(
     training_source,
     validation_data=None,
     disaggregation_data=None,
-    params=DEFAULT_PARAMS
-    ):
+    params=DEFAULT_PARAMS,
+    save_ds=True):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     #### prepare_patches #########################################################################
     
     # Iterate throuh the image an cut out examples
-    X,Y,Masks = [],[],[]
+    X,Y,Masks,BBox = [],[],[],[]
     for train_dataset_name in training_source.keys():
-        tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask = training_source[train_dataset_name] 
-        
-        tr_regions = tr_regions.to(device)
-        tr_valid_data_mask = tr_valid_data_mask.to(device)
-        
-        for regid in tqdm(tr_census.keys()):
-            mask = (regid==tr_regions) * tr_valid_data_mask
-            rmin, rmax, cmin, cmax = bbox2(mask)
-            X.append(tr_features[:,rmin:rmax, cmin:cmax])
-            Y.append(torch.tensor(tr_census[regid]))
-            Masks.append(torch.tensor(mask[rmin:rmax, cmin:cmax]))
+        tX,tY,tMasks,tBBox = [],[],[],[]
+
+        if isinstance(training_source[train_dataset_name],str):
+            with open(training_source[train_dataset_name], 'rb') as handle:
+                tX, tY, tMasks, tBBox = pickle.load(handle)
+        else:
+
+
+            tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask, level = training_source[train_dataset_name] 
             
-        tr_regions = tr_regions.cpu()
-        tr_valid_data_mask = tr_valid_data_mask.cpu()
+            tr_regions = tr_regions.to(device)
+            tr_valid_data_mask = tr_valid_data_mask.to(device)
+            
+            for regid in tqdm(tr_census.keys()):
+                mask = (regid==tr_regions) * tr_valid_data_mask
+                boundingbox = bbox2(mask)
+                rmin, rmax, cmin, cmax = boundingbox
+                # tX.append(tr_features[:,rmin:rmax, cmin:cmax])
+                tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
+                # tY.append(torch.tensor(tr_census[regid]))
+                tY.append(tr_census[regid])
+                # tMasks.append(torch.tensor(mask[rmin:rmax, cmin:cmax]))
+                tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
+                tBBox.append(boundingbox)
+                
+            tr_regions = tr_regions.cpu()
+            tr_valid_data_mask = tr_valid_data_mask.cpu()
+
+            if save_ds:
+                dim, h, w = tr_features.shape
+                # h5_file = h5py.File("datasets/{train_dataset_name}/{level}.hdf5")
+                # tr_features_h5 = h5_file.create_dataset('X', shape=(dim, h, w ), dtype=np.float32, fillvalue=0)
+                # tr_features_h5 = tr_features
+                datapath = f"datasets/train/{train_dataset_name}/{level}.pkl"
+                Path(f"datasets/train/{train_dataset_name}").mkdir(parents=True, exist_ok=True)
+                with open(f"datasets/train/{train_dataset_name}/{level}.pkl", 'wb') as handle:
+                    pickle.dump([tX, tY, tMasks, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
         
+        #Append samples two dataset
+        X.append(tX)
+        Y.append(tY)
+        Masks.append(tMasks)
+        tBBox.append(tBBox)
+            
     if params["admin_augment"]:
         train_data = MultiPatchDataset(X, Y, Masks, device=device)
     else:
