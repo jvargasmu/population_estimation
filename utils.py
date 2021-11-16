@@ -6,9 +6,8 @@ from tqdm import tqdm
 import copy
 from pylab import figure, imshow, matshow, grid
 import torch
-# import os
-# import rasterio 
-# import scipy.io as sio
+import pickle
+import h5py
 
 def get_properties_dict(data_dict_orig):
     data_dict = []
@@ -225,15 +224,36 @@ class PatchDataset(torch.utils.data.Dataset):
 
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, *variables, device): 
-        self.variables = variables
+    def __init__(self, rawsets, device):
         self.device = device
         
-        num_single = len(self.variables[0])
+        self.loc_list = []
+        self.BBox = {}
+        self.features = {}
+        self.Ys = {}
+        self.Masks = {}
+        for i, (name, rs)  in enumerate(rawsets.items()):
+
+            with open(rs['vars'], "rb") as f:
+                tr_census, tr_regions, tr_valid_data_mask, tBBox = pickle.load(f)
+
+            self.BBox[name] = tBBox
+            self.features[name] = h5py.File(rs["features"], 'r')
+            self.Ys[name] = tr_census
+            self.Masks[name] = tr_valid_data_mask
+            self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
+
+
+        
+        num_single = len(self.loc_list)
         indicies = range(num_single)
         max_pix_forward = 16000
 
-        patchsize = [feats.numel() for feats in self.variables[0]]
+        bboxlist = [ self.BBox[name][k] for name,k in self.loc_list ]
+        patchsize = [ (bb[1]-bb[0])*(bb[3]-bb[2]) for bb in bboxlist]
+        patchsize = torch.tensor(patchsize)
+
+
         pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
         pairs = np.asarray(pairs, dtype=object)
         sumpixels_pairs = [(patchsize[id1]+patchsize[id2]) for id1,id2 in pairs ]
@@ -246,13 +266,23 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
         self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
 
+
+
     def __len__(self):
         return self.all_sample_ids.__len__()
 
+    def idx_to_loc(self, idx):
+        return self.loc_list(idx)
+
+
     def getsingleitem(self, idx):
         output = []
-        for var in self.variables:
-            output.append(var[idx])
+        name, k = self.idx_to_loc(idx)
+        rmin, rmax, cmin, cmax = self.BBox[name][k]
+        X = torch.from_numpy(self.features[name][:,rmin:rmax, cmin:cmax])
+        Y = torch.from_numpy(self.Ys[name][k])
+        Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
+
         return output
 
     def __getitem__(self,idx):

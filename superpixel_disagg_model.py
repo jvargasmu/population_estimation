@@ -10,10 +10,14 @@ import matplotlib.pyplot as plt
 from osgeo import gdal
 import wandb
 from pathlib import Path
+import h5py 
+from tqdm import tqdm as tqdm
+from pathlib import Path
 
 import config_pop as cfg
 from utils import read_input_raster_data, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
-    compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, save_as_geoTIFF
+    compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, save_as_geoTIFF, \
+    bbox2
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 
@@ -182,6 +186,64 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     return dataset
 
 
+def prep_train_hdf5_file(training_source, h5_filename, var_filename):
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Iterate throuh the image an cut out examples
+    tX,tY,tMasks,tBBox = [],[],[],[]
+
+    tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask, level = training_source
+    
+    tr_regions = tr_regions.to(device)
+    tr_valid_data_mask = tr_valid_data_mask.to(device)
+    
+    for regid in tqdm(tr_census.keys()):
+        mask = (regid==tr_regions) * tr_valid_data_mask
+        boundingbox = bbox2(mask)
+        rmin, rmax, cmin, cmax = boundingbox
+        tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
+        tY.append(tr_census[regid])
+        tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
+        boundingbox = [rmin.cpu(), rmax.cpu(), cmin.cpu(), cmax.cpu()]
+        tBBox.append(boundingbox)
+        
+    tr_regions = tr_regions.cpu()
+    tr_valid_data_mask = tr_valid_data_mask.cpu()
+
+    dim, h, w = tr_features.shape
+
+    if ~os.path.isfile(h5_filename):
+        with h5py.File(h5_filename, "w") as f:
+            h5_features = f.create_dataset("features", (dim, h, w), dtype=np.float32, fillvalue=0)
+            for i,feat in enumerate(tr_features):
+                h5_features[i] = feat
+        
+    with open(var_filename, 'wb') as handle:
+        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data
+
+    dim, h, w = val_features.shape
+
+    if ~os.path.isfile(h5_filename):
+        with h5py.File(h5_filename, "w") as f:
+            h5_features = f.create_dataset("features", (dim, h, w), dtype=np.float32, fillvalue=0)
+            for i,feat in enumerate(val_features):
+                h5_features[i] = feat
+            
+    with open(var_filename, 'wb') as handle:
+        pickle.dump(
+            [val_census, val_regions, val_map, val_valid_ids,\
+            val_map_valid_ids, val_guide_res, val_valid_data_mask], 
+            handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open(disag_filename, 'wb') as handle:
+        pickle.dump( this_disaggregation_data,  handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 def build_variable_list(dataset: dict, var_list: list) -> list:
     """
     Selects the variables specified in var_list from the datset and returns them as a list of same order as var_list
@@ -250,50 +312,77 @@ def superpixel_with_pix_data(
     disaggregation_data={}
     for i,ds in enumerate(train_dataset_name):
         this_level = train_level[i]
-        datapath = f"datasets/train/{ds}/{this_level}.pkl"
-        if os.path.isfile(datapath):
-            training_source[ds] = datapath
-        else:
 
-            train_level_dict[ds] = train_level[i]
+        h5_filename = f"datasets/{ds}/data.hdf5"
+        train_var_filename = f"datasets/{ds}/additional_train_vars_{this_level}.pkl"
+        test_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
+        test_disag_filename = f"datasets/{ds}/disag_vars.pkl"
+        parent_dir = f"datasets/{ds}/"
+
+        if not (os.path.isfile(h5_filename) and os.path.isfile(train_var_filename)):
+
             this_dataset = get_dataset(ds, params, building_features, related_building_features) 
             train_variables = fine_train_source_vars if train_level[i]=="f" else cr_train_source_vars
-            training_source[ds] = build_variable_list(this_dataset, train_variables)
+            this_dataset_list = build_variable_list(this_dataset, train_variables)
 
-            # if ds in test_dataset_name:
-        #     validation_data[ds] = build_variable_list(this_dataset, fine_val_data_vars)
-        #     disaggregation_data[ds] = build_variable_list(this_dataset, cr_disaggregation_data_vars)
+            Path(parent_dir).mkdir(parents=True, exist_ok=True)
+            prep_train_hdf5_file(this_dataset_list, h5_filename, train_var_filename)
 
-            # Make RAM space
-            del this_dataset
+            # Build testdataset here to avoid dublicate executions later
+            if ds in test_dataset_name:
+                this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
+                this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
+            
+                prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename,  test_var_filename, test_disag_filename)
 
-    calculate_norm = False
-    if calculate_norm:
-        feats = torch.zeros((train_dataset[ds]["features"].shape[0],0))
-        for i,ds in enumerate(train_dataset_name):
-            feats = torch.cat([ feats, train_dataset[ds]["features"][:,train_dataset[ds]["valid_data_mask"]] ],1)
-        print("means", feats.mean(1))
-        print("stds", feats.std(1))
+            # Free up RAM
+            del this_dataset, this_dataset_list
 
-    for ds in test_dataset_name:
-        # if ds not in list(validation_data.keys()): 
+        training_source[ds] = []
+        training_source[ds] = {"features": h5_filename, "vars": train_var_filename}
+
+    # calculate_norm = False
+    # if calculate_norm:
+    #     feats = torch.zeros((train_dataset[ds]["features"].shape[0],0))
+    #     for i,ds in enumerate(train_dataset_name):
+    #         feats = torch.cat([ feats, train_dataset[ds]["features"][:,train_dataset[ds]["valid_data_mask"]] ],1)
+    #     print("means", feats.mean(1))
+    #     print("stds", feats.std(1))
+
+    for ds in test_dataset_name: 
         this_level = train_level[i]
-        datapath = f"datasets/test/{ds}/validationvariables.pkl"
-        if os.path.isfile(datapath):
-           with open(datapath, 'rb') as handle:
-                validation_data[ds], disaggregation_data[ds] = pickle.load(handle)
-        else:
-            this_test_dataset = get_dataset(ds, params, building_features, related_building_features)
-            validation_data[ds] = build_variable_list(this_test_dataset, fine_val_data_vars)
-            disaggregation_data[ds] = build_variable_list(this_test_dataset, cr_disaggregation_data_vars)
+
+        h5_filename = f"datasets/{ds}/data.hdf5"
+        test_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
+        test_disag_filename = f"datasets/{ds}/disag_vars.pkl"
+        parent_dir = f"datasets/{ds}/"
+
+        if not (os.path.isfile(h5_filename) and os.path.isfile(test_var_filename) and os.path.isfile(test_disag_filename)):
+
+            this_dataset = get_dataset(ds, params, building_features, related_building_features)
+            this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
+            this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
+            
+            Path(parent_dir).mkdir(parents=True, exist_ok=True)
+            prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename, test_var_filename, test_disag_filename)
             
             # Free up RAM
-            del this_test_dataset
+            del this_dataset, this_validation_data, this_disaggregation_data
+
+        
+        validation_data[ds] = []
+        validation_data[ds] = {"features": h5_filename, "vars": test_disag_filename, "disag": test_disag_filename }
+
             
-            Path(f"datasets/test/{ds}").mkdir(parents=True, exist_ok=True)
-            with open(datapath, 'wb') as handle:
-                # TODO: better save them as numpy arrays! torch get saved as huge binaries!
-                pickle.dump([validation_data[ds], disaggregation_data[ds]], handle, protocol=pickle.HIGHEST_PROTOCOL)
+            # Path(f"datasets/test/{ds}").mkdir(parents=True, exist_ok=True)
+            # with open(datapath, 'wb') as handle:
+            #     # TODO: better save them as numpy arrays! torch get saved as huge binaries!
+            #     pickle.dump([validation_data[ds], disaggregation_data[ds]], handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+ 
 
     res = PixAdminTransform(
         training_source=training_source,
