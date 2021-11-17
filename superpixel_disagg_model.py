@@ -9,10 +9,15 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt 
 from osgeo import gdal
 import wandb
+from pathlib import Path
+import h5py 
+from tqdm import tqdm as tqdm
+from pathlib import Path
 
 import config_pop as cfg
 from utils import read_input_raster_data, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
-    compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, save_as_geoTIFF
+    compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, save_as_geoTIFF, \
+    bbox2
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 
@@ -48,7 +53,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     wp_ids = list(np.unique(fine_regions)) 
     fine_area = dict(zip(wp_ids, areas))
     num_wp_ids = len(wp_ids)
-    inputs = read_input_raster_data(input_paths)
+    features = read_input_raster_data(input_paths)
 
     # Binary map representing a pixel belong to a region with valid id
     map_valid_ids = create_map_of_valid_ids(fine_regions, no_valid_ids)
@@ -64,78 +69,60 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
         cr_census[key] = cr_census_arr[key]
 
     # Reorganize features into one numpy array and handling of no-data mask
-    feature_names = list(inputs.keys())
+    feature_names = list(input_paths.keys())
+    # torch_feature_names = torch.tensor(list(input_paths.keys()))
 
     # Merging building features from google and maxar if both are available
     if ('buildings_google' in feature_names) and ('buildings_maxar' in feature_names):
-        # Calculate drift/slope to approximately match maxar building to the google buildings
-        # Only considering pixels that contain buildings in both patches
-
-        # scale_maxar_to_google = cfg.metadata[dataset_name]['scale_maxar_to_google']
-        # if scale_maxar_to_google is None:
-        #     valid_build_mask = np.logical_and(inputs['buildings_google']>0, inputs['buildings_maxar']>0)
-
-        #     scale_maxar_to_google = LinearRegression().fit(inputs['buildings_maxar'][valid_build_mask].reshape(-1, 1),
-        #                                                 inputs['buildings_google'][valid_build_mask].reshape(-1, 1)).coef_
-        # else:
-        scale_maxar_to_google = 1.
-        
-        inputs['buildings_maxar'] *= scale_maxar_to_google
-
         # Taking the max over both available features
         #  max operation for mean building areas
-        maxargs = np.argmax( np.concatenate([inputs['buildings_google'][:,:,None], inputs['buildings_maxar'][:,:,None]],2),2 ).astype(bool)
-        inputs['buildings_merge'] = inputs['buildings_google'].copy()
-        inputs['buildings_merge'][maxargs] =  inputs['buildings_maxar'][maxargs]
-        del inputs['buildings_google'], inputs['buildings_maxar']
+        gidx = np.where([el=='buildings_google' for el in feature_names])
+        midx = np.where([el=='buildings_maxar' for el in feature_names])
 
-        if ('buildings_google' in feature_names) and ('buildings_maxar' in feature_names): 
-            inputs['buildings_merge_mean_area'] = inputs['buildings_google_mean_area'].copy()
-            inputs['buildings_merge_mean_area'][maxargs] =  inputs['buildings_maxar_mean_area'][maxargs]
-            del inputs['buildings_google_mean_area'], inputs['buildings_maxar_mean_area']
+        maxargs = np.argmax(np.concatenate([features[gidx,:,:,None], features[midx,:,:,None]], 4), 4).astype(bool).squeeze()
+ 
+        features[gidx,maxargs] =  features[midx,maxargs]
+        feature_names[np.squeeze(gidx)] = 'buildings_merge' 
+        bkeepers = np.where([el!='buildings_maxar' for el in feature_names])
+        features = features[bkeepers]
+        feature_names.remove('buildings_maxar') 
 
-        # rearrage the feature names
-        feature_names = list(inputs.keys())
-        buildingidx = np.where(np.array(list(inputs.keys()))=='buildings_merge')[0][0]
-        feature_names[0], feature_names[buildingidx] = feature_names[buildingidx], feature_names[0]
+        if ('buildings_google_mean_area' in feature_names) and ('buildings_maxar_mean_area' in feature_names): 
+            gaidx = np.where([el=='buildings_google_mean_area' for el in feature_names])
+            maidx = np.where([el=='buildings_maxar_mean_area' for el in feature_names])
+            
+            features[gaidx,maxargs] =  features[maidx, maxargs]
+            feature_names[np.squeeze(gaidx)] = 'buildings_merge_mean_area'
+            bmakeepers = np.where([el!='buildings_maxar_mean_area' for el in feature_names])
+            features = features[bmakeepers]
+            feature_names.remove('buildings_maxar_mean_area') 
+            
 
     # Assert that first input is a building variable
     assert(feature_names[0] in building_features)
 
-    ih, iw = inputs[feature_names[0]].shape
-    num_feat = len(inputs.keys())
-    features = torch.zeros( (len(inputs.keys()), ih, iw), dtype=torch.float32)
-    valid_data_mask = torch.ones( (ih, iw), dtype=torch.bool)
-    fmean = torch.zeros((len(inputs.keys())))
-    fstd = torch.zeros((len(inputs.keys())))
-    for i,name in enumerate(feature_names):
+    num_feat, ih, iw = features.shape
+    valid_data_mask = torch.ones( (ih, iw), dtype=torch.bool) 
+    for i, name in enumerate(feature_names):
         
-        # convert dict into an matrix of features
-        features[i] = torch.from_numpy(inputs[name]) 
         if name in (building_features + related_building_features):
-            features[i][features[i]<0] = 0 
+            features[i][features[i]<0] = 0
         else:
             this_mask = features[i]!=no_data_values[name]
             if no_data_values[name]>1e30:
-                this_mask *= ~torch.from_numpy(np.isclose(features[i],no_data_values[name]))
+                this_mask *= ~(np.isclose(features[i],no_data_values[name]))
             valid_data_mask *= this_mask
 
         # Normalize the features, execpt for the buildings layer when the scale Network is used
         if (params['Net'] in ['ScaleNet']) and (name not in building_features):
-            if name in cfg.norms[dataset_name].keys():
+            if name in list(cfg.norms[dataset_name].keys()):
                 # normalize by known mean and std
                 features[i] = (features[i] - cfg.norms[dataset_name][name][0]) / cfg.norms[dataset_name][name][1]
             else:
                 raise Exception("Did not find precalculated mean and std")
-                pass
-
-                # calculate mean std your self...
-                # fmean[i] = features[i][this_mask].mean()
-                # fstd[i] = features[i][this_mask].std()
-                # features[i] = (features[i] - fmean) / fstd
-
-    del inputs
-
+                
+    # features = torch.cat(features, 0)
+    features = torch.from_numpy(features)
 
     # this_mask = features[0]!=no_data_values[name]
     if params["Net"]=='ScaleNet':
@@ -146,17 +133,14 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     # also account for the invalid map ids
     valid_data_mask *= map_valid_ids.astype(bool)
 
-    fstd = features[:,valid_data_mask].std(1)
-    fmean = features[:,valid_data_mask].mean(1)
-
     # Create dataformat with densities for administrative boundaries of level -1 and -2
     # Fills in the densities per pixel
     #TODO: distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
-    fine_density, fine_density_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
-    cr_density, cr_density_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
+    fine_density, fine_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
+    cr_density, cr_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
 
-    fine_map = fine_density_map
-    cr_map = cr_density_map
+    # fine_map = fine_density_map
+    # cr_map = cr_density_map
     replacement = 0
 
     # replace -inf with 1e-16 ("-16" on log scale) is close enough to zero for the log scale, otherwise take 0
@@ -165,12 +149,13 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
 
     cr_map = torch.from_numpy(cr_map)
     fine_map = torch.from_numpy(fine_map).float()
-    valid_data_mask = valid_data_mask.to(torch.bool)
+    valid_data_mask =  valid_data_mask.to(torch.bool)
     fine_regions = torch.from_numpy(fine_regions.astype(np.int16))
     map_valid_ids = torch.from_numpy(map_valid_ids.astype(np.bool8))
     id_to_cr_id = torch.from_numpy(id_to_cr_id.astype(np.int32))
     cr_regions = torch.from_numpy(cr_regions.astype(np.int32)) 
 
+    # replacements of invalid values
     features[:,~valid_data_mask] = replacement
     fine_map[~valid_data_mask] = replacement
     cr_map[~valid_data_mask] = replacement
@@ -191,12 +176,73 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
         "valid_ids": valid_ids,
         "guide_res": guide_res,
         "geo_metadata": geo_metadata,
-        "mean_std": (fmean, fstd),
-        "num_valid_pix": valid_data_mask.sum()
+        # "mean_std": (fmean, fstd),
+        "num_valid_pix": valid_data_mask.sum(),
+        "fine": "fine",
+        "coarse": "coarse",
+
     }
     
     return dataset
 
+
+def prep_train_hdf5_file(training_source, h5_filename, var_filename):
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Iterate throuh the image an cut out examples
+    tX,tY,tMasks,tBBox = [],[],[],[]
+
+    tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask, level = training_source
+    
+    tr_regions = tr_regions.to(device)
+    tr_valid_data_mask = tr_valid_data_mask.to(device)
+    
+    for regid in tqdm(tr_census.keys()):
+        mask = (regid==tr_regions) * tr_valid_data_mask
+        boundingbox = bbox2(mask)
+        rmin, rmax, cmin, cmax = boundingbox
+        tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
+        tY.append(np.asarray(tr_census[regid]))
+        tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
+        boundingbox = [rmin.cpu(), rmax.cpu(), cmin.cpu(), cmax.cpu()]
+        tBBox.append(boundingbox)
+        
+    tr_regions = tr_regions.cpu()
+    tr_valid_data_mask = tr_valid_data_mask.cpu().numpy()
+
+    dim, h, w = tr_features.shape
+
+    if not os.path.isfile(h5_filename):
+        with h5py.File(h5_filename, "w") as f:
+            h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0)
+            for i,feat in enumerate(tr_features):
+                h5_features[:,i] = feat
+        
+    with open(var_filename, 'wb') as handle:
+        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data
+
+    dim, h, w = val_features.shape
+
+    if not os.path.isfile(h5_filename):
+        with h5py.File(h5_filename, "w") as f:
+            h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0)
+            for i,feat in enumerate(val_features):
+                h5_features[:,i] = feat
+            
+    with open(var_filename, 'wb') as handle:
+        pickle.dump(
+            [val_census, val_regions, val_map, val_valid_ids,\
+            val_map_valid_ids, val_guide_res, val_valid_data_mask], 
+            handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open(disag_filename, 'wb') as handle:
+        pickle.dump( this_disaggregation_data,  handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def build_variable_list(dataset: dict, var_list: list) -> list:
     """
@@ -216,6 +262,8 @@ def superpixel_with_pix_data(
     learning_rate,
     weights_regularizer,
     weights_regularizer_adamw, 
+    memory_mode,
+    log_step
     ):
 
     ####  define parameters  ########################################################
@@ -236,25 +284,25 @@ def superpixel_with_pix_data(
             'optim': optimizer,
             'lr': learning_rate,
             "epochs": 100,
-            'logstep': 1,
+            'logstep': log_step,
             'train_dataset_name': train_dataset_name,
             'train_level': train_level,
             'test_dataset_name': test_dataset_name,
-            'input_variables': list(cfg.input_paths[train_dataset_name[0]].keys())
+            'input_variables': list(cfg.input_paths[train_dataset_name[0]].keys()),
+            'memory_mode': memory_mode
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
     related_building_features = ['buildings_google_mean_area', 'buildings_maxar_mean_area', 'buildings_merge_mean_area']
 
-    fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "guide_res", "valid_data_mask"]
-    cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "guide_res", "valid_data_mask"]
+    fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "guide_res", "valid_data_mask", "fine"]
+    cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "guide_res", "valid_data_mask", "coarse"]
     fine_val_data_vars = ["features", "fine_census", "fine_regions", "fine_map", "valid_ids", "map_valid_ids", "guide_res", "valid_data_mask"]
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
     wandb.init(project="HAC", entity="nandometzger", config=params)
 
     ####  load dataset  #############################################################
-    # 
 
     assert(all(elem=="c" or elem=="f" for elem in train_level))
 
@@ -262,41 +310,84 @@ def superpixel_with_pix_data(
     test_dataset = {}
     train_level_dict = {}
     test_level_dict = {}
-    for i,ds in enumerate(train_dataset_name):
-        train_level_dict[ds] = train_level[i]
-        train_dataset[ds] = get_dataset(ds, params, building_features, related_building_features) 
-
-    calculate_norm = True
-    if calculate_norm:
-        feats = torch.zeros((train_dataset[ds]["features"].shape[0],0))
-        for i,ds in enumerate(train_dataset_name):
-            feats = torch.cat([ feats, train_dataset[ds]["features"][:,train_dataset[ds]["valid_data_mask"]] ],1)
-        print("means", feats.mean(1))
-        print("stds", feats.std(1))
-
-
-    for ds in test_dataset_name:
-        if ds in list(train_dataset.keys()):
-            test_dataset[ds] = train_dataset[ds]
-        else:
-            test_dataset[ds] = get_dataset(ds, params, building_features, related_building_features)
-
-
-    ##################################################
-
-    # build training
-    training_source ={}
-    for i,ds in enumerate(train_dataset_name):
-        train_variables = fine_train_source_vars if train_level[i]=="f" else cr_train_source_vars
-
-        training_source[ds] = build_variable_list(train_dataset[ds], train_variables)
-
-    # build validation
+    training_source = {}
     validation_data ={}
     disaggregation_data={}
-    for ds in test_dataset_name:
-        validation_data[ds] = build_variable_list(test_dataset[ds], fine_val_data_vars)
-        disaggregation_data[ds] = build_variable_list(test_dataset[ds], cr_disaggregation_data_vars)
+    for i,ds in enumerate(train_dataset_name):
+        this_level = train_level[i]
+
+        h5_filename = f"datasets/{ds}/data.hdf5"
+        train_var_filename = f"datasets/{ds}/additional_train_vars_{this_level}.pkl"
+        test_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
+        test_disag_filename = f"datasets/{ds}/disag_vars.pkl"
+        parent_dir = f"datasets/{ds}/"
+
+        if not (os.path.isfile(h5_filename) and os.path.isfile(train_var_filename)):
+
+            this_dataset = get_dataset(ds, params, building_features, related_building_features) 
+            train_variables = fine_train_source_vars if train_level[i]=="f" else cr_train_source_vars
+            this_dataset_list = build_variable_list(this_dataset, train_variables)
+            
+            Path(parent_dir).mkdir(parents=True, exist_ok=True)
+            prep_train_hdf5_file(this_dataset_list, h5_filename, train_var_filename)
+
+            # Build testdataset here to avoid dublicate executions later
+            if ds in test_dataset_name and ():
+                this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
+                this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
+            
+                prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename,  test_var_filename, test_disag_filename)
+
+            # Free up RAM
+            del this_dataset, this_dataset_list
+
+        training_source[ds] = []
+        training_source[ds] = {"features": h5_filename, "vars": train_var_filename}
+
+    # calculate_norm = False
+    # if calculate_norm:
+    #     feats = torch.zeros((train_dataset[ds]["features"].shape[0],0))
+    #     for i,ds in enumerate(train_dataset_name):
+    #         feats = torch.cat([ feats, train_dataset[ds]["features"][:,train_dataset[ds]["valid_data_mask"]] ],1)
+    #     print("means", feats.mean(1))
+    #     print("stds", feats.std(1))
+
+    for ds in test_dataset_name: 
+        this_level = train_level[i]
+
+        h5_filename = f"datasets/{ds}/data.hdf5"
+        test_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
+        test_disag_filename = f"datasets/{ds}/disag_vars.pkl"
+        parent_dir = f"datasets/{ds}/"
+
+        if not (os.path.isfile(h5_filename) and os.path.isfile(test_var_filename) and os.path.isfile(test_disag_filename)):
+
+            this_dataset = get_dataset(ds, params, building_features, related_building_features)
+            this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
+            this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
+
+            del this_dataset
+
+            Path(parent_dir).mkdir(parents=True, exist_ok=True)
+            prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename, test_var_filename, test_disag_filename)
+            
+            # Free up RAM
+            del this_validation_data, this_disaggregation_data
+
+        
+        validation_data[ds] = []
+        validation_data[ds] = {"features": h5_filename, "vars": test_var_filename, "disag": test_disag_filename }
+
+            
+            # Path(f"datasets/test/{ds}").mkdir(parents=True, exist_ok=True)
+            # with open(datapath, 'wb') as handle:
+            #     # TODO: better save them as numpy arrays! torch get saved as huge binaries!
+            #     pickle.dump([validation_data[ds], disaggregation_data[ds]], handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+ 
 
     res = PixAdminTransform(
         training_source=training_source,
@@ -347,6 +438,8 @@ def main():
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
+    parser.add_argument("--memory_mode", "-mm", type=bool, default=False, help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory!")
+    parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
     args = parser.parse_args()
 
     args.train_dataset_name = args.train_dataset_name[0].split(",")
@@ -360,7 +453,9 @@ def main():
         args.optimizer,
         args.learning_rate,
         args.weights_regularizer,
-        args.weights_regularizer_adamw, 
+        args.weights_regularizer_adamw,
+        args.memory_mode,
+        args.log_step
     )
 
 

@@ -6,9 +6,8 @@ from tqdm import tqdm
 import copy
 from pylab import figure, imshow, matshow, grid
 import torch
-# import os
-# import rasterio 
-# import scipy.io as sio
+import pickle
+import h5py
 
 def get_properties_dict(data_dict_orig):
     data_dict = []
@@ -18,10 +17,14 @@ def get_properties_dict(data_dict_orig):
 
 
 def read_input_raster_data(input_paths):
-    inputs = {}
-    for kinp in input_paths.keys():
+    #assuming every covariate has same dimensions
+    first_name = list(input_paths.keys())[0]
+    hwdims = gdal.Open(input_paths[first_name]).ReadAsArray().astype(np.float32).shape
+    fdim = input_paths.__len__()
+    inputs = np.zeros((fdim,) + hwdims, dtype=np.float32) 
+    for i,kinp in enumerate(input_paths.keys()):
         print("read {}".format(input_paths[kinp]))
-        inputs[kinp] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
+        inputs[i] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
     return inputs
 
 
@@ -205,34 +208,83 @@ def bbox2(img):
 
 class PatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, *variables, device): 
-        self.variables = variables
+    def __init__(self, rawsets, device): 
         self.device = device
+        
+        print("Preparing dataloader for: ", list(rawsets.keys()))
+        self.loc_list = []
+        self.BBox = {}
+        self.features = {}
+        self.Ys = {}
+        self.Masks = {}
+        for i, (name, rs)  in enumerate(rawsets.items()):
 
+            with open(rs['vars'], "rb") as f:
+                tr_census, tr_regions, tr_valid_data_mask, tY, tBBox = pickle.load(f)
+
+            self.BBox[name] = tBBox
+            self.features[name] = h5py.File(rs["features"], 'r')["features"]
+            self.Ys[name] =  tY #{ k: np.asarray(v) for k,v in tr_census.items() }
+            self.Masks[name] = tr_valid_data_mask
+            self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
+
+        self.dims = self.features[name].shape[1]
+        
     def __len__(self):
         return len(self.variables[0])
 
-    def __getitem__(self, idx):
+    def getsingleitem(self, idx):
         output = []
-        for var in self.variables:
-            output.append(var[idx])
-        return [output]
+        name, k = self.idx_to_loc(idx)
+        rmin, rmax, cmin, cmax = self.BBox[name][k]
+        X = torch.from_numpy(self.features[name][:,:,rmin:rmax, cmin:cmax])
+        Y = torch.from_numpy(self.Ys[name][k])
+        Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
+        return X, Y, Mask
 
+    def __getitem__(self, idx):
+        return self.getsingleitem(idx)
 
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, *variables, device): 
-        self.variables = variables
+    def __init__(self, rawsets, memory_mode, device):
         self.device = device
-        num_single = len(variables[0])
-        indicies = range(num_single)
-        max_pix_forward = 8000
+        
+        print("Preparing dataloader for: ", list(rawsets.keys()))
+        self.loc_list = []
+        self.BBox = {}
+        self.features = {}
+        self.Ys = {}
+        self.Masks = {}
+        for i, (name, rs)  in enumerate(rawsets.items()):
 
-        patchsize = [feats.numel() for feats in variables[0]]
+            with open(rs['vars'], "rb") as f:
+                tr_census, tr_regions, tr_valid_data_mask, tY, tBBox = pickle.load(f)
+
+            self.BBox[name] = tBBox
+            if memory_mode:
+                self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
+            else:
+                self.features[name] = h5py.File(rs["features"], 'r')["features"]
+            self.Ys[name] =  tY #{ k: np.asarray(v) for k,v in tr_census.items() }
+            self.Masks[name] = tr_valid_data_mask
+            self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
+
+        self.dims = self.features[name].shape[1]
+        
+        num_single = len(self.loc_list)
+        indicies = range(num_single)
+        max_pix_forward = 20000
+
+        bboxlist = [ self.BBox[name][k] for name,k in self.loc_list ]
+        patchsize = [ (bb[1]-bb[0])*(bb[3]-bb[2]) for bb in bboxlist]
+        patchsize = np.asarray(patchsize)
+
+
         pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
-        pairs = np.asarray(pairs, dtype=object)
-        sumpixels_pairs = [(patchsize[id1]+patchsize[id2]) for id1,id2 in pairs ]
-        self.small_pairs = pairs[np.asarray(sumpixels_pairs)<max_pix_forward**2]
+        pairs = np.asarray(pairs) 
+        sumpixels_pairs12 = np.take(patchsize, pairs[:,0]) + np.take(patchsize, pairs[:,1])  
+        self.small_pairs = pairs[np.asarray(sumpixels_pairs12)<max_pix_forward**2]
 
         # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
         # triplets = np.asarray(triplets, dtype=object)
@@ -241,14 +293,24 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
         self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
 
+
     def __len__(self):
         return self.all_sample_ids.__len__()
 
+    def idx_to_loc(self, idx):
+        return self.loc_list[idx]
+    
+    def num_feats(self):
+        return self.dims
+
     def getsingleitem(self, idx):
         output = []
-        for var in self.variables:
-            output.append(var[idx])
-        return output
+        name, k = self.idx_to_loc(idx)
+        rmin, rmax, cmin, cmax = self.BBox[name][k]
+        X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
+        Y = torch.from_numpy(self.Ys[name][k])
+        Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
+        return X, Y, Mask
 
     def __getitem__(self,idx):
         idxs = self.all_sample_ids[idx]
@@ -278,7 +340,6 @@ def LogoutputL2(outputs, targets, eps=1e-8):
 
 def save_as_geoTIFF(src_filename,  dst_filename, raster): 
  
-
     from osgeo import gdal, osr
 
     src_filename ='/path/to/source.tif'

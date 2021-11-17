@@ -1,7 +1,7 @@
-from numpy import dtype
+import numpy as np
 import torch.nn as nn
 import torch
-
+from tqdm import tqdm
 
 class PixTransformNet(nn.Module):
 
@@ -140,7 +140,11 @@ class PixScaleNet(nn.Module):
             inputs = inputs[:,:,mask[0]].unsqueeze(3)
 
         # Apply network
-        inputs = inputs.to(self.device)
+        if isinstance(inputs, np.ndarray):
+            inputs = torch.from_numpy(inputs).to(self.device)
+        else:
+            inputs = inputs.to(self.device)
+
         buildings = inputs[:,0:1,:,:]
         inputs = inputs[:,1:,:,:]
 
@@ -166,11 +170,11 @@ class PixScaleNet(nn.Module):
     def forward_batchwise(self, inputs,mask=None, predict_map=False, return_scale=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
-        PS = 1200
+        PS = 1300
         oh, ow = inputs.shape[-2:]
         if predict_map:
-            outvar = torch.zeros((1,1,oh, ow), dtype=inputs.dtype, device='cpu')
-            scale = torch.zeros((1,1,oh, ow), dtype=inputs.dtype, device='cpu')
+            outvar = torch.zeros((1,1,oh, ow), dtype=torch.float32, device='cpu')
+            scale = torch.zeros((1,1,oh, ow), dtype=torch.float32, device='cpu')
         else:
             outvar = 0
 

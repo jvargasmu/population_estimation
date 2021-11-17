@@ -6,3 +6,4 @@ wandb/
 data/
 checkpoints/
 outputs/
+datasets/

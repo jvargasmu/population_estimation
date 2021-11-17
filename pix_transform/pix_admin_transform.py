@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.core.numeric import zeros_like
+import os
 
 import torch
 import torch.nn.functional as F
@@ -7,6 +8,9 @@ import torch.optim as optim
 import torch.utils.data
 import sys
 import wandb
+import h5py
+import pickle
+from pathlib import Path
 
 from utils import plot_2dmatrix, accumulate_values_by_region, compute_performance_metrics, bbox2, \
      PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2
@@ -47,7 +51,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         mynet.eval()
 
         # batchwise passing for whole image
-        return_vals = mynet.forward_batchwise(guide_img.unsqueeze(0),
+        return_vals = mynet.forward_batchwise(
+            guide_img,
             predict_map=True,
             return_scale=return_scale
         )
@@ -133,35 +138,25 @@ def PixAdminTransform(
     training_source,
     validation_data=None,
     disaggregation_data=None,
-    params=DEFAULT_PARAMS
-    ):
+    params=DEFAULT_PARAMS,
+    save_ds=True):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     #### prepare_patches #########################################################################
-    
-    # Iterate throuh the image an cut out examples
-    X,Y,Masks = [],[],[]
-    for train_dataset_name in training_source.keys():
-        tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask = training_source[train_dataset_name] 
-        
-        tr_regions = tr_regions.to(device)
-        tr_valid_data_mask = tr_valid_data_mask.to(device)
-        
-        for regid in tqdm(tr_census.keys()):
-            mask = (regid==tr_regions) * tr_valid_data_mask
-            rmin, rmax, cmin, cmax = bbox2(mask)
-            X.append(tr_features[:,rmin:rmax, cmin:cmax])
-            Y.append(torch.tensor(tr_census[regid]))
-            Masks.append(torch.tensor(mask[rmin:rmax, cmin:cmax]))
-            
-        tr_regions = tr_regions.cpu()
-        tr_valid_data_mask = tr_valid_data_mask.cpu()
-        
+
+    # load into memory
+    for name,v in validation_data.items(): 
+        with open(v['vars'], "rb") as f:
+            v['memory_vars'] = pickle.load(f)
+        with open(v['disag'], "rb") as f:
+            v['memory_disag'] = pickle.load(f)
+        v['features_disk'] = h5py.File(v["features"], 'r')["features"]
+
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(X, Y, Masks, device=device)
+        train_data = MultiPatchDataset(training_source, memory_mode=params['memory_mode'], device=device)
     else:
-        train_data = PatchDataset(X, Y, Masks, device=device)
+        train_data = PatchDataset(training_source, device=device)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
 
     #### setup loss/network ############################################################################
@@ -182,11 +177,11 @@ def PixAdminTransform(
         raise Exception("unknown loss!")
         
     if params['Net']=='PixNet':
-        mynet = PixTransformNet(channels_in=tr_features.shape[0],
+        mynet = PixTransformNet(channels_in=train_data.num_feats(),
                                 weights_regularizer=params['weights_regularizer'],
                                 device=device).train().to(device)
     elif params['Net']=='ScaleNet':
-            mynet = PixScaleNet(channels_in=tr_features.shape[0],
+            mynet = PixScaleNet(channels_in=train_data.num_feats(),
                             weights_regularizer=params['weights_regularizer'],
                             device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                             ).train().to(device)
@@ -207,8 +202,9 @@ def PixAdminTransform(
         #TODO: if we do not cross validation we can do disagregation,
         
         log_dict = {}
-        for test_dataset_name in validation_data.keys():
-            val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]
+        for test_dataset_name, values in validation_data.items():
+            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
+            val_features = values["features_disk"]
 
             res, this_log_dict, best_scores = eval_my_model(
                 mynet, val_features, val_valid_data_mask, val_regions,
@@ -229,12 +225,13 @@ def PixAdminTransform(
 
     epochs = params["epochs"]
     itercounter = 0
+    batchiter = 0
     with tqdm(range(0, epochs), leave=True) as tnr:
 
         # initialize the best score variables
         best_scores = {}
         for test_dataset_name in validation_data.keys():
-            best_scores[train_dataset_name] = [-1e12, 1e12, -1e12]
+            best_scores[test_dataset_name] = [-1e12, 1e12, -1e12]
 
         for epoch in tnr:
             for sample in tqdm(train_loader):
@@ -256,27 +253,28 @@ def PixAdminTransform(
                 optimizer.step()
 
                 itercounter += 1
+                batchiter += 1
                 torch.cuda.empty_cache()
 
                 # if epoch % params['logstep'] == 0:
                 # if itercounter>=( tr_census.keys().__len__() * params['logstep'] ):
-                if itercounter>=( 2000*params['logstep'] ):
+                if itercounter>=( params['logstep'] ):
                     itercounter = 0
 
                     # Evaluate Model and save model
 
                     log_dict = {}
-                    for test_dataset_name in validation_data.keys():
-                        val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]
-
-
+                    for test_dataset_name, values in validation_data.items():
+                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
+                        val_features = values["features_disk"]
+                        
                         res, this_log_dict, this_best_scores = eval_my_model(
                             mynet, val_features, val_valid_data_mask, val_regions,
                             val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
                             val_map, device, 
-                            best_scores[train_dataset_name], optimizer=optimizer,
-                            disaggregation_data=disaggregation_data[test_dataset_name], epoch=epoch,
-                            dataset_name=test_dataset_name
+                            best_scores[test_dataset_name], optimizer=optimizer,
+                            disaggregation_data=values['memory_disag'], epoch=epoch,
+                            dataset_name=test_dataset_name, return_scale=True
                         )
                         for key in this_log_dict.keys():
                             log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
@@ -284,6 +282,8 @@ def PixAdminTransform(
                         best_scores[test_dataset_name] = this_best_scores
 
                     log_dict['train/loss'] = loss 
+                    log_dict['batchiter'] = batchiter
+                    log_dict['epoch'] = epoch
 
                     # if val_fine_map is not None:
                     tnr.set_postfix(R2=log_dict[list(validation_data.keys())[0]+'/r2'],
@@ -302,15 +302,15 @@ def PixAdminTransform(
 
         log_dict = {}
         res = {}
-        for test_dataset_name in validation_data.keys():
-            val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]
-
+        for test_dataset_name, values in validation_data.items():
+            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
+            val_features = values["features_disk"]
             this_res, log_dict, best_scores = eval_my_model(
                 mynet, val_features, val_valid_data_mask, val_regions,
                 val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
                 val_map, device,
-                best_scores[train_dataset_name], optimizer=optimizer,
-                disaggregation_data=disaggregation_data[test_dataset_name], return_scale=True,
+                best_scores[test_dataset_name], optimizer=optimizer,
+                disaggregation_data=values['memory_disag'], return_scale=True,
                 dataset_name=test_dataset_name
             )
             for key in this_log_dict.keys():
