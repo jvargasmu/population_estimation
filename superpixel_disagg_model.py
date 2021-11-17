@@ -203,24 +203,24 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
         boundingbox = bbox2(mask)
         rmin, rmax, cmin, cmax = boundingbox
         tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
-        tY.append(tr_census[regid])
+        tY.append(np.asarray(tr_census[regid]))
         tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
         boundingbox = [rmin.cpu(), rmax.cpu(), cmin.cpu(), cmax.cpu()]
         tBBox.append(boundingbox)
         
     tr_regions = tr_regions.cpu()
-    tr_valid_data_mask = tr_valid_data_mask.cpu()
+    tr_valid_data_mask = tr_valid_data_mask.cpu().numpy()
 
     dim, h, w = tr_features.shape
 
-    if ~os.path.isfile(h5_filename):
+    if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
             h5_features = f.create_dataset("features", (dim, h, w), dtype=np.float32, fillvalue=0)
             for i,feat in enumerate(tr_features):
                 h5_features[i] = feat
         
     with open(var_filename, 'wb') as handle:
-        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
@@ -229,7 +229,7 @@ def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename, 
 
     dim, h, w = val_features.shape
 
-    if ~os.path.isfile(h5_filename):
+    if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
             h5_features = f.create_dataset("features", (dim, h, w), dtype=np.float32, fillvalue=0)
             for i,feat in enumerate(val_features):

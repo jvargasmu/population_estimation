@@ -208,25 +208,10 @@ def bbox2(img):
 
 class PatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, *variables, device): 
-        self.variables = variables
-        self.device = device
-
-    def __len__(self):
-        return len(self.variables[0])
-
-    def __getitem__(self, idx):
-        output = []
-        for var in self.variables:
-            output.append(var[idx])
-        return [output]
-
-
-class MultiPatchDataset(torch.utils.data.Dataset):
-    """Patch dataset."""
-    def __init__(self, rawsets, device):
+    def __init__(self, rawsets, device): 
         self.device = device
         
+        print("Preparing dataloader for: ", list(rawsets.keys()))
         self.loc_list = []
         self.BBox = {}
         self.features = {}
@@ -235,15 +220,54 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         for i, (name, rs)  in enumerate(rawsets.items()):
 
             with open(rs['vars'], "rb") as f:
-                tr_census, tr_regions, tr_valid_data_mask, tBBox = pickle.load(f)
+                tr_census, tr_regions, tr_valid_data_mask, tY, tBBox = pickle.load(f)
 
             self.BBox[name] = tBBox
-            self.features[name] = h5py.File(rs["features"], 'r')
-            self.Ys[name] = tr_census
+            self.features[name] = h5py.File(rs["features"], 'r')["features"]
+            self.Ys[name] =  tY #{ k: np.asarray(v) for k,v in tr_census.items() }
             self.Masks[name] = tr_valid_data_mask
             self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
 
+        self.dims = self.features[name].shape[0]
+        
+    def __len__(self):
+        return len(self.variables[0])
 
+    def getsingleitem(self, idx):
+        output = []
+        name, k = self.idx_to_loc(idx)
+        rmin, rmax, cmin, cmax = self.BBox[name][k]
+        X = torch.from_numpy(self.features[name][:,rmin:rmax, cmin:cmax])
+        Y = torch.from_numpy(self.Ys[name][k])
+        Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
+        return X, Y, Mask
+
+    def __getitem__(self, idx):
+        return self.getsingleitem(idx)
+
+class MultiPatchDataset(torch.utils.data.Dataset):
+    """Patch dataset."""
+    def __init__(self, rawsets, device):
+        self.device = device
+        
+        print("Preparing dataloader for: ", list(rawsets.keys()))
+        self.loc_list = []
+        self.BBox = {}
+        self.features = {}
+        self.Ys = {}
+        self.Masks = {}
+        for i, (name, rs)  in enumerate(rawsets.items()):
+
+            with open(rs['vars'], "rb") as f:
+                tr_census, tr_regions, tr_valid_data_mask, tY, tBBox = pickle.load(f)
+
+            self.BBox[name] = tBBox
+            self.features[name] = h5py.File(rs["features"], 'r')["features"]
+            self.Ys[name] =  tY #{ k: np.asarray(v) for k,v in tr_census.items() }
+            self.Masks[name] = tr_valid_data_mask
+            self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
+
+        self.dims = self.features[name].shape[0]
         
         num_single = len(self.loc_list)
         indicies = range(num_single)
@@ -251,13 +275,13 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
         bboxlist = [ self.BBox[name][k] for name,k in self.loc_list ]
         patchsize = [ (bb[1]-bb[0])*(bb[3]-bb[2]) for bb in bboxlist]
-        patchsize = torch.tensor(patchsize)
+        patchsize = np.asarray(patchsize)
 
 
         pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
-        pairs = np.asarray(pairs, dtype=object)
-        sumpixels_pairs = [(patchsize[id1]+patchsize[id2]) for id1,id2 in pairs ]
-        self.small_pairs = pairs[np.asarray(sumpixels_pairs)<max_pix_forward**2]
+        pairs = np.asarray(pairs) 
+        sumpixels_pairs12 = np.take(patchsize, pairs[:,0]) + np.take(patchsize, pairs[:,1])  
+        self.small_pairs = pairs[np.asarray(sumpixels_pairs12)<max_pix_forward**2]
 
         # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
         # triplets = np.asarray(triplets, dtype=object)
@@ -267,13 +291,14 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
 
 
-
     def __len__(self):
         return self.all_sample_ids.__len__()
 
     def idx_to_loc(self, idx):
-        return self.loc_list(idx)
-
+        return self.loc_list[idx]
+    
+    def num_feats(self):
+        return self.dims
 
     def getsingleitem(self, idx):
         output = []
@@ -282,8 +307,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         X = torch.from_numpy(self.features[name][:,rmin:rmax, cmin:cmax])
         Y = torch.from_numpy(self.Ys[name][k])
         Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
-
-        return output
+        return X, Y, Mask
 
     def __getitem__(self,idx):
         idxs = self.all_sample_ids[idx]
