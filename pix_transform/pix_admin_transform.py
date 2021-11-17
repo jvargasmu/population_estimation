@@ -282,7 +282,7 @@ def PixAdminTransform(
                         best_scores[test_dataset_name] = this_best_scores
 
                     log_dict['train/loss'] = loss 
-                    log_dict['batchiter'] = 0
+                    log_dict['batchiter'] = batchiter
                     log_dict['epoch'] = epoch
 
                     # if val_fine_map is not None:
