@@ -228,7 +228,7 @@ class PatchDataset(torch.utils.data.Dataset):
             self.Masks[name] = tr_valid_data_mask
             self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
 
-        self.dims = self.features[name].shape[0]
+        self.dims = self.features[name].shape[1]
         
     def __len__(self):
         return len(self.variables[0])
@@ -237,7 +237,7 @@ class PatchDataset(torch.utils.data.Dataset):
         output = []
         name, k = self.idx_to_loc(idx)
         rmin, rmax, cmin, cmax = self.BBox[name][k]
-        X = torch.from_numpy(self.features[name][:,rmin:rmax, cmin:cmax])
+        X = torch.from_numpy(self.features[name][:,:,rmin:rmax, cmin:cmax])
         Y = torch.from_numpy(self.Ys[name][k])
         Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
         return X, Y, Mask
@@ -267,7 +267,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.Masks[name] = tr_valid_data_mask
             self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
 
-        self.dims = self.features[name].shape[0]
+        self.dims = self.features[name].shape[1]
         
         num_single = len(self.loc_list)
         indicies = range(num_single)
@@ -304,7 +304,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         output = []
         name, k = self.idx_to_loc(idx)
         rmin, rmax, cmin, cmax = self.BBox[name][k]
-        X = torch.from_numpy(self.features[name][:,rmin:rmax, cmin:cmax])
+        X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.from_numpy(self.Ys[name][k])
         Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
         return X, Y, Mask
@@ -337,7 +337,6 @@ def LogoutputL2(outputs, targets, eps=1e-8):
 
 def save_as_geoTIFF(src_filename,  dst_filename, raster): 
  
-
     from osgeo import gdal, osr
 
     src_filename ='/path/to/source.tif'

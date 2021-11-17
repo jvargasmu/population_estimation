@@ -215,9 +215,9 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
 
     if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
-            h5_features = f.create_dataset("features", (dim, h, w), dtype=np.float32, fillvalue=0)
+            h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0)
             for i,feat in enumerate(tr_features):
-                h5_features[i] = feat
+                h5_features[:,i] = feat
         
     with open(var_filename, 'wb') as handle:
         pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -231,9 +231,9 @@ def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename, 
 
     if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
-            h5_features = f.create_dataset("features", (dim, h, w), dtype=np.float32, fillvalue=0)
+            h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0)
             for i,feat in enumerate(val_features):
-                h5_features[i] = feat
+                h5_features[:,i] = feat
             
     with open(var_filename, 'wb') as handle:
         pickle.dump(
@@ -324,7 +324,7 @@ def superpixel_with_pix_data(
             this_dataset = get_dataset(ds, params, building_features, related_building_features) 
             train_variables = fine_train_source_vars if train_level[i]=="f" else cr_train_source_vars
             this_dataset_list = build_variable_list(this_dataset, train_variables)
-
+            
             Path(parent_dir).mkdir(parents=True, exist_ok=True)
             prep_train_hdf5_file(this_dataset_list, h5_filename, train_var_filename)
 
@@ -362,16 +362,18 @@ def superpixel_with_pix_data(
             this_dataset = get_dataset(ds, params, building_features, related_building_features)
             this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
             this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
-            
+
+            del this_dataset
+
             Path(parent_dir).mkdir(parents=True, exist_ok=True)
             prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename, test_var_filename, test_disag_filename)
             
             # Free up RAM
-            del this_dataset, this_validation_data, this_disaggregation_data
+            del this_validation_data, this_disaggregation_data
 
         
         validation_data[ds] = []
-        validation_data[ds] = {"features": h5_filename, "vars": test_disag_filename, "disag": test_disag_filename }
+        validation_data[ds] = {"features": h5_filename, "vars": test_var_filename, "disag": test_disag_filename }
 
             
             # Path(f"datasets/test/{ds}").mkdir(parents=True, exist_ok=True)

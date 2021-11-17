@@ -51,7 +51,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         mynet.eval()
 
         # batchwise passing for whole image
-        return_vals = mynet.forward_batchwise(guide_img.unsqueeze(0),
+        return_vals = mynet.forward_batchwise(
+            guide_img,
             predict_map=True,
             return_scale=return_scale
         )
@@ -150,6 +151,7 @@ def PixAdminTransform(
             v['memory_vars'] = pickle.load(f)
         with open(v['disag'], "rb") as f:
             v['memory_disag'] = pickle.load(f)
+        v['features_disk'] = h5py.File(v["features"], 'r')["features"]
 
     if params["admin_augment"]:
         train_data = MultiPatchDataset(training_source, device=device)
@@ -200,8 +202,9 @@ def PixAdminTransform(
         #TODO: if we do not cross validation we can do disagregation,
         
         log_dict = {}
-        for test_dataset_name in validation_data.keys():
-            val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]['memory_vars']
+        for test_dataset_name, values in validation_data.items():
+            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
+            val_features = values["features_disk"]
 
             res, this_log_dict, best_scores = eval_my_model(
                 mynet, val_features, val_valid_data_mask, val_regions,
@@ -259,16 +262,17 @@ def PixAdminTransform(
                     # Evaluate Model and save model
 
                     log_dict = {}
-                    for test_dataset_name in validation_data.keys():
-                        val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]['memory_vars']
-
-
+                    for test_dataset_name, values in validation_data.items():
+                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
+                        
+                        val_features = values["features_disk"]
+                        
                         res, this_log_dict, this_best_scores = eval_my_model(
                             mynet, val_features, val_valid_data_mask, val_regions,
                             val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
                             val_map, device, 
                             best_scores[test_dataset_name], optimizer=optimizer,
-                            disaggregation_data=disaggregation_data[test_dataset_name], epoch=epoch,
+                            disaggregation_data=values['memory_disag'], epoch=epoch,
                             dataset_name=test_dataset_name
                         )
                         for key in this_log_dict.keys():

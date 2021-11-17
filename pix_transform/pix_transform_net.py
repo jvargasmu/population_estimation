@@ -1,7 +1,7 @@
-from numpy import dtype
+import numpy as np
 import torch.nn as nn
 import torch
-
+from tqdm import tqdm
 
 class PixTransformNet(nn.Module):
 
@@ -38,7 +38,7 @@ class PixTransformNet(nn.Module):
     def forward(self, inputs, mask=None, predict_map=False):
 
         # Check if the image is too large for singe forward pass
-        if torch.tensor(inputs.shape[2:4]).prod()>750**2:
+        if torch.tensor(inputs.shape[2:4]).prod()>400**2:
             return self.forward_batchwise(inputs, mask)
 
         # Apply network
@@ -60,7 +60,7 @@ class PixTransformNet(nn.Module):
     def forward_batchwise(self, inputs,mask=None, predict_map=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
-        PS = 500
+        PS = 150
         oh, ow = inputs.shape[-2:]
         if not predict_map:
             outvar = 0
@@ -132,7 +132,7 @@ class PixScaleNet(nn.Module):
     def forward(self, inputs, mask=None, predict_map=False):
 
         # Check if the image is too large for singe forward pass
-        if torch.tensor(inputs.shape[2:4]).prod()>1500**2:
+        if torch.tensor(inputs.shape[2:4]).prod()>2000**2:
             return self.forward_batchwise(inputs, mask)
 
         if (mask is not None) and (not predict_map):
@@ -140,7 +140,11 @@ class PixScaleNet(nn.Module):
             inputs = inputs[:,:,mask[0]].unsqueeze(3)
 
         # Apply network
-        inputs = inputs.to(self.device)
+        if isinstance(inputs, np.ndarray):
+            inputs = torch.from_numpy(inputs).to(self.device)
+        else:
+            inputs = inputs.to(self.device)
+
         buildings = inputs[:,0:1,:,:]
         inputs = inputs[:,1:,:,:]
 
@@ -166,16 +170,16 @@ class PixScaleNet(nn.Module):
     def forward_batchwise(self, inputs,mask=None, predict_map=False, return_scale=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
-        PS = 1200
+        PS = 1500
         oh, ow = inputs.shape[-2:]
         if predict_map:
-            outvar = torch.zeros((1,1,oh, ow), dtype=inputs.dtype, device='cpu')
-            scale = torch.zeros((1,1,oh, ow), dtype=inputs.dtype, device='cpu')
+            outvar = torch.zeros((1,1,oh, ow), dtype=torch.float32, device='cpu')
+            scale = torch.zeros((1,1,oh, ow), dtype=torch.float32, device='cpu')
         else:
             outvar = 0
 
         sums = []
-        for hi in range(0,oh,PS):
+        for hi in tqdm(range(0,oh,PS)):
             for oi in range(0,ow,PS):
                 if (not predict_map) and (not self.convnet):
                     if mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
