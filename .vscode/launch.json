@@ -81,12 +81,12 @@
             "args": [
                 "-train", "tza",
                 "-train_lvl", "c",
-                "-test", "tza",
+                "-test", "tza,tza",
                 "-lr", "0.00001",
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-log_step", "50",
+                "-lstep", "200",
                 "-mm", "True",
             ]
         },
@@ -102,12 +102,12 @@
             "args": [ 
                 "-train", "uga",
                 "-train_lvl", "c",
-                "-test", "uga",
+                "-test", "uga,tza",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-lstep", "50",
+                "-lstep", "200",
                 "-mm", "True"
             ]
         },
@@ -123,7 +123,7 @@
             "args": [ 
                 "-train", "cod",
                 "-train_lvl", "c",
-                "-test", "cod",
+                "-test", "cod,tza,uga",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.001",
