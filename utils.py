@@ -271,7 +271,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         
         num_single = len(self.loc_list)
         indicies = range(num_single)
-        max_pix_forward = 16000
+        max_pix_forward = 20000
 
         bboxlist = [ self.BBox[name][k] for name,k in self.loc_list ]
         patchsize = [ (bb[1]-bb[0])*(bb[3]-bb[2]) for bb in bboxlist]

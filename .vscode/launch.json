@@ -118,7 +118,7 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
                 "-train", "cod",
-                "-train_lvl", "f",
+                "-train_lvl", "c",
                 "-test", "cod",
                 "-lr", "0.00001",
                 "-optim", "adamw",

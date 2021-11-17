@@ -179,7 +179,7 @@ class PixScaleNet(nn.Module):
             outvar = 0
 
         sums = []
-        for hi in tqdm(range(0,oh,PS)):
+        for hi in range(0,oh,PS):
             for oi in range(0,ow,PS):
                 if (not predict_map) and (not self.convnet):
                     if mask[:,hi:hi+PS,oi:oi+PS].sum()>0:

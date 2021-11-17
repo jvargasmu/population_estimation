@@ -264,7 +264,6 @@ def PixAdminTransform(
                     log_dict = {}
                     for test_dataset_name, values in validation_data.items():
                         val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
-                        
                         val_features = values["features_disk"]
                         
                         res, this_log_dict, this_best_scores = eval_my_model(
@@ -299,15 +298,15 @@ def PixAdminTransform(
 
         log_dict = {}
         res = {}
-        for test_dataset_name in validation_data.keys():
-            val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data[test_dataset_name]
-
+        for test_dataset_name, values in validation_data.items():
+            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
+            val_features = values["features_disk"]
             this_res, log_dict, best_scores = eval_my_model(
                 mynet, val_features, val_valid_data_mask, val_regions,
                 val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
                 val_map, device,
-                best_scores[train_dataset_name], optimizer=optimizer,
-                disaggregation_data=disaggregation_data[test_dataset_name], return_scale=True,
+                best_scores[test_dataset_name], optimizer=optimizer,
+                disaggregation_data=values['memory_disag'], return_scale=True,
                 dataset_name=test_dataset_name
             )
             for key in this_log_dict.keys():
