@@ -262,6 +262,8 @@ def superpixel_with_pix_data(
     learning_rate,
     weights_regularizer,
     weights_regularizer_adamw, 
+    memory_mode,
+    log_step
     ):
 
     ####  define parameters  ########################################################
@@ -282,11 +284,12 @@ def superpixel_with_pix_data(
             'optim': optimizer,
             'lr': learning_rate,
             "epochs": 100,
-            'logstep': 1,
+            'logstep': log_step,
             'train_dataset_name': train_dataset_name,
             'train_level': train_level,
             'test_dataset_name': test_dataset_name,
-            'input_variables': list(cfg.input_paths[train_dataset_name[0]].keys())
+            'input_variables': list(cfg.input_paths[train_dataset_name[0]].keys()),
+            'memory_mode': memory_mode
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -329,7 +332,7 @@ def superpixel_with_pix_data(
             prep_train_hdf5_file(this_dataset_list, h5_filename, train_var_filename)
 
             # Build testdataset here to avoid dublicate executions later
-            if ds in test_dataset_name:
+            if ds in test_dataset_name and ():
                 this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
                 this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
             
@@ -435,6 +438,8 @@ def main():
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
+    parser.add_argument("--memory_mode", "-mm", type=bool, default=False, help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory!")
+    parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
     args = parser.parse_args()
 
     args.train_dataset_name = args.train_dataset_name[0].split(",")
@@ -448,7 +453,9 @@ def main():
         args.optimizer,
         args.learning_rate,
         args.weights_regularizer,
-        args.weights_regularizer_adamw, 
+        args.weights_regularizer_adamw,
+        args.memory_mode,
+        args.log_step
     )
 
 

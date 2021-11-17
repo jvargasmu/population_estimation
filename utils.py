@@ -247,7 +247,7 @@ class PatchDataset(torch.utils.data.Dataset):
 
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, rawsets, device):
+    def __init__(self, rawsets, memory_mode, device):
         self.device = device
         
         print("Preparing dataloader for: ", list(rawsets.keys()))
@@ -262,7 +262,10 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 tr_census, tr_regions, tr_valid_data_mask, tY, tBBox = pickle.load(f)
 
             self.BBox[name] = tBBox
-            self.features[name] = h5py.File(rs["features"], 'r')["features"]
+            if memory_mode:
+                self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
+            else:
+                self.features[name] = h5py.File(rs["features"], 'r')["features"]
             self.Ys[name] =  tY #{ k: np.asarray(v) for k,v in tr_census.items() }
             self.Masks[name] = tr_valid_data_mask
             self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])

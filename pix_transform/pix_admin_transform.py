@@ -154,7 +154,7 @@ def PixAdminTransform(
         v['features_disk'] = h5py.File(v["features"], 'r')["features"]
 
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(training_source, device=device)
+        train_data = MultiPatchDataset(training_source, memory_mode=params['memory_mode'], device=device)
     else:
         train_data = PatchDataset(training_source, device=device)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
@@ -225,6 +225,7 @@ def PixAdminTransform(
 
     epochs = params["epochs"]
     itercounter = 0
+    batchiter = 0
     with tqdm(range(0, epochs), leave=True) as tnr:
 
         # initialize the best score variables
@@ -252,11 +253,12 @@ def PixAdminTransform(
                 optimizer.step()
 
                 itercounter += 1
+                batchiter += 1
                 torch.cuda.empty_cache()
 
                 # if epoch % params['logstep'] == 0:
                 # if itercounter>=( tr_census.keys().__len__() * params['logstep'] ):
-                if itercounter>=( 2000*params['logstep'] ):
+                if itercounter>=( params['logstep'] ):
                     itercounter = 0
 
                     # Evaluate Model and save model
@@ -272,7 +274,7 @@ def PixAdminTransform(
                             val_map, device, 
                             best_scores[test_dataset_name], optimizer=optimizer,
                             disaggregation_data=values['memory_disag'], epoch=epoch,
-                            dataset_name=test_dataset_name
+                            dataset_name=test_dataset_name, return_scale=True
                         )
                         for key in this_log_dict.keys():
                             log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
@@ -280,6 +282,8 @@ def PixAdminTransform(
                         best_scores[test_dataset_name] = this_best_scores
 
                     log_dict['train/loss'] = loss 
+                    log_dict['batchiter'] = 0
+                    log_dict['epoch'] = epoch
 
                     # if val_fine_map is not None:
                     tnr.set_postfix(R2=log_dict[list(validation_data.keys())[0]+'/r2'],
