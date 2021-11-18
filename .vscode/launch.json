@@ -81,13 +81,13 @@
             "args": [
                 "-train", "tza",
                 "-train_lvl", "c",
-                "-test", "tza,tza",
-                "-lr", "0.00001",
+                "-test", "tza,uga",
+                "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-lstep", "200",
-                "-mm", "True",
+                "-lstep", "400",
+                // "-mm", "True",
             ]
         },
         {

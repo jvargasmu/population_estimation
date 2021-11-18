@@ -220,7 +220,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
                 h5_features[:,i] = feat
         
     with open(var_filename, 'wb') as handle:
-        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tMasks, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
@@ -332,7 +332,7 @@ def superpixel_with_pix_data(
             prep_train_hdf5_file(this_dataset_list, h5_filename, train_var_filename)
 
             # Build testdataset here to avoid dublicate executions later
-            if ds in test_dataset_name and ():
+            if ds in test_dataset_name and (not (os.path.isfile(h5_filename) and os.path.isfile(test_var_filename) and os.path.isfile(test_disag_filename))):
                 this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
                 this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
             
