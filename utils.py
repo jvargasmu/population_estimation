@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from tqdm import tqdm
 import copy
-from pylab import figure, imshow, matshow, grid
+from pylab import figure, imshow, matshow, grid, savefig
 import torch
 import pickle
 import h5py
@@ -178,7 +178,6 @@ def calculate_densities(census, area, map=None):
     density_map = mapping_ar[map] 
     return density, density_map
     
-
     
 def plot_2dmatrix(matrix,fig=1):
     if torch.is_tensor(matrix):
@@ -188,6 +187,7 @@ def plot_2dmatrix(matrix,fig=1):
     figure(fig)
     matshow(matrix, interpolation='nearest')
     grid(True)
+    savefig('outputs/last_plot.png')
 
 
 def accumulate_values_by_region(map, ids, regions):
@@ -279,7 +279,6 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         bboxlist = [ self.BBox[name][k] for name,k in self.loc_list ]
         patchsize = [ (bb[1]-bb[0])*(bb[3]-bb[2]) for bb in bboxlist]
         patchsize = np.asarray(patchsize)
-
 
         pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
         pairs = np.asarray(pairs) 
