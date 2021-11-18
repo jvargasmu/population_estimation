@@ -259,15 +259,16 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         for i, (name, rs)  in enumerate(rawsets.items()):
 
             with open(rs['vars'], "rb") as f:
-                tr_census, tr_regions, tr_valid_data_mask, tY, tBBox = pickle.load(f)
+                tr_census, tr_regions, tr_valid_data_mask, tY, tMasks, tBBox = pickle.load(f)
 
             self.BBox[name] = tBBox
             if memory_mode:
                 self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
             else:
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
+                
             self.Ys[name] =  tY #{ k: np.asarray(v) for k,v in tr_census.items() }
-            self.Masks[name] = tr_valid_data_mask
+            self.Masks[name] = tMasks
             self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
 
         self.dims = self.features[name].shape[1]
@@ -308,7 +309,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         rmin, rmax, cmin, cmax = self.BBox[name][k]
         X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.from_numpy(self.Ys[name][k])
-        Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
+        Mask = torch.from_numpy(self.Masks[name][k]) 
         return X, Y, Mask
 
     def __getitem__(self,idx):
