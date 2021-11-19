@@ -74,8 +74,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             num_validation_ids
         )
         agg_preds = {id: agg_preds_arr[id] for id in validation_ids}
-        r2, mae, mse = compute_performance_metrics(agg_preds, validation_census)
-        log_dict = {"r2": r2, "mae": mae, "mse": mse}
+        r2, mae, mse, mape = compute_performance_metrics(agg_preds, validation_census)
+        log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
 
         if disaggregation_data is not None:
             target_to_source, source_census, source_regions = disaggregation_data
@@ -104,8 +104,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 num_validation_ids
             )
             agg_preds_adj = {id: agg_preds_adj_arr[id] for id in validation_ids}
-            r2_adj, mae_adj, mse_adj = compute_performance_metrics(agg_preds_adj, validation_census)
-            log_dict.update( {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj} )
+            r2_adj, mae_adj, mse_adj, mape_adj = compute_performance_metrics(agg_preds_adj, validation_census)
+            log_dict.update( {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj, "adjusted/mape": mape_adj} )
 
             predicted_target_img_adjusted = predicted_target_img_adjusted.cpu() 
             predicted_target_img = predicted_target_img.cpu()
