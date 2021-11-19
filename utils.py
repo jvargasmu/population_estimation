@@ -17,7 +17,7 @@ def get_properties_dict(data_dict_orig):
     return data_dict
 
 
-def read_input_raster_data(input_paths):
+def read_input_raster_data_to_np(input_paths):
     #assuming every covariate has same dimensions
     first_name = list(input_paths.keys())[0]
     hwdims = gdal.Open(input_paths[first_name]).ReadAsArray().astype(np.float32).shape
@@ -26,6 +26,14 @@ def read_input_raster_data(input_paths):
     for i,kinp in enumerate(input_paths.keys()):
         print("read {}".format(input_paths[kinp]))
         inputs[i] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
+    return inputs
+
+
+def read_input_raster_data(input_paths):
+    inputs = {}
+    for kinp in input_paths.keys():
+        print("read {}".format(input_paths[kinp]))
+        inputs[kinp] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
     return inputs
 
 

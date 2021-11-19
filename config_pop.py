@@ -125,6 +125,38 @@ input_paths = {
             root_path),
         "cod_wdpa_dst_cat1_100m_2015": "{}Covariates/COD/WDPA/WDPA_1/cod_wdpa_dst_cat1_100m_2015.tif".format(
             root_path),
+    },
+    "rwa": {
+        "buildings_google": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_count.tif".format(root_path),
+        "buildings_maxar": "{}OtherBuildings/RWA/RWA_mbp_BCB_v3_count.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_mean_area.tif".format(root_path),
+        "buildings_maxar_mean_area": "{}OtherBuildings/RWA/RWA_mbp_BCB_v3_mean_area.tif".format(root_path),
+        "rwa_tt50k_100m_2000": "{}Covariates/RWA/Accessibility/rwa_tt50k_100m_2000.tif".format(
+            root_path),
+        "rwa_dst_bsgme_100m_2015": "{}Covariates/RWA/BSGM/2015/DTE/rwa_dst_bsgme_100m_2015.tif".format(
+            root_path),
+        "rwa_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/RWA/BuiltSettlement/2014/DTE/rwa_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
+            root_path),
+        "rwa_dst_coastline_100m_2000_2020": "{}Covariates/RWA/Coastline/DST/rwa_dst_coastline_100m_2000_2020.tif".format(
+            root_path),
+        "rwa_dmsp_100m_2011": "{}Covariates/RWA/DMSP/rwa_dmsp_100m_2011.tif".format(
+            root_path),
+        "rwa_esaccilc_dst_water_100m_2000_2012": "{}Covariates/RWA/ESA_CCI_Water/DST/rwa_esaccilc_dst_water_100m_2000_2012.tif".format(
+            root_path),
+        "rwa_osm_dst_roadintersec_100m_2016": "{}Covariates/RWA/OSM/DST/rwa_osm_dst_roadintersec_100m_2016.tif".format(
+            root_path),
+        "rwa_osm_dst_waterway_100m_2016": "{}Covariates/RWA/OSM/DST/rwa_osm_dst_waterway_100m_2016.tif".format(
+            root_path),
+        "rwa_osm_dst_road_100m_2016": "{}Covariates/RWA/OSM/DST/rwa_osm_dst_road_100m_2016.tif".format(
+            root_path),
+        "rwa_srtm_slope_100m": "{}Covariates/RWA/Slope/rwa_srtm_slope_100m.tif".format(
+            root_path),
+        "rwa_srtm_topo_100m": "{}Covariates/RWA/Topo/rwa_srtm_topo_100m.tif".format(
+            root_path),
+        "rwa_viirs_100m_2015": "{}Covariates/RWA/VIIRS/rwa_viirs_100m_2015.tif".format(
+            root_path),
+        "rwa_wdpa_dst_cat1_100m_2015": "{}Covariates/RWA/WDPA/WDPA_1/rwa_wdpa_dst_cat1_100m_2015.tif".format(
+            root_path),
     }
 }
 
@@ -216,6 +248,35 @@ no_data_values = {
         "cod_srtm_topo_100m": 32767.,
         "cod_viirs_100m_2015": 3.4028e+38,
         "cod_wdpa_dst_cat1_100m_2015": -99999,
+    },
+    "rwa":{
+        "buildings_j": None,
+        "buildings_google": -99999,
+        "buildings_maxar": -99999, 
+        "buildings_google_mean_area": -99999,
+        "buildings_merge_mean_area": -99999,
+        "buildings_maxar_mean_area": -99999,
+        "esaccilc_dst011_100m_2000": -99999,
+        "esaccilc_dst040_100m_2000": -99999,
+        "esaccilc_dst130_100m_2000": -99999,
+        "esaccilc_dst140_100m_2000": -99999,
+        "esaccilc_dst150_100m_2000": -99999,
+        "esaccilc_dst160_100m_2000": -99999,
+        "esaccilc_dst190_100m_2000": -99999,
+        "esaccilc_dst200_100m_2000": -99999,
+        "rwa_tt50k_100m_2000": -99999,
+        "rwa_dst_bsgme_100m_2015": -99999,
+        "rwa_dst_ghslesaccilcgufghsll_100m_2014": -99999,
+        "rwa_dst_coastline_100m_2000_2020": -99999,
+        "rwa_dmsp_100m_2011": 32767.,
+        "rwa_esaccilc_dst_water_100m_2000_2012":-99999, 
+        "rwa_osm_dst_roadintersec_100m_2016":-99999, 
+        "rwa_osm_dst_waterway_100m_2016": -99999,
+        "rwa_osm_dst_road_100m_2016": -99999,
+        "rwa_srtm_slope_100m": 255.,
+        "rwa_srtm_topo_100m": 32767.,
+        "rwa_viirs_100m_2015": 3.4028e+38,
+        "rwa_wdpa_dst_cat1_100m_2015": -99999,
     }
 }
 
@@ -345,8 +406,33 @@ norms = {
         "cod_viirs_100m_2015": (0.2205 , 1.0825),
         "cod_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
         'buildings_merge_mean_area': (26.3673, 48.1988)
-
     },
+    "rwa":{
+        "buildings_j": (0.00089380914, 8.41622997e-03),
+        # "buildings": (0.265996819, 1.83158563e+00),
+        "esaccilc_dst011_100m_2000": (2.81727052, 5.69885715e+00),
+        "esaccilc_dst040_100m_2000": (0.44520899, 2.72345595e+00),
+        "esaccilc_dst130_100m_2000": (3.09648584, 4.70480562e+00),
+        "esaccilc_dst140_100m_2000": (9.18009012, 9.85124076e+00),
+        "esaccilc_dst150_100m_2000": (108.52330299, 8.17261502e+01),
+        "esaccilc_dst160_100m_2000": (8.65616757, 9.26884634e+00),
+        "esaccilc_dst190_100m_2000": (37.38046272, 3.10730075e+01),
+        "esaccilc_dst200_100m_2000": (64.73759992, 4.46013049e+01),
+        "rwa_tt50k_100m_2000": (209.1351, 188.1936),
+        "rwa_dst_bsgme_100m_2015": (3.2670, 4.2283),
+        "rwa_dst_ghslesaccilcgufghsll_100m_2014": (3.3381, 4.2542),
+        "rwa_dst_coastline_100m_2000_2020": (698.8104,  326.6751),
+        "rwa_dmsp_100m_2011": (71.8836 ,  399.8602 ),
+        "rwa_esaccilc_dst_water_100m_2000_2012":(18.1815, 14.8920), 
+        "rwa_osm_dst_roadintersec_100m_2016":(19.8096, 29.5883), 
+        "rwa_osm_dst_waterway_100m_2016": (15.2655, 15.4519), 
+        "rwa_osm_dst_road_100m_2016": (3.7082,  5.6608), 
+        "rwa_srtm_slope_100m": (3.2089 , 3.8157),
+        "rwa_srtm_topo_100m": (1143.9080 , 402.7680),
+        "rwa_viirs_100m_2015": (0.2205 , 1.0825),
+        "rwa_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
+        'buildings_merge_mean_area': (26.3673, 48.1988)
+    }
 }
 
 metadata = {
@@ -373,6 +459,14 @@ metadata = {
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_cod.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/COD/cod_wpop_regions.tif'.format(root_path)
+    },
+    "rwa":{
+        "wp_no_data": [0, 1],
+        "wp_covariates_no_data": -9999,
+        "hd_no_data": [0],
+        "scale_maxar_to_google": None,
+        "preproc_data_path": 'preprocessed_data_3_rwa.pkl',
+        "rst_wp_regions_path": '{}OtherBuildings/RWA/rwa_wpop_regions.tif'.format(root_path)
     }
 }
 
