@@ -20,14 +20,6 @@ from pix_transform_utils.utils import upsample
 
 from pix_transform.pix_transform_net import PixTransformNet, PixScaleNet
 
-DEFAULT_PARAMS = {
-            'weights_regularizer': 0.001, # spatial color head
-            'loss': 'l1',
-            'optim': 'adam',
-            'lr': 0.001,
-            "epochs": 25,
-            'logstep': 1,
-            }
 
 if 'ipykernel' in sys.modules:
     from tqdm import tqdm_notebook as tqdm
@@ -138,26 +130,33 @@ def PixAdminTransform(
     training_source,
     validation_data=None,
     disaggregation_data=None,
-    params=DEFAULT_PARAMS,
+    params=None,
     save_ds=True):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     #### prepare_patches #########################################################################
 
-    # load into memory
-    for name,v in validation_data.items(): 
-        with open(v['vars'], "rb") as f:
-            v['memory_vars'] = pickle.load(f)
-        with open(v['disag'], "rb") as f:
-            v['memory_disag'] = pickle.load(f)
-        v['features_disk'] = h5py.File(v["features"], 'r')["features"]
 
     if params["admin_augment"]:
         train_data = MultiPatchDataset(training_source, memory_mode=params['memory_mode'], device=device)
     else:
         train_data = PatchDataset(training_source, memory_mode=params['memory_mode'],  device=device)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
+
+    # load test data into memory
+    for name,v in validation_data.items(): 
+        with open(v['vars'], "rb") as f:
+            v['memory_vars'] = pickle.load(f)
+        with open(v['disag'], "rb") as f:
+            v['memory_disag'] = pickle.load(f)
+        
+        # check if we can reuse the features from the training
+        if name in train_data.features:
+            v['features_disk'] = train_data.features[name]
+        else:
+            v['features_disk'] = h5py.File(v["features"], 'r')["features"]
+
 
     #### setup loss/network ############################################################################
 
