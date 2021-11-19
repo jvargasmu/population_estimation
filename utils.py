@@ -2,6 +2,7 @@ import fiona
 from osgeo import gdal
 import numpy as np
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from sklearn.utils import check_array
 from tqdm import tqdm
 import copy
 from pylab import figure, imshow, matshow, grid, savefig
@@ -34,6 +35,16 @@ def read_shape_layer_data(shape_layer_path):
     layer_data = get_properties_dict(layer_data_orig)
     return layer_data
 
+def mean_absolute_percentage_error(y_true, y_pred): 
+
+    y_true = check_array(y_true.reshape(-1,1))
+    y_pred = check_array(y_pred.reshape(-1,1))
+    
+    zeromask = (y_true==0).sum()
+    y_true, y_pred = y_true[zeromask], y_pred[zeromask]  
+
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
 
 def compute_performance_metrics(preds_dict, gt_dict):
     assert len(preds_dict) == len(gt_dict)
@@ -51,8 +62,9 @@ def compute_performance_metrics(preds_dict, gt_dict):
     r2 = r2_score(gt, preds)
     mae = mean_absolute_error(gt, preds)
     mse = mean_squared_error(gt, preds)
+    mape = mean_absolute_percentage_error(gt,preds)
 
-    return r2, mae, mse
+    return r2, mae, mse, mape
 
 
 def write_geolocated_image(image, output_path, src_geo_transform, src_projection):

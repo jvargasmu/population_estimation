@@ -53,6 +53,22 @@
             ]
         }, 
         {
+            "name": "Py: RWA preprocessing_pop_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "preprocessing_pop_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "../../../data/OtherBuildings/RWA/rwa_humdata_regions_shapefile/rwa_humdata_regions.shp",
+                "../../../data/OtherBuildings/RWA/rwa_humdata_regions.tif",
+                "../../../data/OtherBuildings/RWA/rwa_wpop_regions.tif",
+                "../../../data/OtherBuildings/RWA/rwa_wpop_census.csv",
+                "preprocessed_data_3_rwa.pkl",
+                "rwa",
+                "P_2020"
+            ]
+        }, 
+        {
             "name": "Py: train_model_with_agg_data.py",
             "type": "python",
             "request": "launch",
