@@ -17,7 +17,7 @@ def get_properties_dict(data_dict_orig):
     return data_dict
 
 
-def read_input_raster_data(input_paths):
+def read_input_raster_data_to_np(input_paths):
     #assuming every covariate has same dimensions
     first_name = list(input_paths.keys())[0]
     hwdims = gdal.Open(input_paths[first_name]).ReadAsArray().astype(np.float32).shape
@@ -26,6 +26,14 @@ def read_input_raster_data(input_paths):
     for i,kinp in enumerate(input_paths.keys()):
         print("read {}".format(input_paths[kinp]))
         inputs[i] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
+    return inputs
+
+
+def read_input_raster_data(input_paths):
+    inputs = {}
+    for kinp in input_paths.keys():
+        print("read {}".format(input_paths[kinp]))
+        inputs[kinp] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
     return inputs
 
 
@@ -220,7 +228,7 @@ def bbox2(img):
 
 class PatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, rawsets, device): 
+    def __init__(self, rawsets, memory_mode, device): 
         self.device = device
         
         print("Preparing dataloader for: ", list(rawsets.keys()))
@@ -231,13 +239,16 @@ class PatchDataset(torch.utils.data.Dataset):
         self.Masks = {}
         for i, (name, rs)  in enumerate(rawsets.items()):
 
-            with open(rs['vars'], "rb") as f:
-                tr_census, tr_regions, tr_valid_data_mask, tY, tBBox = pickle.load(f)
+            with open(rs['vars'], "rb") as f: 
+                tr_census, tr_regions, tr_valid_data_mask, tY, tMasks, tBBox = pickle.load(f)
 
             self.BBox[name] = tBBox
-            self.features[name] = h5py.File(rs["features"], 'r')["features"]
-            self.Ys[name] =  tY #{ k: np.asarray(v) for k,v in tr_census.items() }
-            self.Masks[name] = tr_valid_data_mask
+            if memory_mode:
+                self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
+            else:
+                self.features[name] = h5py.File(rs["features"], 'r')["features"]
+            self.Ys[name] =  tY  
+            self.Masks[name] = tMasks
             self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
 
         self.dims = self.features[name].shape[1]
@@ -250,8 +261,8 @@ class PatchDataset(torch.utils.data.Dataset):
         name, k = self.idx_to_loc(idx)
         rmin, rmax, cmin, cmax = self.BBox[name][k]
         X = torch.from_numpy(self.features[name][:,:,rmin:rmax, cmin:cmax])
-        Y = torch.from_numpy(self.Ys[name][k])
-        Mask = torch.from_numpy(self.Masks[name][rmin:rmax, cmin:cmax]) 
+        Y = torch.from_numpy(self.Ys[name][k]) 
+        Mask = torch.from_numpy(self.Masks[name][k]) 
         return X, Y, Mask
 
     def __getitem__(self, idx):
@@ -279,7 +290,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             else:
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
                 
-            self.Ys[name] =  tY #{ k: np.asarray(v) for k,v in tr_census.items() }
+            self.Ys[name] =  tY 
             self.Masks[name] = tMasks
             self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
 

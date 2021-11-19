@@ -148,6 +148,26 @@
             ]
         },
         {
+            "name": "RWA superpixel_disagg_model.py",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [ 
+                "-train", "rwa",
+                "-train_lvl", "c",
+                "-test", "rwa,cod,tza,uga",
+                "-lr", "0.0001",
+                "-optim", "adam",
+                "-wr", "0.001",
+                "-adamwr", "0.",
+                "--log_step", "50"
+            ]
+        },
+        {
             "name": "UGA->TZA superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
@@ -248,7 +268,7 @@
             ]
         },
         {
-            "name": "TZA,UGA,COD,RWA->COD superpixel_disagg_model.py",
+            "name": "TZA,UGA,COD,RWA->RWA superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
