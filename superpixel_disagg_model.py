@@ -135,7 +135,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
 
     # Create dataformat with densities for administrative boundaries of level -1 and -2
     # Fills in the densities per pixel
-    #TODO: distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
+    # TODO: distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
     fine_density, fine_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
     cr_density, cr_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
 

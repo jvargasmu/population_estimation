@@ -156,7 +156,7 @@ def PixAdminTransform(
     if params["admin_augment"]:
         train_data = MultiPatchDataset(training_source, memory_mode=params['memory_mode'], device=device)
     else:
-        train_data = PatchDataset(training_source, device=device)
+        train_data = PatchDataset(training_source, memory_mode=params['memory_mode'],  device=device)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
 
     #### setup loss/network ############################################################################
