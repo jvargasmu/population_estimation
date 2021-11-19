@@ -15,7 +15,7 @@ from tqdm import tqdm as tqdm
 from pathlib import Path
 
 import config_pop as cfg
-from utils import read_input_raster_data, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
+from utils import read_input_raster_data, read_input_raster_data_to_np, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
     compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, save_as_geoTIFF, \
     bbox2
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
@@ -53,7 +53,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     wp_ids = list(np.unique(fine_regions)) 
     fine_area = dict(zip(wp_ids, areas))
     num_wp_ids = len(wp_ids)
-    features = read_input_raster_data(input_paths)
+    features = read_input_raster_data_to_np(input_paths)
 
     # Binary map representing a pixel belong to a region with valid id
     map_valid_ids = create_map_of_valid_ids(fine_regions, no_valid_ids)
