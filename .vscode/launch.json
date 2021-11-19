@@ -232,7 +232,7 @@
             ]
         },
         {
-            "name": "TZA,UGA,COD->COD superpixel_disagg_model.py",
+            "name": "TZA,UGA,COD,RWA->COD superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
@@ -241,9 +241,9 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,tza,cod",
-                "-train_lvl", "f,f,c",
-                "-test", "tza,uga,cod",
+                "-train", "uga,tza,rwa,cod",
+                "-train_lvl", "f,f,f,c",
+                "-test", "tza,uga,cod,rwa",
                 "-lr", "0.00001",
                 "-optim", "adam",
                 "-wr", "0.001",
