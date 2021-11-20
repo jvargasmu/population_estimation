@@ -15,7 +15,7 @@ import pickle
 from pathlib import Path
 
 from utils import plot_2dmatrix, accumulate_values_by_region, compute_performance_metrics, bbox2, \
-     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2
+     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2, compute_performance_metrics_arrays
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 from pix_transform_utils.utils import upsample
@@ -142,9 +142,9 @@ def PixAdminTransform(
 
 
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(training_source, memory_mode=params['memory_mode'], device=device)
+        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
     else:
-        train_data = PatchDataset(training_source, memory_mode=params['memory_mode'],  device=device)
+        train_data = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
 
     # load test data into memory
@@ -261,11 +261,26 @@ def PixAdminTransform(
                 if itercounter>=( params['logstep'] ):
                     itercounter = 0
 
-                    # Evaluate Model and save model
-
+                    # Validate and Test the model and save model
                     log_dict = {}
+                    
+                    for name in training_source.keys():
+                        logging.info(f'Validating dataset of {test_dataset_name}')
+                        agg_preds,val_census = [],[]
+                        for idx in range(len(train_data.Ys_val[name])):
+                            X, Y, Mask = train_data.get_single_validation_item(idx, name) 
+                            agg_preds.append(mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy())
+                            val_census.append(Y.cpu().numpy())
+
+                        r2, mae, mse, mape = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
+                        this_log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
+                        for key in this_log_dict.keys():
+                            log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
+                        torch.cuda.empty_cache()
+                    
+                    # Test Model
                     for test_dataset_name, values in validation_data.items():
-                        logging.info(f'Evaluating Dataset of {test_dataset_name}')
+                        logging.info(f'Testing dataset of {test_dataset_name}')
                         val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
                         val_features = values["features_disk"]
                         

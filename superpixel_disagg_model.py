@@ -13,6 +13,7 @@ from pathlib import Path
 import h5py 
 from tqdm import tqdm as tqdm
 from pathlib import Path
+import random
 
 import config_pop as cfg
 from utils import read_input_raster_data, read_input_raster_data_to_np, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
@@ -263,7 +264,9 @@ def superpixel_with_pix_data(
     weights_regularizer,
     weights_regularizer_adamw, 
     memory_mode,
-    log_step
+    log_step,
+    random_seed,
+    validation_split,
     ):
 
     ####  define parameters  ########################################################
@@ -289,7 +292,9 @@ def superpixel_with_pix_data(
             'train_level': train_level,
             'test_dataset_name': test_dataset_name,
             'input_variables': list(cfg.input_paths[train_dataset_name[0]].keys()),
-            'memory_mode': memory_mode
+            'memory_mode': memory_mode,
+            'random_seed': random_seed,
+            'validation_split': validation_split
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -301,6 +306,10 @@ def superpixel_with_pix_data(
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
     wandb.init(project="HAC", entity="nandometzger", config=params)
+
+    torch.manual_seed(random_seed)
+    random.seed(random_seed)
+    np.random.seed(random_seed)
 
     ####  load dataset  #############################################################
 
@@ -434,12 +443,18 @@ def main():
     parser.add_argument("--train_dataset_name", "-train", nargs='+', help="Train Dataset name (separated by commas)", required=True)
     parser.add_argument("--train_level", "-train_lvl", nargs='+', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
     parser.add_argument("--test_dataset_name", "-test", nargs='+', help="Test Dataset name (separated by commas)", required=True)
+
     parser.add_argument("--optimizer", "-optim", type=str, default="adamw", help=" ")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
+
     parser.add_argument("--memory_mode", "-mm", type=bool, default=False, help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory!")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
+
+    parser.add_argument("--validation_split", "-vs", type=float, default=0.1, help="Evealuate the model after 'logstep' batchiterations.")
+    parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run.")
+    
     args = parser.parse_args()
 
     args.train_dataset_name = args.train_dataset_name[0].split(",")
@@ -455,7 +470,9 @@ def main():
         args.weights_regularizer,
         args.weights_regularizer_adamw,
         args.memory_mode,
-        args.log_step
+        args.log_step,
+        args.random_seed,
+        args.validation_split,
     )
 
 

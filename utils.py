@@ -54,6 +54,16 @@ def mean_absolute_percentage_error(y_true, y_pred):
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
 
+def compute_performance_metrics_arrays(preds, gt): 
+
+    r2 = r2_score(gt, preds)
+    mae = mean_absolute_error(gt, preds)
+    mse = mean_squared_error(gt, preds)
+    mape = mean_absolute_percentage_error(gt,preds)
+
+    return r2, mae, mse, mape
+
+
 def compute_performance_metrics(preds_dict, gt_dict):
     assert len(preds_dict) == len(gt_dict)
 
@@ -67,12 +77,7 @@ def compute_performance_metrics(preds_dict, gt_dict):
     preds = np.array(preds).astype(np.float)
     gt = np.array(gt).astype(np.float)
 
-    r2 = r2_score(gt, preds)
-    mae = mean_absolute_error(gt, preds)
-    mse = mean_squared_error(gt, preds)
-    mape = mean_absolute_percentage_error(gt,preds)
-
-    return r2, mae, mse, mape
+    return compute_performance_metrics_arrays(preds, gt)
 
 
 def write_geolocated_image(image, output_path, src_geo_transform, src_projection):
@@ -228,7 +233,7 @@ def bbox2(img):
 
 class PatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, rawsets, memory_mode, device): 
+    def __init__(self, rawsets, memory_mode, device, validation_split): 
         self.device = device
         
         print("Preparing dataloader for: ", list(rawsets.keys()))
@@ -270,29 +275,48 @@ class PatchDataset(torch.utils.data.Dataset):
 
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, rawsets, memory_mode, device):
+    def __init__(self, rawsets, memory_mode, device, validation_split):
         self.device = device
         
         print("Preparing dataloader for: ", list(rawsets.keys()))
-        self.loc_list = []
-        self.BBox = {}
         self.features = {}
+        self.loc_list = []
+        self.loc_list_val = []
+        self.BBox = {}
+        self.BBox_val = {}
         self.Ys = {}
+        self.Ys_val = {}
         self.Masks = {}
+        self.Masks_val = {}
         for i, (name, rs) in (enumerate(rawsets.items())):
 
             with open(rs['vars'], "rb") as f:
-                tr_census, tr_regions, tr_valid_data_mask, tY, tMasks, tBBox = pickle.load(f)
+                _, _, _, tY, tMasks, tBBox = pickle.load(f)
 
-            self.BBox[name] = tBBox
             if memory_mode:
                 self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
             else:
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
-                
-            self.Ys[name] =  tY 
-            self.Masks[name] = tMasks
-            self.loc_list.extend( [(name, k) for k,_ in enumerate(tBBox)])
+            
+            tY = np.asarray(tY)
+            tMasks = np.asarray(tMasks, dtype=object)
+            tBBox = np.asarray(tBBox)
+
+            split_int =int(len(tY)*validation_split)
+            choice_val = np.random.choice(range(len(tY)), size=(split_int,), replace=False)   
+            ind_val = np.zeros(len(tY), dtype=bool)
+            ind_val[choice_val] = True 
+            ind_train = ~ind_val
+
+            self.Ys_val[name] =  tY[ind_val]
+            self.Masks_val[name] = tMasks[ind_val]
+            self.BBox_val[name] = tBBox[ind_val]
+            self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
+            
+            self.Ys[name] =  tY[ind_train]
+            self.Masks[name] = tMasks[ind_train]
+            self.BBox[name] = tBBox[ind_train]
+            self.loc_list.extend( [(name, k) for k,_ in enumerate(self.BBox[name])])
 
         self.dims = self.features[name].shape[1]
         
@@ -319,20 +343,39 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.all_sample_ids.__len__()
+    
+    def len_val(self):
+        return len(self.loc_list_val)
 
     def idx_to_loc(self, idx):
         return self.loc_list[idx]
+
+    def idx_to_loc_val(self, idx):
+        return self.loc_list_val[idx]
     
     def num_feats(self):
         return self.dims
 
-    def getsingleitem(self, idx):
+    def get_single_item(self, idx):
         output = []
         name, k = self.idx_to_loc(idx)
         rmin, rmax, cmin, cmax = self.BBox[name][k]
         X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
-        Y = torch.from_numpy(self.Ys[name][k])
+        Y = torch.tensor(self.Ys[name][k])
         Mask = torch.from_numpy(self.Masks[name][k]) 
+        return X, Y, Mask
+
+    def get_single_validation_item(self, idx, name=None):
+        output = []
+        if name is None:
+            name, k = self.idx_to_loc_val(idx)
+        else:
+            k = idx
+        rmin, rmax, cmin, cmax = self.BBox_val[name][k]
+        X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
+        Y = torch.tensor(self.Ys_val[name][k])
+        Mask = torch.from_numpy(self.Masks_val[name][k])
+        # Mask = Mask.view((1,rmax-rmin, cmax-cmin))
         return X, Y, Mask
 
     def __getitem__(self,idx):
@@ -340,7 +383,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
         sample = []
         for i in idxs:
-            sample.append(self.getsingleitem(i))
+            sample.append(self.get_single_item(i))
         
         return sample
 
