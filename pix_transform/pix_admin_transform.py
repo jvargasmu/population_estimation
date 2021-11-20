@@ -275,7 +275,7 @@ def PixAdminTransform(
                         r2, mae, mse, mape = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
                         this_log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
                         for key in this_log_dict.keys():
-                            log_dict[test_dataset_name+'/validation/'+key + 'validation'] = this_log_dict[key]
+                            log_dict[test_dataset_name + '/validation/' + key ] = this_log_dict[key]
                         torch.cuda.empty_cache()
                     
                     # Test Model
