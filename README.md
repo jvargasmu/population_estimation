@@ -18,4 +18,5 @@ time python train_model_with_agg_data.py preprocessed_data.pkl raster_world_pop_
 
 - Example to run Superpixel script:
 
-time python superpixel_disagg_model.py preprocessed_data_3.pkl ../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif output_dir/ tza 
+
+time python superpixel_disagg_model.py -train tza,uga -train_lvl c,f -test tza,uga -lr 0.0001 -optim adam -wr 0.001 -lstep 400 
