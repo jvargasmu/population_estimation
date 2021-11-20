@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.core.numeric import zeros_like
 import os
+import logging
+logging.basicConfig( format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 
 import torch
 import torch.nn.functional as F
@@ -46,7 +48,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         return_vals = mynet.forward_batchwise(
             guide_img,
             predict_map=True,
-            return_scale=return_scale
+            return_scale=return_scale,
+            forward_only=True
         )
         if return_scale:
             predicted_target_img, scales = return_vals
@@ -82,9 +85,9 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
             
             agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
-            scalings = {id: source_census[id]/agg_preds_cr[id] for id in source_census.keys()}
+            scalings = {id: torch.tensor(source_census[id]/agg_preds_cr[id]).to(device) for id in source_census.keys()}
 
-            for idx in scalings.keys():
+            for idx in (scalings.keys()):
                 mask = [source_regions==idx]
                 predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
 
@@ -255,8 +258,6 @@ def PixAdminTransform(
                 batchiter += 1
                 torch.cuda.empty_cache()
 
-                # if epoch % params['logstep'] == 0:
-                # if itercounter>=( tr_census.keys().__len__() * params['logstep'] ):
                 if itercounter>=( params['logstep'] ):
                     itercounter = 0
 
@@ -264,10 +265,11 @@ def PixAdminTransform(
 
                     log_dict = {}
                     for test_dataset_name, values in validation_data.items():
+                        logging.info(f'Evaluating Dataset of {test_dataset_name}')
                         val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
                         val_features = values["features_disk"]
                         
-                        res, this_log_dict, this_best_scores = eval_my_model(
+                        _, this_log_dict, this_best_scores = eval_my_model(
                             mynet, val_features, val_valid_data_mask, val_regions,
                             val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
                             val_map, device, 
@@ -277,8 +279,9 @@ def PixAdminTransform(
                         )
                         for key in this_log_dict.keys():
                             log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
-
                         best_scores[test_dataset_name] = this_best_scores
+                        
+                        torch.cuda.empty_cache()
 
                     log_dict['train/loss'] = loss 
                     log_dict['batchiter'] = batchiter

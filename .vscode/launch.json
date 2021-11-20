@@ -280,11 +280,11 @@
                 "-train", "uga,tza,rwa,cod",
                 "-train_lvl", "f,f,f,c",
                 "-test", "tza,uga,cod,rwa",
-                "-lr", "0.00001",
+                "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-lstep", "50",
+                "-lstep", "40",
             ]
         },
         {
@@ -299,12 +299,12 @@
             "args": [ 
                 "-train", "uga,tza,rwa,cod",
                 "-train_lvl", "f,c,f,f",
-                "-test", "tza,uga,cod,rwa",
-                "-lr", "0.00001",
+                "-test", "tza,uga",
+                "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-lstep", "50",
+                "-lstep", "40",
             ]
         }
     ]
