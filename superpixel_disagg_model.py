@@ -13,6 +13,7 @@ from pathlib import Path
 import h5py 
 from tqdm import tqdm as tqdm
 from pathlib import Path
+import random
 
 import config_pop as cfg
 from utils import read_input_raster_data, read_input_raster_data_to_np, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
@@ -434,17 +435,27 @@ def main():
     parser.add_argument("--train_dataset_name", "-train", nargs='+', help="Train Dataset name (separated by commas)", required=True)
     parser.add_argument("--train_level", "-train_lvl", nargs='+', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
     parser.add_argument("--test_dataset_name", "-test", nargs='+', help="Test Dataset name (separated by commas)", required=True)
+
     parser.add_argument("--optimizer", "-optim", type=str, default="adamw", help=" ")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
+
     parser.add_argument("--memory_mode", "-mm", type=bool, default=False, help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory!")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
+    parser.add_argument("--asdf", "-a", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
+    parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run.")
+    
     args = parser.parse_args()
 
     args.train_dataset_name = args.train_dataset_name[0].split(",")
     args.train_level = args.train_level[0].split(",")
     args.test_dataset_name = args.test_dataset_name[0].split(",")
+
+    # Initialize Random Seed
+    torch.manual_seed(args.random_seed)
+    random.seed(args.random_seed)
+    np.random.seed(args.random_seed)
 
     superpixel_with_pix_data( 
         args.train_dataset_name,
