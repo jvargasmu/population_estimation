@@ -264,7 +264,9 @@ def superpixel_with_pix_data(
     weights_regularizer,
     weights_regularizer_adamw, 
     memory_mode,
-    log_step
+    log_step,
+    random_seed,
+    validation_split,
     ):
 
     ####  define parameters  ########################################################
@@ -290,7 +292,9 @@ def superpixel_with_pix_data(
             'train_level': train_level,
             'test_dataset_name': test_dataset_name,
             'input_variables': list(cfg.input_paths[train_dataset_name[0]].keys()),
-            'memory_mode': memory_mode
+            'memory_mode': memory_mode,
+            'random_seed': random_seed,
+            'validation_split': validation_split
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -302,6 +306,10 @@ def superpixel_with_pix_data(
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
     wandb.init(project="HAC", entity="nandometzger", config=params)
+
+    torch.manual_seed(random_seed)
+    random.seed(random_seed)
+    np.random.seed(random_seed)
 
     ####  load dataset  #############################################################
 
@@ -443,7 +451,8 @@ def main():
 
     parser.add_argument("--memory_mode", "-mm", type=bool, default=False, help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory!")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
-    parser.add_argument("--asdf", "-a", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
+
+    parser.add_argument("--validation_split", "-vs", type=float, default=0.1, help="Evealuate the model after 'logstep' batchiterations.")
     parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run.")
     
     args = parser.parse_args()
@@ -451,11 +460,6 @@ def main():
     args.train_dataset_name = args.train_dataset_name[0].split(",")
     args.train_level = args.train_level[0].split(",")
     args.test_dataset_name = args.test_dataset_name[0].split(",")
-
-    # Initialize Random Seed
-    torch.manual_seed(args.random_seed)
-    random.seed(args.random_seed)
-    np.random.seed(args.random_seed)
 
     superpixel_with_pix_data( 
         args.train_dataset_name,
@@ -466,7 +470,9 @@ def main():
         args.weights_regularizer,
         args.weights_regularizer_adamw,
         args.memory_mode,
-        args.log_step
+        args.log_step,
+        args.random_seed,
+        args.validation_split,
     )
 
 

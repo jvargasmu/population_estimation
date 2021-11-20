@@ -142,9 +142,9 @@ def PixAdminTransform(
 
 
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(training_source, memory_mode=params['memory_mode'], device=device)
+        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
     else:
-        train_data = PatchDataset(training_source, memory_mode=params['memory_mode'],  device=device)
+        train_data = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
 
     # load test data into memory
@@ -261,9 +261,21 @@ def PixAdminTransform(
                 if itercounter>=( params['logstep'] ):
                     itercounter = 0
 
-                    # Evaluate Model and save model
-
+                    # Validate and Test the model and save model
                     log_dict = {}
+                    
+                    for name in training_source.keys():
+                        agg_preds,val_census = [],[]
+                        for idx in range(len(train_data.Ys_val[name])):
+                            train_data.get_single_validation_item(idx, name)
+                            agg_preds.append(mynet.forward_one_or_more(sample))
+                            val_census.append(sample[1]) 
+                        r2, mae, mse, mape = compute_performance_metrics(agg_preds, val_census)
+                        this_log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
+                        for key in this_log_dict.keys():
+                            log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
+                    
+                    # Test Model
                     for test_dataset_name, values in validation_data.items():
                         logging.info(f'Evaluating Dataset of {test_dataset_name}')
                         val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
