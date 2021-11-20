@@ -237,7 +237,7 @@ class PatchDataset(torch.utils.data.Dataset):
         self.features = {}
         self.Ys = {}
         self.Masks = {}
-        for i, (name, rs)  in enumerate(rawsets.items()):
+        for i, (name, rs)  in tqdm(enumerate(rawsets.items())):
 
             with open(rs['vars'], "rb") as f: 
                 tr_census, tr_regions, tr_valid_data_mask, tY, tMasks, tBBox = pickle.load(f)
@@ -279,7 +279,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.features = {}
         self.Ys = {}
         self.Masks = {}
-        for i, (name, rs)  in enumerate(rawsets.items()):
+        for i, (name, rs) in (enumerate(rawsets.items())):
 
             with open(rs['vars'], "rb") as f:
                 tr_census, tr_regions, tr_valid_data_mask, tY, tMasks, tBBox = pickle.load(f)

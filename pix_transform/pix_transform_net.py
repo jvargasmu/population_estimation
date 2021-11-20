@@ -129,10 +129,11 @@ class PixScaleNet(nn.Module):
         self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]
 
 
-    def forward(self, inputs, mask=None, predict_map=False):
+    def forward(self, inputs, mask=None, predict_map=False, forward_only=False):
 
         # Check if the image is too large for singe forward pass
-        if torch.tensor(inputs.shape[2:4]).prod()>1500**2:
+        PS = 1500 if forward_only else 1500
+        if torch.tensor(inputs.shape[2:4]).prod()>PS**2:
             return self.forward_batchwise(inputs, mask)
 
         if (mask is not None) and (not predict_map):
@@ -167,10 +168,10 @@ class PixScaleNet(nn.Module):
                 return inputs.cpu(), scale.cpu()
 
 
-    def forward_batchwise(self, inputs,mask=None, predict_map=False, return_scale=False): 
+    def forward_batchwise(self, inputs, mask=None, predict_map=False, return_scale=False, forward_only=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
-        PS = 1300
+        PS = 1300 if forward_only else 1300
         oh, ow = inputs.shape[-2:]
         if predict_map:
             outvar = torch.zeros((1,1,oh, ow), dtype=torch.float32, device='cpu')
@@ -183,12 +184,12 @@ class PixScaleNet(nn.Module):
             for oi in range(0,ow,PS):
                 if (not predict_map) and (not self.convnet):
                     if mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
-                        outvar += self( inputs[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3))
+                        outvar += self( inputs[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3), forward_only=forward_only)
                 elif (not predict_map) and self.convnet:
                     out, _ = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True)
                     outvar += out.sum().cpu()
                 else:
-                    outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True)
+                    outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True, forward_only=forward_only)
 
         if not predict_map:    
             out = outvar
