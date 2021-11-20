@@ -48,7 +48,7 @@ def mean_absolute_percentage_error(y_true, y_pred):
     y_true = check_array(y_true.reshape(-1,1))
     y_pred = check_array(y_pred.reshape(-1,1))
     
-    zeromask = (y_true==0).sum()
+    zeromask = (y_true!=0)
     y_true, y_pred = y_true[zeromask], y_pred[zeromask]  
 
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
