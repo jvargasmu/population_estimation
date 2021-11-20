@@ -449,7 +449,7 @@ def main():
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
 
-    parser.add_argument("--memory_mode", "-mm", type=bool, default=False, help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory!")
+    parser.add_argument("--memory_mode", "-mm", nargs='+', help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory!")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
 
     parser.add_argument("--validation_split", "-vs", type=float, default=0.1, help="Evealuate the model after 'logstep' batchiterations.")
@@ -460,6 +460,7 @@ def main():
     args.train_dataset_name = args.train_dataset_name[0].split(",")
     args.train_level = args.train_level[0].split(",")
     args.test_dataset_name = args.test_dataset_name[0].split(",")
+    args.memory_mode = args.memory_mode[0].split(",")
 
     superpixel_with_pix_data( 
         args.train_dataset_name,
