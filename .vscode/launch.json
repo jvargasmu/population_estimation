@@ -102,7 +102,7 @@
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-lstep", "400",
+                "-lstep", "10",
                 "-mm", "True",
             ]
         },

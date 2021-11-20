@@ -136,6 +136,12 @@ class PixScaleNet(nn.Module):
         if torch.tensor(inputs.shape[2:4]).prod()>PS**2:
             return self.forward_batchwise(inputs, mask)
 
+        if mask is not None and len(mask.shape)==2:
+            mask = mask.unsqueeze(0)
+        
+        if len(inputs.shape)==3:
+            inputs = inputs.unsqueeze(0)
+
         if (mask is not None) and (not predict_map):
             mask = mask.to(self.device)
             inputs = inputs[:,:,mask[0]].unsqueeze(3)

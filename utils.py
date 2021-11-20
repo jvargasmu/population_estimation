@@ -54,6 +54,16 @@ def mean_absolute_percentage_error(y_true, y_pred):
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
 
+def compute_performance_metrics_arrays(preds, gt): 
+
+    r2 = r2_score(gt, preds)
+    mae = mean_absolute_error(gt, preds)
+    mse = mean_squared_error(gt, preds)
+    mape = mean_absolute_percentage_error(gt,preds)
+
+    return r2, mae, mse, mape
+
+
 def compute_performance_metrics(preds_dict, gt_dict):
     assert len(preds_dict) == len(gt_dict)
 
@@ -67,12 +77,7 @@ def compute_performance_metrics(preds_dict, gt_dict):
     preds = np.array(preds).astype(np.float)
     gt = np.array(gt).astype(np.float)
 
-    r2 = r2_score(gt, preds)
-    mae = mean_absolute_error(gt, preds)
-    mse = mean_squared_error(gt, preds)
-    mape = mean_absolute_percentage_error(gt,preds)
-
-    return r2, mae, mse, mape
+    return compute_performance_metrics_arrays(preds, gt)
 
 
 def write_geolocated_image(image, output_path, src_geo_transform, src_projection):
@@ -369,7 +374,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         rmin, rmax, cmin, cmax = self.BBox_val[name][k]
         X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_val[name][k])
-        Mask = torch.from_numpy(self.Masks_val[name][k]) 
+        Mask = torch.from_numpy(self.Masks_val[name][k])
+        # Mask = Mask.view((1,rmax-rmin, cmax-cmin))
         return X, Y, Mask
 
     def __getitem__(self,idx):
