@@ -267,6 +267,7 @@ def superpixel_with_pix_data(
     log_step,
     random_seed,
     validation_split,
+    weights
     ):
 
     ####  define parameters  ########################################################
@@ -294,7 +295,8 @@ def superpixel_with_pix_data(
             'input_variables': list(cfg.input_paths[train_dataset_name[0]].keys()),
             'memory_mode': memory_mode,
             'random_seed': random_seed,
-            'validation_split': validation_split
+            'validation_split': validation_split,
+            'weights': weights
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -446,7 +448,8 @@ def main():
     # parser.add_argument("rst_wp_regions_path", type=str,
                         # help="Raster of WorldPop administrative boundaries information") 
     parser.add_argument("--train_dataset_name", "-train", type=str, help="Train Dataset name (separated by commas)", required=True)
-    parser.add_argument("--train_level", "-train_lvl", type=str,  default='c', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
+    parser.add_argument("--train_level", "-train_lvl", type=str,  default='c', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ")
+    parser.add_argument("--train_weight", "-train_w", type=str,  default='1', help="ordered by --train_dataset_name weighting of the samples in the datasets (separated by commas) ")
     parser.add_argument("--test_dataset_name", "-test", type=str, help="Test Dataset name (separated by commas)", required=True)
 
     parser.add_argument("--optimizer", "-optim", type=str, default="adamw", help=" ")
@@ -464,6 +467,9 @@ def main():
 
     args.train_dataset_name = unroll_arglist(args.train_dataset_name)
     args.train_level = unroll_arglist(args.train_level, 'c', len(args.train_dataset_name))
+    args.train_weight = unroll_arglist(args.train_weight, '1', len(args.train_dataset_name))
+    args.train_weight = [ float(el) for el in args.train_weight ]
+    args.train_weight =  [ el/sum(args.train_weight) for el in args.train_weight ]
     args.test_dataset_name = unroll_arglist(args.test_dataset_name)
     args.memory_mode = unroll_arglist(args.memory_mode, 'm', len(args.train_dataset_name))
 
@@ -479,6 +485,7 @@ def main():
         args.log_step,
         args.random_seed,
         args.validation_split,
+        args.train_weight
     )
 
 

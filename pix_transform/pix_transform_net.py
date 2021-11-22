@@ -209,17 +209,17 @@ class PixScaleNet(nn.Module):
 
     def forward_one_or_more(self, sample, mask=None):
 
-        total_sum = 0
-        valid_samples  = 0
+        summings = []
+        valid_samples  = 0 
         for i, inp in enumerate(sample):
             if inp[2].sum()>0:
 
-                total_sum += self(inp[0], inp[2]).cpu()
+                summings.append( self(inp[0], inp[2]).cpu())
                 valid_samples += 1
 
         if valid_samples==0:
             return None    
-        return total_sum
+        return summings
 
 
 
