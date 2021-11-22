@@ -265,7 +265,7 @@ def PixAdminTransform(
                     log_dict = {}
                     
                     for name in training_source.keys():
-                        logging.info(f'Validating dataset of {test_dataset_name}')
+                        logging.info(f'Validating dataset of {name}')
                         agg_preds,val_census = [],[]
                         for idx in range(len(train_data.Ys_val[name])):
                             X, Y, Mask = train_data.get_single_validation_item(idx, name) 
@@ -275,7 +275,7 @@ def PixAdminTransform(
                         r2, mae, mse, mape = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
                         this_log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
                         for key in this_log_dict.keys():
-                            log_dict[test_dataset_name + '/validation/' + key ] = this_log_dict[key]
+                            log_dict[name + '/validation/' + key ] = this_log_dict[key]
                         torch.cuda.empty_cache()
                     
                     # Test Model
