@@ -293,10 +293,12 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             with open(rs['vars'], "rb") as f:
                 _, _, _, tY, tMasks, tBBox = pickle.load(f)
 
-            if memory_mode:
+            if memory_mode[i]=='m':
                 self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
-            else:
+            elif memory_mode[i]=='d':
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
+            else:
+                raise Exception(f"Wrong memory mode for {name}. It should be 'd' or 'm' in a comma separated list")
             
             tY = np.asarray(tY)
             tMasks = np.asarray(tMasks, dtype=object)

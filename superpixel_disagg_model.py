@@ -434,22 +434,27 @@ def superpixel_with_pix_data(
 
     return
 
+def unroll_arglist(arg_list, fill=None, target_len=None):
+    arg_list = arg_list.split(",")
+    if fill is not None:
+        arg_list.extend([fill]*(target_len- len(arg_list)))
+    return arg_list
 
 def main():
     parser = argparse.ArgumentParser()
     # parser.add_argument("preproc_data_path", type=str, help="Preprocessed data of regions (pickle file)")
     # parser.add_argument("rst_wp_regions_path", type=str,
                         # help="Raster of WorldPop administrative boundaries information") 
-    parser.add_argument("--train_dataset_name", "-train", nargs='+', help="Train Dataset name (separated by commas)", required=True)
-    parser.add_argument("--train_level", "-train_lvl", nargs='+', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
-    parser.add_argument("--test_dataset_name", "-test", nargs='+', help="Test Dataset name (separated by commas)", required=True)
+    parser.add_argument("--train_dataset_name", "-train", type=str, help="Train Dataset name (separated by commas)", required=True)
+    parser.add_argument("--train_level", "-train_lvl", type=str,  default='c', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ", required=True)
+    parser.add_argument("--test_dataset_name", "-test", type=str, help="Test Dataset name (separated by commas)", required=True)
 
     parser.add_argument("--optimizer", "-optim", type=str, default="adamw", help=" ")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
 
-    parser.add_argument("--memory_mode", "-mm", type=bool, default=False, help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory!")
+    parser.add_argument("--memory_mode", "-mm", type=str, default='m', help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory! m:load into memory; d: load from a hdf5 file on disk. (separated by commas)")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
 
     parser.add_argument("--validation_split", "-vs", type=float, default=0.1, help="Evealuate the model after 'logstep' batchiterations.")
@@ -457,9 +462,11 @@ def main():
     
     args = parser.parse_args()
 
-    args.train_dataset_name = args.train_dataset_name[0].split(",")
-    args.train_level = args.train_level[0].split(",")
-    args.test_dataset_name = args.test_dataset_name[0].split(",")
+    args.train_dataset_name = unroll_arglist(args.train_dataset_name)
+    args.train_level = unroll_arglist(args.train_level, 'c', len(args.train_dataset_name))
+    args.test_dataset_name = unroll_arglist(args.test_dataset_name)
+    args.memory_mode = unroll_arglist(args.memory_mode, 'm', len(args.train_dataset_name))
+
 
     superpixel_with_pix_data( 
         args.train_dataset_name,
