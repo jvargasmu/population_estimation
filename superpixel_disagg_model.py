@@ -467,7 +467,6 @@ def main():
     args.test_dataset_name = unroll_arglist(args.test_dataset_name)
     args.memory_mode = unroll_arglist(args.memory_mode, 'm', len(args.train_dataset_name))
 
-
     superpixel_with_pix_data( 
         args.train_dataset_name,
         args.train_level,

@@ -305,6 +305,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             tBBox = np.asarray(tBBox)
 
             split_int =int(len(tY)*validation_split)
+            # np.random.seed(0)
             choice_val = np.random.choice(range(len(tY)), size=(split_int,), replace=False)   
             ind_val = np.zeros(len(tY), dtype=bool)
             ind_val[choice_val] = True 
