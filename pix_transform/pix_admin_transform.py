@@ -138,14 +138,21 @@ def PixAdminTransform(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    #### prepare_patches #########################################################################
-
+    #### prepare Dataset #########################################################################
 
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"], params["weights"])
+        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"], params["weights"], params["custom_sampler_weights"])
     else:
         train_data = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
+    if params["sampler"] in ['custom', 'natural']:
+        weights = train_data.all_natural_weights if params["sampler"]=="natural" else train_data.custom_sampler_weights
+        sampler = torch.utils.data.WeightedRandomSampler(weights, len(weights), replacement=False)
+        shuffle = False
+    else:
+        logging.info(f'Using no weighted sampler') 
+        sampler = None
+        shuffle = True
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=shuffle, sampler=sampler)
 
     # load test data into memory
     for name,v in validation_data.items(): 
