@@ -231,7 +231,7 @@
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-vs", "0.2"
+                "-vs", "0.2",
                 "-mm", "m,m",
             ]
         },
@@ -265,6 +265,7 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            //"justMyCode": false,
             "args": [ 
                 "-train", "uga,tza",
                 "-train_lvl", "f,c",
@@ -274,7 +275,10 @@
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "-mm", "True",
-                "-vs", "0.2"
+                "-vs", "0.2",
+                "-mm", "m,m",
+                "--sampler", "custom",
+                "--custom_sampler_weights", "1,100"
             ]
         }
         {
@@ -308,6 +312,7 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            //"justMyCode": false,
             "args": [ 
                 "-train", "uga,tza,rwa,cod",
                 "-train_lvl", "f,c,f,f",
@@ -316,10 +321,11 @@
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-lstep", "4000",
+                "-lstep", "40",
                 "-vs", "0.2",
                 "-mm", "m,m,m,m",
-                "--train_weight", "1,10,1,1"
+                "--sampler", "custom",
+                "--custom_sampler_weights", "1,100,1,1"
             ]
         },
         {

@@ -275,7 +275,7 @@ class PatchDataset(torch.utils.data.Dataset):
 
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, rawsets, memory_mode, device, validation_split, weights):
+    def __init__(self, rawsets, memory_mode, device, validation_split, loss_weights, sampler_weights):
         self.device = device
         
         print("Preparing dataloader for: ", list(rawsets.keys()))
@@ -283,7 +283,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.loc_list = []
         self.loc_list_val = []
         self.all_weights = []
-        self.natural_weight = []
+        self.all_sampler_weights = []
+        self.all_natural_weights = []
         self.BBox = {}
         self.BBox_val = {}
         self.Ys = {}
@@ -329,9 +330,11 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.Masks[name] = tMasks[ind_train][valid_boxes]
             self.loc_list.extend( [(name, k) for k,_ in enumerate(self.BBox[name])])
 
-            self.weight_list[name] =  torch.tensor([weights[i]]*len(self.Ys[name]), requires_grad=True)
+            self.weight_list[name] =  torch.tensor([loss_weights[i]]*len(self.Ys[name]), requires_grad=True)
             self.all_weights.extend(self.weight_list[name])
-            self.natural_weight.append([len(self.Ys[name])]*len(self.Ys[name]))
+ 
+            self.all_sampler_weights.extend( [sampler_weights[i]] * len(self.Ys[name]) )
+            self.all_natural_weights.extend([len(self.Ys[name])] * len(self.Ys[name]))
 
         self.dims = self.features[name].shape[1]
         
@@ -354,7 +357,11 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         # sumpixels_triplets = [(patchsize[id1]+patchsize[id2]+patchsize[id3]) for id1,id2,id3 in triplets ]
         # self.small_triplets = triplets[np.asarray(sumpixels_triplets)<max_pix_forward**2]
 
+        # prepare the weights
         self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
+        self.custom_sampler_weights = [ self.all_sampler_weights[idx1]+self.all_sampler_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
+        self.natural_sampler_weights = [ self.all_natural_weights[idx1]+self.all_natural_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
+
 
 
     def __len__(self):

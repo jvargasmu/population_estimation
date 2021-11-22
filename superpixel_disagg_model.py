@@ -267,7 +267,9 @@ def superpixel_with_pix_data(
     log_step,
     random_seed,
     validation_split,
-    weights
+    weights,
+    sampler,
+    custom_sampler_weights
     ):
 
     ####  define parameters  ########################################################
@@ -296,7 +298,9 @@ def superpixel_with_pix_data(
             'memory_mode': memory_mode,
             'random_seed': random_seed,
             'validation_split': validation_split,
-            'weights': weights
+            'weights': weights,
+            'sampler': sampler,
+            'custom_sampler_weights': custom_sampler_weights
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -309,6 +313,7 @@ def superpixel_with_pix_data(
 
     wandb.init(project="HAC", entity="nandometzger", config=params)
 
+    # Fix all random seeds
     torch.manual_seed(random_seed)
     random.seed(random_seed)
     np.random.seed(random_seed)
@@ -317,10 +322,6 @@ def superpixel_with_pix_data(
 
     assert(all(elem=="c" or elem=="f" for elem in train_level))
 
-    train_dataset = {}
-    test_dataset = {}
-    train_level_dict = {}
-    test_level_dict = {}
     training_source = {}
     validation_data ={}
     disaggregation_data={}
@@ -388,18 +389,7 @@ def superpixel_with_pix_data(
         
         validation_data[ds] = []
         validation_data[ds] = {"features": h5_filename, "vars": test_var_filename, "disag": test_disag_filename }
-
-            
-            # Path(f"datasets/test/{ds}").mkdir(parents=True, exist_ok=True)
-            # with open(datapath, 'wb') as handle:
-            #     # TODO: better save them as numpy arrays! torch get saved as huge binaries!
-            #     pickle.dump([validation_data[ds], disaggregation_data[ds]], handle, protocol=pickle.HIGHEST_PROTOCOL)
     
-    
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
- 
-
     res = PixAdminTransform(
         training_source=training_source,
         validation_data=validation_data,
@@ -449,10 +439,13 @@ def main():
                         # help="Raster of WorldPop administrative boundaries information") 
     parser.add_argument("--train_dataset_name", "-train", type=str, help="Train Dataset name (separated by commas)", required=True)
     parser.add_argument("--train_level", "-train_lvl", type=str,  default='c', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ")
-    parser.add_argument("--train_weight", "-train_w", type=str,  default='1', help="ordered by --train_dataset_name weighting of the samples in the datasets (separated by commas) ")
     parser.add_argument("--test_dataset_name", "-test", type=str, help="Test Dataset name (separated by commas)", required=True)
 
+    parser.add_argument("--sampler", "-sap", type=str, default=None, help="Options: natural (not recommended yet), custom (see --custom_sampler_weights), <blank> (no sampler)")
+    parser.add_argument("--custom_sampler_weights", "-csw", type=str,  default='1', help="ordered by --train_dataset_name weight for the sampler (separated by commas) ")
+
     parser.add_argument("--optimizer", "-optim", type=str, default="adamw", help=" ")
+    parser.add_argument("--train_weight", "-train_w", type=str,  default='1', help="ordered by --train_dataset_name weighting of the samples in the datasets (separated by commas) ")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
@@ -465,13 +458,21 @@ def main():
     
     args = parser.parse_args()
 
+
+    # check arguments and fill with default values
     args.train_dataset_name = unroll_arglist(args.train_dataset_name)
     args.train_level = unroll_arglist(args.train_level, 'c', len(args.train_dataset_name))
+    args.test_dataset_name = unroll_arglist(args.test_dataset_name)
+    args.memory_mode = unroll_arglist(args.memory_mode, 'm', len(args.train_dataset_name))
+    
     args.train_weight = unroll_arglist(args.train_weight, '1', len(args.train_dataset_name))
     args.train_weight = [ float(el) for el in args.train_weight ]
     args.train_weight =  [ el/sum(args.train_weight) for el in args.train_weight ]
-    args.test_dataset_name = unroll_arglist(args.test_dataset_name)
-    args.memory_mode = unroll_arglist(args.memory_mode, 'm', len(args.train_dataset_name))
+
+    args.custom_sampler_weights = unroll_arglist(args.custom_sampler_weights, '1', len(args.train_dataset_name))
+    args.custom_sampler_weights = [ float(el) for el in args.custom_sampler_weights ]
+    args.custom_sampler_weights =  [ el/sum(args.custom_sampler_weights) for el in args.custom_sampler_weights ]
+
 
     superpixel_with_pix_data( 
         args.train_dataset_name,
@@ -485,7 +486,9 @@ def main():
         args.log_step,
         args.random_seed,
         args.validation_split,
-        args.train_weight
+        args.train_weight,
+        args.sampler,
+        args.custom_sampler_weights
     )
 
 
