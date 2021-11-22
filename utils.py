@@ -275,19 +275,22 @@ class PatchDataset(torch.utils.data.Dataset):
 
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, rawsets, memory_mode, device, validation_split):
+    def __init__(self, rawsets, memory_mode, device, validation_split, weights):
         self.device = device
         
         print("Preparing dataloader for: ", list(rawsets.keys()))
         self.features = {}
         self.loc_list = []
         self.loc_list_val = []
+        self.all_weights = []
+        self.natural_weight = []
         self.BBox = {}
         self.BBox_val = {}
         self.Ys = {}
         self.Ys_val = {}
         self.Masks = {}
         self.Masks_val = {}
+        self.weight_list = {}
         for i, (name, rs) in (enumerate(rawsets.items())):
 
             with open(rs['vars'], "rb") as f:
@@ -311,15 +314,24 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             ind_val[choice_val] = True 
             ind_train = ~ind_val
 
-            self.Ys_val[name] =  tY[ind_val]
-            self.Masks_val[name] = tMasks[ind_val]
+            # Preprate validation variables
             self.BBox_val[name] = tBBox[ind_val]
+            valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
+            self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
+            self.Ys_val[name] =  tY[ind_val][valid_val_boxes]
+            self.Masks_val[name] = tMasks[ind_val][valid_val_boxes]
             self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
-            
-            self.Ys[name] =  tY[ind_train]
-            self.Masks[name] = tMasks[ind_train]
+
             self.BBox[name] = tBBox[ind_train]
+            valid_boxes = (self.BBox[name][:,1]-self.BBox[name][:,0]) * (self.BBox[name][:,3]-self.BBox[name][:,2])>0
+            self.BBox[name] = self.BBox[name][valid_boxes] 
+            self.Ys[name] =  tY[ind_train][valid_boxes]
+            self.Masks[name] = tMasks[ind_train][valid_boxes]
             self.loc_list.extend( [(name, k) for k,_ in enumerate(self.BBox[name])])
+
+            self.weight_list[name] =  torch.tensor([weights[i]]*len(self.Ys[name]), requires_grad=True)
+            self.all_weights.extend(self.weight_list[name])
+            self.natural_weight.append([len(self.Ys[name])]*len(self.Ys[name]))
 
         self.dims = self.features[name].shape[1]
         
@@ -334,7 +346,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
         pairs = np.asarray(pairs) 
         sumpixels_pairs12 = np.take(patchsize, pairs[:,0]) + np.take(patchsize, pairs[:,1])  
-        self.small_pairs = pairs[np.asarray(sumpixels_pairs12)<max_pix_forward**2]
+        pairs = pairs[np.asarray(sumpixels_pairs12)<max_pix_forward**2]
+        self.small_pairs = pairs[np.asarray(sumpixels_pairs12)>0]
 
         # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
         # triplets = np.asarray(triplets, dtype=object)
@@ -365,8 +378,9 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         rmin, rmax, cmin, cmax = self.BBox[name][k]
         X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys[name][k])
-        Mask = torch.from_numpy(self.Masks[name][k]) 
-        return X, Y, Mask
+        Mask = torch.from_numpy(self.Masks[name][k])
+        weight = self.weight_list[name][k]
+        return X, Y, Mask, weight
 
     def get_single_validation_item(self, idx, name=None):
         output = []
@@ -378,7 +392,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_val[name][k])
         Mask = torch.from_numpy(self.Masks_val[name][k])
-        # Mask = Mask.view((1,rmax-rmin, cmax-cmin))
+        if np.prod(X.shape[1:])==0:
+            raise Exception("no values")
         return X, Y, Mask
 
     def __getitem__(self,idx):

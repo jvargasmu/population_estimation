@@ -142,7 +142,7 @@ def PixAdminTransform(
 
 
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
+        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"], params["weights"])
     else:
         train_data = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
@@ -240,17 +240,18 @@ def PixAdminTransform(
                 optimizer.zero_grad()
                 
                 # Feed forward the network
-                y_pred = mynet.forward_one_or_more(sample)
+                y_pred_list = mynet.forward_one_or_more(sample)
                 
                 #check if any valid values are there, else skip   
-                if y_pred is None:
+                if y_pred_list is None:
                     continue
                 
-                # Sum over the census data per patch
-                y = [torch.sum(torch.tensor([samp[1] for samp in sample]))]
+                # Sum over the census data per patch 
+                y_pred = torch.sum(torch.stack([pred*samp[3] for pred,samp in zip(y_pred_list, sample)]))
+                y_gt = torch.sum(torch.tensor([samp[1]*samp[3] for samp in sample]))
                 
                 # Backwards
-                loss = myloss(y_pred, y[0])
+                loss = myloss(y_pred, y_gt)
                 loss.backward()
                 optimizer.step()
 

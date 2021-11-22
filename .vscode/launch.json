@@ -232,6 +232,7 @@
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "-vs", "0.2"
+                "-mm", "m,m",
             ]
         },
         {
@@ -251,7 +252,7 @@
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-mm", "True",
+                "-mm", "m,m",
                 "-vs", "0.2"
             ]
         },
@@ -311,13 +312,14 @@
                 "-train", "uga,tza,rwa,cod",
                 "-train_lvl", "f,c,f,f",
                 "-test", "tza,uga",
-                "-lr", "0.0001",
+                "-lr", "0.00003",
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "-lstep", "4000",
                 "-vs", "0.2",
-                "-mm", "m,m,m,m"
+                "-mm", "m,m,m,m",
+                "--train_weight", "1,10,1,1"
             ]
         },
         {
@@ -335,11 +337,12 @@
                 "-test", "tza,uga",
                 "-lr", "0.0001",
                 "-optim", "adam",
-                "-wr", "0.001",
+                "-wr", "0.0001",
                 "-adamwr", "0.",
                 "-lstep", "4000",
                 "-vs", "0.2",
-                "-mm", "m,m,m,d"
+                "-mm", "m,m,m,m",
+                "--train_weight", "10,1,1,1"
             ]
         }
     ]
