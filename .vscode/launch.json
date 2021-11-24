@@ -271,16 +271,16 @@
                 "-train", "uga,tza",
                 "-train_lvl", "f,c",
                 "-test", "tza,uga",
-                "-lr", "0.00001",
+                "-lr", "0.00003",
                 "-optim", "adam",
-                "-wr", "0.1",
+                "-wr", "0.01",
                 "-adamwr", "0.001",
                 "-mm", "True",
                 "-vs", "0.2",
-                "-mm", "m,m",
+                "-mm", "d,d",
                 "--sampler", "custom",
-                "--custom_sampler_weights", "1,100",
-                "--dropout", "0.5"
+                "--custom_sampler_weights", "1,1000",
+                "--dropout", "0.0"
             ]
         }
         {

@@ -330,7 +330,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.Masks[name] = tMasks[ind_train][valid_boxes]
             self.loc_list.extend( [(name, k) for k,_ in enumerate(self.BBox[name])])
 
-            self.weight_list[name] =  torch.tensor([loss_weights[i]]*len(self.Ys[name]), requires_grad=True)
+            self.weight_list[name] =  torch.tensor([loss_weights[i]]*len(self.Ys[name]), requires_grad=False)
             self.all_weights.extend(self.weight_list[name])
  
             self.all_sampler_weights.extend( [sampler_weights[i]] * len(self.Ys[name]) )
@@ -383,9 +383,9 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         output = []
         name, k = self.idx_to_loc(idx)
         rmin, rmax, cmin, cmax = self.BBox[name][k]
-        X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
+        X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys[name][k])
-        Mask = torch.from_numpy(self.Masks[name][k])
+        Mask = torch.tensor(self.Masks[name][k])
         weight = self.weight_list[name][k]
         return X, Y, Mask, weight
 
@@ -396,9 +396,9 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         else:
             k = idx
         rmin, rmax, cmin, cmax = self.BBox_val[name][k]
-        X = torch.from_numpy(self.features[name][0,:,rmin:rmax, cmin:cmax])
+        X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_val[name][k])
-        Mask = torch.from_numpy(self.Masks_val[name][k])
+        Mask = torch.tensor(self.Masks_val[name][k])
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
         return X, Y, Mask

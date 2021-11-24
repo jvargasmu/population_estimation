@@ -152,7 +152,7 @@ def PixAdminTransform(
         logging.info(f'Using no weighted sampler') 
         sampler = None
         shuffle = True
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=shuffle, sampler=sampler)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=shuffle, sampler=sampler, num_workers=0)
 
     # load test data into memory
     for name,v in validation_data.items(): 
