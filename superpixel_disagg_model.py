@@ -269,7 +269,8 @@ def superpixel_with_pix_data(
     validation_split,
     weights,
     sampler,
-    custom_sampler_weights
+    custom_sampler_weights,
+    dropout
     ):
 
     ####  define parameters  ########################################################
@@ -300,7 +301,8 @@ def superpixel_with_pix_data(
             'validation_split': validation_split,
             'weights': weights,
             'sampler': sampler,
-            'custom_sampler_weights': custom_sampler_weights
+            'custom_sampler_weights': custom_sampler_weights,
+            'dropout': dropout
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -449,6 +451,7 @@ def main():
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
+    parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="propout probability ")
 
     parser.add_argument("--memory_mode", "-mm", type=str, default='m', help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory! m:load into memory; d: load from a hdf5 file on disk. (separated by commas)")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
@@ -488,7 +491,8 @@ def main():
         args.validation_split,
         args.train_weight,
         args.sampler,
-        args.custom_sampler_weights
+        args.custom_sampler_weights,
+        args.dropout
     )
 
 

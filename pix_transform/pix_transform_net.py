@@ -103,7 +103,8 @@ class PixTransformNet(nn.Module):
 
 class PixScaleNet(nn.Module):
 
-    def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001, device="cuda" if torch.cuda.is_available() else "cpu", loss=None):
+    def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
+        device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.):
         super(PixScaleNet, self).__init__()
 
         self.channels_in = channels_in
@@ -116,14 +117,23 @@ class PixScaleNet(nn.Module):
         k1,k2,k3,k4 = kernel_size 
         self.convnet = torch.any(torch.tensor(kernel_size)>1)
 
-        self.scalenet = nn.Sequential(                      nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
-                                      nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
-                                      nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
-                                    #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
-                                    #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
-                                      nn.ReLU(inplace=True),nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2),
-                                      nn.ReLU(inplace=True)
-                                      )
+        if dropout>0.0:
+            self.scalenet = nn.Sequential(
+                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
+                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2),
+                                                                 nn.ReLU(inplace=True)
+                            )
+        else:
+            self.scalenet = nn.Sequential(                      nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
+                        #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
+                        #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
+                            nn.ReLU(inplace=True),nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2),
+                            nn.ReLU(inplace=True)
+                            )
         
         self.params_with_regularizer = []
         self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]

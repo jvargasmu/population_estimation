@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Py: TZA preprocessing_pop_data.py",
             "type": "python",
@@ -272,13 +273,14 @@
                 "-test", "tza,uga",
                 "-lr", "0.00001",
                 "-optim", "adam",
-                "-wr", "0.001",
-                "-adamwr", "0.",
+                "-wr", "0.1",
+                "-adamwr", "0.001",
                 "-mm", "True",
                 "-vs", "0.2",
                 "-mm", "m,m",
                 "--sampler", "custom",
-                "--custom_sampler_weights", "1,100"
+                "--custom_sampler_weights", "1,100",
+                "--dropout", "0.5"
             ]
         }
         {
@@ -319,13 +321,14 @@
                 "-test", "tza,uga",
                 "-lr", "0.00003",
                 "-optim", "adam",
-                "-wr", "0.001",
+                "-wr", "0.01",
                 "-adamwr", "0.",
                 "-lstep", "40",
                 "-vs", "0.2",
                 "-mm", "m,m,m,m",
                 "--sampler", "custom",
-                "--custom_sampler_weights", "1,100,1,1"
+                "--custom_sampler_weights", "1,1000,1,1",
+
             ]
         },
         {

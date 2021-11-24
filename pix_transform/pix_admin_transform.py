@@ -193,6 +193,7 @@ def PixAdminTransform(
             mynet = PixScaleNet(channels_in=train_data.num_feats(),
                             weights_regularizer=params['weights_regularizer'],
                             device=device, loss=params['loss'], kernel_size=params['kernel_size'],
+                            dropout=params["dropout"]
                             ).train().to(device)
 
     if params["optim"]=="adam":
