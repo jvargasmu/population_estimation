@@ -216,8 +216,8 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
 
     if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
-            h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0)
-            for i,feat in enumerate(tr_features):
+            h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0, chunks=(1,dim,512,512))
+            for i,feat in tqdm(enumerate(tr_features)):
                 h5_features[:,i] = feat
         
     with open(var_filename, 'wb') as handle:
@@ -232,8 +232,8 @@ def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename, 
 
     if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
-            h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0)
-            for i,feat in enumerate(val_features):
+            h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0, chunks=(1,dim,512,512))
+            for i,feat in tqdm(enumerate(val_features)):
                 h5_features[:,i] = feat
             
     with open(var_filename, 'wb') as handle:
