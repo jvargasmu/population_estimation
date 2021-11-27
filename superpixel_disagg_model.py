@@ -267,6 +267,7 @@ def superpixel_with_pix_data(
     log_step,
     random_seed,
     validation_split,
+    validation_fold,
     weights,
     sampler,
     custom_sampler_weights,
@@ -299,6 +300,7 @@ def superpixel_with_pix_data(
             'memory_mode': memory_mode,
             'random_seed': random_seed,
             'validation_split': validation_split,
+            'validation_fold': validation_fold,
             'weights': weights,
             'sampler': sampler,
             'custom_sampler_weights': custom_sampler_weights,
@@ -457,6 +459,7 @@ def main():
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
 
     parser.add_argument("--validation_split", "-vs", type=float, default=0.1, help="Evealuate the model after 'logstep' batchiterations.")
+    parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
     parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run.")
     
     args = parser.parse_args()
@@ -489,10 +492,11 @@ def main():
         args.log_step,
         args.random_seed,
         args.validation_split,
+        args.validation_fold,
         args.train_weight,
         args.sampler,
         args.custom_sampler_weights,
-        args.dropout
+        args.dropout,
     )
 
 

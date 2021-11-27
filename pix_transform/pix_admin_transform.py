@@ -142,7 +142,7 @@ def PixAdminTransform(
     #### prepare Dataset #########################################################################
 
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"], params["weights"], params["custom_sampler_weights"])
+        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"], params["validation_fold"], params["weights"], params["custom_sampler_weights"])
     else:
         train_data = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
     if params["sampler"] in ['custom', 'natural']:

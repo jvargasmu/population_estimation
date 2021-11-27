@@ -3,6 +3,7 @@ from osgeo import gdal
 import numpy as np
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.utils import check_array
+from sklearn.model_selection import KFold
 from tqdm import tqdm
 import copy
 from pylab import figure, imshow, matshow, grid, savefig
@@ -275,7 +276,7 @@ class PatchDataset(torch.utils.data.Dataset):
 
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, rawsets, memory_mode, device, validation_split, loss_weights, sampler_weights):
+    def __init__(self, rawsets, memory_mode, device, validation_split, validation_fold, loss_weights, sampler_weights):
         self.device = device
         
         print("Preparing dataloader for: ", list(rawsets.keys()))
@@ -308,9 +309,17 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             tMasks = np.asarray(tMasks, dtype=object)
             tBBox = np.asarray(tBBox)
 
-            split_int =int(len(tY)*validation_split)
-            np.random.seed(0)
-            choice_val = np.random.choice(range(len(tY)), size=(split_int,), replace=False)   
+            np.random.seed(1610)
+            if validation_fold is not None:
+                kf = KFold(n_splits=5, shuffle=True, random_state=1610)
+                trainidxs, validxs = [],[]
+                for train_index, val_index in kf.split(tY):
+                    trainidxs.append(train_index)
+                    validxs.append(val_index)
+                choice_val = validxs[validation_fold]
+            else:
+                split_int =int(len(tY)*validation_split)
+                choice_val = np.random.choice(range(len(tY)), size=(split_int,), replace=False)   
             ind_val = np.zeros(len(tY), dtype=bool)
             ind_val[choice_val] = True 
             ind_train = ~ind_val
