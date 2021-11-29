@@ -23,6 +23,8 @@ from pix_transform_utils.utils import upsample
 
 from pix_transform.pix_transform_net import PixTransformNet, PixScaleNet
 
+from bayesian_dl.loss import GaussianNLLLoss, LaplacianNLLLoss
+
 
 if 'ipykernel' in sys.modules:
     from tqdm import tqdm_notebook as tqdm
@@ -241,6 +243,10 @@ def PixAdminTransform(
         myloss = LogoutputL1
     elif params['loss'] == 'LogoutputL2':
         myloss = LogoutputL2
+    elif params['loss'] == 'gaussNLL':
+        myloss = GaussianNLLLoss()
+    elif params['loss'] == 'laplaceNLL':
+        myloss = LaplacianNLLLoss()
     else:
         raise Exception("unknown loss!")
         
