@@ -293,6 +293,8 @@ def PixAdminTransform(
                             for key in this_log_dict.keys():
                                 log_dict[name + '/validation/' + key ] = this_log_dict[key]
                             torch.cuda.empty_cache()
+
+                    
                         
                     # Test Model
                     for test_dataset_name, values in validation_data.items():
