@@ -70,8 +70,11 @@ def disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, 
         num_validation_ids
     )
     agg_preds_adj = {id: agg_preds_adj_arr[id] for id in validation_ids}
-    r2_adj, mae_adj, mse_adj, mape_adj = compute_performance_metrics(agg_preds_adj, validation_census)
-    log_dict = {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj, "adjusted/mape": mape_adj} 
+    metrics = compute_performance_metrics(agg_preds_adj, validation_census)
+    log_dict = {}
+    for key,value in metrics.items():
+        log_dict["adjusted/"+key] = value
+    # log_dict = {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj, "adjusted/mape": mape_adj} 
 
     predicted_target_img = predicted_target_img.cpu()
     return predicted_target_img_adjusted.cpu(), log_dict
@@ -113,19 +116,19 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             num_validation_ids
         )
         agg_preds = {id: agg_preds_arr[id] for id in validation_ids}
-        r2, mae, mse, mape = compute_performance_metrics(agg_preds, validation_census)
-        log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
+        metrics = compute_performance_metrics(agg_preds, validation_census)
+        # log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
 
         if disaggregation_data is not None:
 
             predicted_target_img_adjusted, adj_logs = disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
                 num_validation_ids, validation_ids, validation_census, disaggregation_data)
-            log_dict.update(adj_logs)
+            metrics.update(adj_logs)
 
             predicted_target_img_adjusted = predicted_target_img_adjusted.cpu() 
             predicted_target_img = predicted_target_img.cpu()
 
-    return res, log_dict
+    return res, metrics
 
 
 def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_scores):
@@ -169,8 +172,9 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
             'checkpoints/best_mape_adj_{}_{}.pth'.format(dataset_name, wandb.run.name) )
 
-    return best_scores
+    best_scores = best_r2, best_mae, best_mape, best_r2_adj, best_mae_adj, best_mape_adj
 
+    return best_scores
 
 
 def PixAdminTransform(
@@ -333,11 +337,11 @@ def PixAdminTransform(
                                 agg_preds.append(mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy())
                                 val_census.append(Y.cpu().numpy())
 
-                            r2, mae, mse, mape = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
-                            this_log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
-                            best_val_scores[test_dataset_name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, this_log_dict, name, best_val_scores[test_dataset_name])
-                            for key in this_log_dict.keys():
-                                log_dict[name + '/validation/' + key ] = this_log_dict[key]
+                            metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
+                            # this_log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
+                            best_val_scores[test_dataset_name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, name, best_val_scores[test_dataset_name])
+                            for key in metrics.keys():
+                                log_dict[name + '/validation/' + key ] = metrics[key]
                             torch.cuda.empty_cache()
 
                     # Evaluation Model
