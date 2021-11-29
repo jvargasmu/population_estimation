@@ -54,13 +54,20 @@ def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
         mask = [source_regions==idx]
         predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
 
-    return predicted_target_img_adjusted.cpu()
+
+    scalings_array = torch.tensor(list(scalings.values())).numpy()
+    metrics = {
+    "disaggregation/scalings": scalings_array, "disaggregation/mean_scaling": np.mean(scalings_array),
+    "disaggregation/median_scaling": np.median(scalings_array), "disaggregation/min_scaling": np.min(scalings_array),
+    "disaggregation/max_scaling": np.max(scalings_array)  }
+
+    return predicted_target_img_adjusted.cpu(), metrics
 
 
 def disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
     num_validation_ids, validation_ids, validation_census, disaggregation_data):
 
-    predicted_target_img_adjusted = disag_map(predicted_target_img, agg_preds_arr, disaggregation_data)
+    predicted_target_img_adjusted, log_dict = disag_map(predicted_target_img, agg_preds_arr, disaggregation_data)
 
     # Aggregate by fine administrative boundary
     agg_preds_adj_arr = compute_accumulated_values_by_region(
@@ -71,7 +78,6 @@ def disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, 
     )
     agg_preds_adj = {id: agg_preds_adj_arr[id] for id in validation_ids}
     metrics = compute_performance_metrics(agg_preds_adj, validation_census)
-    log_dict = {}
     for key,value in metrics.items():
         log_dict["adjusted/"+key] = value
     # log_dict = {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj, "adjusted/mape": mape_adj} 
