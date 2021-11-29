@@ -10,6 +10,8 @@ from pylab import figure, imshow, matshow, grid, savefig
 import torch
 import pickle
 import h5py
+import wandb
+
 
 def get_properties_dict(data_dict_orig):
     data_dict = []
@@ -52,17 +54,34 @@ def mean_absolute_percentage_error(y_true, y_pred):
     zeromask = (y_true!=0)
     y_true, y_pred = y_true[zeromask], y_pred[zeromask]  
 
-    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+    percentage_error = (y_true - y_pred) / y_true
+
+    return np.mean(np.abs(percentage_error)) * 100, percentage_error * 100
+
+
+def my_mean_absolute_error(y_pred,y_true):
+    errors = y_pred - y_true
+    output_errors = np.average(np.abs(errors), axis=0)
+    return output_errors, errors
 
 
 def compute_performance_metrics_arrays(preds, gt): 
 
     r2 = r2_score(gt, preds)
-    mae = mean_absolute_error(gt, preds)
+    
+    mae, errors = my_mean_absolute_error(gt, preds)
     mse = mean_squared_error(gt, preds)
-    mape = mean_absolute_percentage_error(gt,preds)
+    mape, percentage_error = mean_absolute_percentage_error(gt,preds)
 
-    return r2, mae, mse, mape
+    metrics = {
+    "r2": r2, "mae": mae, "mse": mse, "mape": mape,
+    "aux/errors/errors": errors, "aux/errors/min_errors": np.min(errors), "aux/errors/max_errors":  np.max(errors), "aux/errors/median_error":  np.median(errors), "aux/errors/mean_error":  np.mean(errors), "aux/errors/std_error":  np.std(errors), 
+    "aux/errors/abs/abs_errors": np.abs(errors), "aux/errors/abs/min_abs_errors": np.min(np.abs(errors)), "aux/errors/abs/max_abs_error":  np.max(np.abs(errors)), "aux/errors/abs/median_abs_error":  np.median(np.abs(errors)), "aux/errors/abs/mean_abs_error": np.mean(np.abs(errors)), "aux/errors/abs/std_abs_error": np.std(np.abs(errors)),
+    "aux/errors_percentage/percentage_errors": percentage_error, "aux/errors_percentage/min_percentage_errors": np.min(percentage_error), "aux/errors_percentage/max_percentage_error":  np.max(percentage_error), "aux/errors_percentage/median_percentage_error":  np.median(percentage_error), "aux/errors_percentage/mean_percentage_error":  np.mean(percentage_error), "aux/errors_percentage/std_percentage_error": np.std(percentage_error),
+    "aux/errors_percentage/abs/abs_percentage_errors": np.abs(percentage_error), "aux/errors_percentage/abs/min_abs_percentage_errors": np.min(np.abs(percentage_error)), "aux/errors_percentage/abs/max_abs_percentage_errors":  np.max(np.abs(percentage_error)), "aux/errors_percentage/abs/median_abs_percentage_error":  np.median(np.abs(percentage_error)), "aux/errors_percentage/abs/mean_abs_percentage_error":  np.mean(np.abs(percentage_error)), "aux/errors_percentage/abs/std_abs_percentage_error":  np.std(np.abs(percentage_error))
+    }
+
+    return metrics
 
 
 def compute_performance_metrics(preds_dict, gt_dict):
