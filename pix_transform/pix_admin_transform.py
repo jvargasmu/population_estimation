@@ -57,7 +57,7 @@ def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
 
     scalings_array = torch.tensor(list(scalings.values())).numpy()
     metrics = {
-    "disaggregation/scalings": scalings_array, "disaggregation/mean_scaling": np.mean(scalings_array),
+    "disaggregation/scalings_": wandb.Histogram(scalings_array), "disaggregation/mean_scaling": np.mean(scalings_array),
     "disaggregation/median_scaling": np.median(scalings_array), "disaggregation/min_scaling": np.min(scalings_array),
     "disaggregation/max_scaling": np.max(scalings_array)  }
 

@@ -229,7 +229,7 @@
             "args": [ 
                 "-train", "rwa",
                 "-train_lvl", "f",
-                "-test", "tza",
+                "-test", "rwa,tza",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.001",
