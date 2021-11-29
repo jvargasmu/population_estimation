@@ -30,6 +30,55 @@ else:
     from tqdm import tqdm as tqdm
 
 
+def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
+
+    # Get device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Unfold disagg data
+    target_to_source, source_census, source_regions = disaggregation_data
+
+    predicted_target_img_adjusted = torch.zeros_like(predicted_target_img, device=device)
+    predicted_target_img = predicted_target_img.to(device)
+
+    # agg_preds_cr_arr = np.zeros(len(target_to_source.unique()))
+    agg_preds_cr_arr = np.zeros(target_to_source.unique().max()+1)
+    for finereg in target_to_source.unique():
+        finregs_to_sum = torch.nonzero(target_to_source==finereg)
+        agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
+    
+    agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
+    scalings = {id: torch.tensor(source_census[id]/agg_preds_cr[id]).to(device) for id in source_census.keys()}
+
+    for idx in (scalings.keys()):
+        mask = [source_regions==idx]
+        predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
+
+    return predicted_target_img_adjusted.cpu()
+
+
+def disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
+    num_validation_ids, validation_ids, validation_census, disaggregation_data):
+
+    predicted_target_img_adjusted = disag_map(predicted_target_img, agg_preds_arr, disaggregation_data)
+
+    # Aggregate by fine administrative boundary
+    agg_preds_adj_arr = compute_accumulated_values_by_region(
+        validation_regions.numpy().astype(np.uint32),
+        predicted_target_img_adjusted.cpu().numpy().astype(np.float32),
+        valid_validation_ids.numpy().astype(np.uint32),
+        num_validation_ids
+    )
+    agg_preds_adj = {id: agg_preds_adj_arr[id] for id in validation_ids}
+    r2_adj, mae_adj, mse_adj, mape_adj = compute_performance_metrics(agg_preds_adj, validation_census)
+    log_dict = {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj, "adjusted/mape": mape_adj} 
+
+    predicted_target_img = predicted_target_img.cpu()
+    return predicted_target_img_adjusted.cpu(), log_dict
+
+
+    
+
 def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
     valid_validation_ids, num_validation_ids, validation_ids, validation_census, 
     target_img, device, 
@@ -62,6 +111,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
         predicted_target_img[~valid_mask] = 1e-10
 
+        res["predicted_target_img"] = predicted_target_img
+
         # Aggregate by fine administrative boundary
         agg_preds_arr = compute_accumulated_values_by_region(
             validation_regions.numpy().astype(np.uint32),
@@ -74,40 +125,14 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
 
         if disaggregation_data is not None:
-            target_to_source, source_census, source_regions = disaggregation_data
 
-            predicted_target_img_adjusted = torch.zeros_like(predicted_target_img, device=device)
-            predicted_target_img = predicted_target_img.to(device)
-
-            # agg_preds_cr_arr = np.zeros(len(target_to_source.unique()))
-            agg_preds_cr_arr = np.zeros(target_to_source.unique().max()+1)
-            for finereg in target_to_source.unique():
-                finregs_to_sum = torch.nonzero(target_to_source==finereg)
-                agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
-            
-            agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
-            scalings = {id: torch.tensor(source_census[id]/agg_preds_cr[id]).to(device) for id in source_census.keys()}
-
-            for idx in (scalings.keys()):
-                mask = [source_regions==idx]
-                predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
-
-            # Aggregate by fine administrative boundary
-            agg_preds_adj_arr = compute_accumulated_values_by_region(
-                validation_regions.numpy().astype(np.uint32),
-                predicted_target_img_adjusted.cpu().numpy().astype(np.float32),
-                valid_validation_ids.numpy().astype(np.uint32),
-                num_validation_ids
-            )
-            agg_preds_adj = {id: agg_preds_adj_arr[id] for id in validation_ids}
-            r2_adj, mae_adj, mse_adj, mape_adj = compute_performance_metrics(agg_preds_adj, validation_census)
-            log_dict.update( {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj, "adjusted/mape": mape_adj} )
+            predicted_target_img_adjusted, adj_logs = disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
+                num_validation_ids, validation_ids, validation_census, disaggregation_data)
+            log_dict.update(adj_logs)
 
             predicted_target_img_adjusted = predicted_target_img_adjusted.cpu() 
             predicted_target_img = predicted_target_img.cpu()
 
-            res["predicted_target_img"] = predicted_target_img
-        res["predicted_target_img"] = predicted_target_img
 
 
         if r2>best_r2:
@@ -122,8 +147,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
                 'checkpoints/best_mae_{}.pth'.format(wandb.run.name) )
         
-        if r2_adj>best_r2_adj:
-            best_r2_adj = r2_adj
+        if log_dict["adjusted/r2"]>best_r2_adj:
+            best_r2_adj = log_dict["adjusted/r2"]
             log_dict["adjusted/best_r2"] = best_r2_adj
             torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
                 'checkpoints/best_r2_adj_{}.pth'.format(wandb.run.name) )
@@ -279,6 +304,7 @@ def PixAdminTransform(
                     # Validate and Test the model and save model
                     log_dict = {}
                     
+                    # Validation
                     if params["validation_split"]>0.:
                         for name in training_source.keys():
                             logging.info(f'Validating dataset of {name}')
@@ -294,9 +320,7 @@ def PixAdminTransform(
                                 log_dict[name + '/validation/' + key ] = this_log_dict[key]
                             torch.cuda.empty_cache()
 
-                    
-                        
-                    # Test Model
+                    # Evaluation Model
                     for test_dataset_name, values in validation_data.items():
                         logging.info(f'Testing dataset of {test_dataset_name}')
                         val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
@@ -315,6 +339,12 @@ def PixAdminTransform(
                         best_scores[test_dataset_name] = this_best_scores
                         
                         torch.cuda.empty_cache()
+
+                        #Disaggregation
+                    
+                    # Model checkpointing
+
+
 
                     log_dict['train/loss'] = loss 
                     log_dict['batchiter'] = batchiter
