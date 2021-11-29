@@ -277,6 +277,19 @@ def PixAdminTransform(
                 # fine_to_cr, val_cr_census, val_cr_regions,
                 return_scale=True, dataset_name=test_dataset_name
             )
+
+            
+
+            res, this_log_dict = eval_my_model(
+                mynet, val_features, val_valid_data_mask, val_regions,
+                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
+                disaggregation_data=values['memory_disag'],
+                dataset_name=test_dataset_name, return_scale=True
+            )
+
+
+
+
             for key in this_log_dict.keys():
                 log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
 
