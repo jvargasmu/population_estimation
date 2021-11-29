@@ -167,13 +167,17 @@ class PixScaleNet(nn.Module):
         buildings = inputs[:,0:1,:,:]
         inputs = inputs[:,1:,:,:]
 
-        scale = self.scalenet(inputs) 
+        scale = self.scalenet(inputs)
+        if self.bayesian:
+            log_var = scale[:,1:2,:,:]
+            scale = scale[:,0:1,:,:]
+            log_var = torch.mul(torch.sqrt(buildings), torch.exp(log_var))
         inputs = torch.mul(buildings, scale)
         
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
             inputs = inputs.exp() 
-                
+        
         # Check if masking should be applied
         if mask is not None:
             mask = mask.to(self.device)
