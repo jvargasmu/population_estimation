@@ -110,6 +110,8 @@ class PixScaleNet(nn.Module):
         self.channels_in = channels_in
         self.device = device
         self.exptransform_outputs = loss in ['LogoutputL1', 'LogoutputL2']
+        self.bayesian = loss in ['gaussNLL', 'laplaceNLL']
+        out_dim = 2 if self.bayesian else 1
 
         n1 = 128
         n2 = 128
@@ -131,7 +133,7 @@ class PixScaleNet(nn.Module):
                             nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
                         #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
                         #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2),
+                            nn.ReLU(inplace=True),nn.Conv2d(n3, out_dim, (k4, k4),padding=(k4-1)//2),
                             nn.ReLU(inplace=True)
                             )
         
