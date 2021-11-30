@@ -110,6 +110,10 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             res["scales"] = scales.squeeze()
         else:
             predicted_target_img = return_vals
+
+        if len(predicted_target_img.shape)==3:
+            variances = predicted_target_img[1]
+            predicted_target_img = predicted_target_img[0]
         
         # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
         predicted_target_img[~valid_mask] = 1e-10
@@ -244,9 +248,9 @@ def PixAdminTransform(
     elif params['loss'] == 'LogoutputL2':
         myloss = LogoutputL2
     elif params['loss'] == 'gaussNLL':
-        myloss = GaussianNLLLoss()
+        myloss = GaussianNLLLoss(max_clamp=20.)
     elif params['loss'] == 'laplaceNLL':
-        myloss = LaplacianNLLLoss()
+        myloss = LaplacianNLLLoss(max_clamp=20.)
     else:
         raise Exception("unknown loss!")
         
@@ -290,17 +294,12 @@ def PixAdminTransform(
                 return_scale=True, dataset_name=test_dataset_name
             )
 
-            
-
             res, this_log_dict = eval_my_model(
                 mynet, val_features, val_valid_data_mask, val_regions,
                 val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
                 disaggregation_data=values['memory_disag'],
                 dataset_name=test_dataset_name, return_scale=True
             )
-
-
-
 
             for key in this_log_dict.keys():
                 log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
@@ -334,13 +333,26 @@ def PixAdminTransform(
                     continue
                 
                 # Sum over the census data per patch 
-                y_pred = torch.sum(torch.stack([pred*samp[3] for pred,samp in zip(y_pred_list, sample)]))
-                y_gt = torch.sum(torch.tensor([samp[1]*samp[3] for samp in sample]))
-                
+                y_pred = torch.stack([pred*samp[3] for pred,samp in zip(y_pred_list, sample)]).sum(0)
+                y_gt = torch.tensor([samp[1]*samp[3] for samp in sample]).sum()
+
                 # Backwards
                 loss = myloss(y_pred, y_gt)
                 loss.backward()
                 optimizer.step()
+
+                # logging
+                train_log_dict = {}
+                if len(y_pred)==2:
+                    train_log_dict["train/y_pred_"] = y_pred[0]
+                    train_log_dict["train/y_var"] = y_pred[1]
+                else:
+                    train_log_dict["train/y_pred"] = y_pred
+                train_log_dict["train/y_gt"] = y_gt
+                train_log_dict['train/loss'] = loss 
+                train_log_dict['batchiter'] = batchiter
+                train_log_dict['epoch'] = epoch 
+                wandb.log(train_log_dict)
 
                 itercounter += 1
                 batchiter += 1
@@ -388,7 +400,7 @@ def PixAdminTransform(
                             log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
                         torch.cuda.empty_cache()
 
-                    log_dict['train/loss'] = loss 
+                    # log_dict['train/loss'] = loss 
                     log_dict['batchiter'] = batchiter
                     log_dict['epoch'] = epoch
 

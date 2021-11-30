@@ -271,7 +271,8 @@ def superpixel_with_pix_data(
     weights,
     sampler,
     custom_sampler_weights,
-    dropout
+    dropout,
+    loss
     ):
 
     ####  define parameters  ########################################################
@@ -280,7 +281,7 @@ def superpixel_with_pix_data(
             'weights_regularizer': weights_regularizer,#0.001, # spatial color head
             'weights_regularizer_adamw': weights_regularizer_adamw,
             'kernel_size': [1,1,1,1],
-            'loss': 'NormL1',
+            'loss': loss,
 
             "admin_augment": True,
             "load_state": None, #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
@@ -448,7 +449,8 @@ def main():
     parser.add_argument("--sampler", "-sap", type=str, default=None, help="Options: natural (not recommended yet), custom (see --custom_sampler_weights), <blank> (no sampler)")
     parser.add_argument("--custom_sampler_weights", "-csw", type=str,  default='1', help="ordered by --train_dataset_name weight for the sampler (separated by commas) ")
 
-    parser.add_argument("--optimizer", "-optim", type=str, default="adamw", help=" ")
+    parser.add_argument("--optimizer", "-optim", type=str, default="adam", help="adam, adamw ")
+    parser.add_argument("--loss", "-l", type=str, default="NormL1", help="NormL1, NormL2, gaussNLL, laplaceNLL")
     parser.add_argument("--train_weight", "-train_w", type=str,  default='1', help="ordered by --train_dataset_name weighting of the samples in the datasets (separated by commas) ")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
@@ -497,6 +499,7 @@ def main():
         args.sampler,
         args.custom_sampler_weights,
         args.dropout,
+        args.loss
     )
 
 

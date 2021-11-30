@@ -31,8 +31,10 @@ class GaussianNLLLoss(_Loss):
             print('FULL GAUSSIAN NLL LOSS NOT YET IMPLEMENTED')
             raise NotImplementedError
 
-    def forward(self, input: Tensor, target: Tensor, log_var: Tensor) -> Tensor:
-        loss =  0.5 * (log_var + (input - target)**2 / (exp(log_var.clamp(max=self.max_clamp)) + self.eps))
+    def forward(self, pred_log_var: Tensor, target: Tensor) -> Tensor:
+        pred, var = pred_log_var.split([1,1], dim=0)
+        log_var = var.log()
+        loss =  0.5 * (log_var + (pred - target)**2 / (exp(log_var.clamp(max=self.max_clamp)) + self.eps))
 
         if self.reduction == 'mean':
             return loss.mean()
@@ -67,8 +69,11 @@ class LaplacianNLLLoss(_Loss):
             print('FULL LAPLACIAN NLL LOSS NOT YET IMPLEMENTED')
             raise NotImplementedError
 
-    def forward(self, input: Tensor, target: Tensor, log_var: Tensor) -> Tensor:
-        loss =  0.5 * (log_var + abs(input - target) / (exp(log_var.clamp(max=self.max_clamp)) + self.eps))
+    def forward(self, pred_log_var: Tensor, target: Tensor) -> Tensor:
+        pred, var = pred_log_var.split([1,1], dim=0)
+        log_var = var.log()
+        loss =  0.5 * (log_var + abs(pred - target) / (var + self.eps))
+        # loss =  0.5 * (log_var + abs(pred - target) / (exp(log_var.clamp(max=self.max_clamp)) + self.eps))
 
         if self.reduction == 'mean':
             return loss.mean()

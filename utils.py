@@ -66,20 +66,37 @@ def my_mean_absolute_error(y_pred,y_true):
 
 
 def compute_performance_metrics_arrays(preds, gt): 
+    
+    metrics = {}
 
+    preds = np.squeeze(preds)
+    gt = np.squeeze(gt)
+
+    if len(preds.shape)==2:
+        # bayes
+        # preds, vars = np.split(preds,[1], axis=1)
+        stds = np.sqrt(preds[:,1])
+        preds = preds[:,0]
+
+        metrics.update({
+            "aux/stds/var_histogram": stds, "aux/variances/min_stds": np.min(stds),
+            "aux/stds/max_stds":  np.max(stds), "aux/variances/median_stds": np.median(stds),
+            "aux/stds/mean_stds":  np.mean(stds), "aux/stds/std_stds": np.std(stds)
+        })
+    
     r2 = r2_score(gt, preds)
     
     mae, errors = my_mean_absolute_error(gt, preds)
     mse = mean_squared_error(gt, preds)
     mape, percentage_error = mean_absolute_percentage_error(gt,preds)
 
-    metrics = {
+    metrics.update({
     "r2": r2, "mae": mae, "mse": mse, "mape": mape,
     "aux/errors/errors": errors, "aux/errors/min_errors": np.min(errors), "aux/errors/max_errors":  np.max(errors), "aux/errors/median_error":  np.median(errors), "aux/errors/mean_error":  np.mean(errors), "aux/errors/std_error":  np.std(errors), 
     "aux/errors/abs/abs_errors": np.abs(errors), "aux/errors/abs/min_abs_errors": np.min(np.abs(errors)), "aux/errors/abs/max_abs_error":  np.max(np.abs(errors)), "aux/errors/abs/median_abs_error":  np.median(np.abs(errors)), "aux/errors/abs/mean_abs_error": np.mean(np.abs(errors)), "aux/errors/abs/std_abs_error": np.std(np.abs(errors)),
     "aux/errors_percentage/percentage_errors": percentage_error, "aux/errors_percentage/min_percentage_errors": np.min(percentage_error), "aux/errors_percentage/max_percentage_error":  np.max(percentage_error), "aux/errors_percentage/median_percentage_error":  np.median(percentage_error), "aux/errors_percentage/mean_percentage_error":  np.mean(percentage_error), "aux/errors_percentage/std_percentage_error": np.std(percentage_error),
     "aux/errors_percentage/abs/abs_percentage_errors": np.abs(percentage_error), "aux/errors_percentage/abs/min_abs_percentage_errors": np.min(np.abs(percentage_error)), "aux/errors_percentage/abs/max_abs_percentage_errors":  np.max(np.abs(percentage_error)), "aux/errors_percentage/abs/median_abs_percentage_error":  np.median(np.abs(percentage_error)), "aux/errors_percentage/abs/mean_abs_percentage_error":  np.mean(np.abs(percentage_error)), "aux/errors_percentage/abs/std_abs_percentage_error":  np.std(np.abs(percentage_error))
-    }
+    })
 
     return metrics
 

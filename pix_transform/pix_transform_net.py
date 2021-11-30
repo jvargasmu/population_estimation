@@ -2,6 +2,7 @@ import numpy as np
 import torch.nn as nn
 import torch
 from tqdm import tqdm
+from utils import plot_2dmatrix
 
 class PixTransformNet(nn.Module):
 
@@ -104,14 +105,17 @@ class PixTransformNet(nn.Module):
 class PixScaleNet(nn.Module):
 
     def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
-        device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.):
+        device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
+        exp_max_clamp=20):
         super(PixScaleNet, self).__init__()
 
         self.channels_in = channels_in
         self.device = device
+        self.exp_max_clamp = exp_max_clamp
+        
         self.exptransform_outputs = loss in ['LogoutputL1', 'LogoutputL2']
         self.bayesian = loss in ['gaussNLL', 'laplaceNLL']
-        out_dim = 2 if self.bayesian else 1
+        self.out_dim = 2 if self.bayesian else 1
 
         n1 = 128
         n2 = 128
@@ -125,7 +129,7 @@ class PixScaleNet(nn.Module):
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2),
-                                                                 nn.ReLU(inplace=True)
+                                                                 nn.ReLU(inplace=False)
                             )
         else:
             self.scalenet = nn.Sequential(                      nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
@@ -133,8 +137,8 @@ class PixScaleNet(nn.Module):
                             nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
                         #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
                         #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n3, out_dim, (k4, k4),padding=(k4-1)//2),
-                            nn.ReLU(inplace=True)
+                            nn.ReLU(inplace=True),nn.Conv2d(n3, self.out_dim, (k4, k4),padding=(k4-1)//2),
+                            nn.ReLU(inplace=False)
                             )
         
         self.params_with_regularizer = []
@@ -167,12 +171,15 @@ class PixScaleNet(nn.Module):
         buildings = inputs[:,0:1,:,:]
         inputs = inputs[:,1:,:,:]
 
-        scale = self.scalenet(inputs)
+        inputs = self.scalenet(inputs)
+        scale = inputs[:,0:1,:,:]
+        inputs[:,0:1,:,:] = torch.mul(buildings, scale)
         if self.bayesian:
-            log_var = scale[:,1:2,:,:]
-            scale = scale[:,0:1,:,:]
-            log_var = torch.mul(torch.sqrt(buildings), torch.exp(log_var))
-        inputs = torch.mul(buildings, scale)
+            # Variance Propagation
+            var = inputs[:,1:2,:,:]
+            scale = torch.cat([scale, var], 1)
+            inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), var)
+            # inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), torch.exp(log_var))
         
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
@@ -181,11 +188,11 @@ class PixScaleNet(nn.Module):
         # Check if masking should be applied
         if mask is not None:
             mask = mask.to(self.device)
-            return inputs.sum().cpu()
+            return inputs.sum((0,2,3)).cpu()
         else:
             # check if the output should be the map or the sum
             if not predict_map:
-                return inputs.sum().cpu()
+                return inputs.sum((0,2,3)).cpu()
             else:
                 return inputs.cpu(), scale.cpu()
 
@@ -196,8 +203,8 @@ class PixScaleNet(nn.Module):
         PS = 1300 if forward_only else 1300
         oh, ow = inputs.shape[-2:]
         if predict_map:
-            outvar = torch.zeros((1,1,oh, ow), dtype=torch.float32, device='cpu')
-            scale = torch.zeros((1,1,oh, ow), dtype=torch.float32, device='cpu')
+            outvar = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
+            scale = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
         else:
             outvar = 0
 
@@ -213,10 +220,10 @@ class PixScaleNet(nn.Module):
                 else:
                     outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True, forward_only=forward_only)
 
-        if not predict_map:    
-            out = outvar
-        else:
+        if predict_map:    
             out = outvar.squeeze()
+        else:
+            out = outvar
 
         if return_scale:
             out = [out,scale]
@@ -236,11 +243,4 @@ class PixScaleNet(nn.Module):
         if valid_samples==0:
             return None    
         return summings
-
-
-
-
-
-
-
 
