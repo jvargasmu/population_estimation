@@ -79,8 +79,8 @@ def compute_performance_metrics_arrays(preds, gt):
         preds = preds[:,0]
 
         metrics.update({
-            "aux/stds/var_histogram": stds, "aux/variances/min_stds": np.min(stds),
-            "aux/stds/max_stds":  np.max(stds), "aux/variances/median_stds": np.median(stds),
+            "aux/stds/histogram_std": stds, "aux/stds/min_stds": np.min(stds),
+            "aux/stds/max_stds":  np.max(stds), "aux/stds/median_stds": np.median(stds),
             "aux/stds/mean_stds":  np.mean(stds), "aux/stds/std_stds": np.std(stds)
         })
     

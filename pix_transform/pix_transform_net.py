@@ -112,7 +112,7 @@ class PixScaleNet(nn.Module):
         self.channels_in = channels_in
         self.device = device
         self.exp_max_clamp = exp_max_clamp
-        
+
         self.exptransform_outputs = loss in ['LogoutputL1', 'LogoutputL2']
         self.bayesian = loss in ['gaussNLL', 'laplaceNLL']
         self.out_dim = 2 if self.bayesian else 1
@@ -176,9 +176,18 @@ class PixScaleNet(nn.Module):
         inputs[:,0:1,:,:] = torch.mul(buildings, scale)
         if self.bayesian:
             # Variance Propagation
-            var = inputs[:,1:2,:,:]
-            scale = torch.cat([scale, var], 1)
-            inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), var)
+            pred_var = False
+            if pred_var:
+                var = inputs[:,1:2,:,:]
+                scale = torch.cat([scale, var], 1)
+                inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), var)
+            else:
+                log_var = inputs[:,1:2,:,:]
+                scale = torch.cat([scale, log_var], 1)
+                if torch.any(log_var>30 ) or torch.any(log_var<-30 ):
+                    raise Exception("Brace yourself, numerical problems are coming!")
+                inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), torch.exp(log_var))
+
             # inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), torch.exp(log_var))
         
         # backtransform if necessary before(!) summation
@@ -243,4 +252,3 @@ class PixScaleNet(nn.Module):
         if valid_samples==0:
             return None    
         return summings
-

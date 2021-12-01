@@ -249,15 +249,16 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "justMyCode": false,
             "args": [ 
                 "-train", "rwa",
                 "-train_lvl", "f",
                 "-test", "rwa",
                 "-lr", "0.0001",
                 "-optim", "adam",
-                "-wr", "0.001",
+                "-wr", "0.0001",
                 "-adamwr", "0.",
-                "--log_step", "50",
+                "--log_step", "200",
                 "--validation_fold", "1"
             ]
         },
@@ -278,7 +279,7 @@
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "--log_step", "10",
+                "--log_step", "1000",
                 "--validation_fold", "1",
                 "--loss", "laplaceNLL"
             ]
