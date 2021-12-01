@@ -249,7 +249,7 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "justMyCode": false,
+            //"justMyCode": false,
             "args": [ 
                 "-train", "rwa",
                 "-train_lvl", "f",

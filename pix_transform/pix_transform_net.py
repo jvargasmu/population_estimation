@@ -179,14 +179,12 @@ class PixScaleNet(nn.Module):
             pred_var = False
             if pred_var:
                 var = inputs[:,1:2,:,:]
-                scale = torch.cat([scale, var], 1)
-                inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), var)
             else:
-                log_var = inputs[:,1:2,:,:]
-                scale = torch.cat([scale, log_var], 1)
-                if torch.any(log_var>30 ) or torch.any(log_var<-30 ):
-                    raise Exception("Brace yourself, numerical problems are coming!")
-                inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), torch.exp(log_var))
+                var = torch.exp(inputs[:,1:2,:,:])
+                # if torch.any(log_var>30 ) or torch.any(log_var<-30 ):
+                #     raise Exception("Brace yourself, numerical problems are coming!")
+            scale = torch.cat([scale, var], 1)
+            inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), var)
 
             # inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), torch.exp(log_var))
         

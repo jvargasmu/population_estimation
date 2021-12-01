@@ -112,7 +112,7 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             predicted_target_img = return_vals
 
         if len(predicted_target_img.shape)==3:
-            variances = predicted_target_img[1]
+            res["variances"] = predicted_target_img[1]
             predicted_target_img = predicted_target_img[0]
         
         # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
@@ -137,7 +137,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 num_validation_ids, validation_ids, validation_census, disaggregation_data)
             metrics.update(adj_logs)
 
-            predicted_target_img_adjusted = predicted_target_img_adjusted.cpu() 
+            res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
+            predicted_target_img_adjusted = predicted_target_img_adjusted.cpu()
             predicted_target_img = predicted_target_img.cpu()
 
     return res, metrics
@@ -387,12 +388,21 @@ def PixAdminTransform(
                         val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
                         val_features = values["features_disk"]
                         
-                        _, this_log_dict = eval_my_model(
+                        res, this_log_dict = eval_my_model(
                             mynet, val_features, val_valid_data_mask, val_regions,
                             val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
                             disaggregation_data=values['memory_disag'],
                             dataset_name=test_dataset_name, return_scale=True
                         )
+
+                        log_images = True
+                        if log_images:
+                            if len(res['scales'].shape)==3:
+                                this_log_dict["viz/scales"] = wandb.Image(res['scales'][0])
+                                this_log_dict["viz/scales_var"] = wandb.Image(res['scales'][1])
+                                this_log_dict["viz/predicted_target_img"] = wandb.Image(res['predicted_target_img'])
+                                this_log_dict["viz/predicted_target_img_var"] = wandb.Image(res['variances'])
+                                this_log_dict["viz/predicted_target_img_adjusted"] = wandb.Image(res['predicted_target_img_adjusted'])
 
                         # Model checkpointing and update best scores
                         best_scores[test_dataset_name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, this_log_dict, test_dataset_name, best_scores[test_dataset_name])
