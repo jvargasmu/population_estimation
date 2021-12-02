@@ -102,7 +102,7 @@ class PixScaleNet(nn.Module):
 
     def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
-        exp_max_clamp=20, pred_var = False):
+        exp_max_clamp=20, pred_var = True):
         super(PixScaleNet, self).__init__()
 
         self.channels_in = channels_in
