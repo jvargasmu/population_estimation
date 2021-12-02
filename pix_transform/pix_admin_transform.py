@@ -279,8 +279,7 @@ def PixAdminTransform(
 
     if params['eval_only']:
 
-        #TODO: if we do not cross validation we can do disagregation,
-        
+        #TODO: CV with 5 models here
         log_dict = {}
         for test_dataset_name, values in validation_data.items():
             val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']

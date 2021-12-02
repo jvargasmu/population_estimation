@@ -1,6 +1,7 @@
 import numpy as np
 import torch.nn as nn
 import torch
+from torch.nn.modules.container import Sequential
 from tqdm import tqdm
 from utils import plot_2dmatrix
 
@@ -97,21 +98,17 @@ class PixTransformNet(nn.Module):
         return total_sum
 
 
-
-
-
-
-
 class PixScaleNet(nn.Module):
 
     def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
-        exp_max_clamp=20):
+        exp_max_clamp=20, pred_var = False):
         super(PixScaleNet, self).__init__()
 
         self.channels_in = channels_in
         self.device = device
         self.exp_max_clamp = exp_max_clamp
+        self.pred_var = pred_var
 
         self.exptransform_outputs = loss in ['LogoutputL1', 'LogoutputL2']
         self.bayesian = loss in ['gaussNLL', 'laplaceNLL']
@@ -128,18 +125,21 @@ class PixScaleNet(nn.Module):
                             nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2),
-                                                                 nn.ReLU(inplace=False)
+                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True),# nn.Conv2d(n3, self.out_dim, (k4, k4),padding=(k4-1)//2),
+                                                                #  nn.ReLU(inplace=True)
                             )
         else:
-            self.scalenet = nn.Sequential(                      nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+            self.scalenet = nn.Sequential(        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
                             nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
+                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2),
                         #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
                         #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n3, self.out_dim, (k4, k4),padding=(k4-1)//2),
-                            nn.ReLU(inplace=False)
+                            nn.ReLU(inplace=True),#nn.Conv2d(n3, self.out_dim, (k4, k4),padding=(k4-1)//2),
+                            # nn.ReLU(inplace=True)
                             )
+
+        self.scale_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.ReLU(inplace=False) )
+        self.var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.ReLU(inplace=False) if pred_var else nn.Identity(inplace=False) )
         
         self.params_with_regularizer = []
         self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]
@@ -169,39 +169,37 @@ class PixScaleNet(nn.Module):
             inputs = inputs.to(self.device)
 
         buildings = inputs[:,0:1,:,:]
-        inputs = inputs[:,1:,:,:]
+        data = inputs[:,1:,:,:]
 
-        inputs = self.scalenet(inputs)
-        scale = inputs[:,0:1,:,:]
-        inputs[:,0:1,:,:] = torch.mul(buildings, scale)
+        data = self.scalenet(data)
+        scale = self.scale_layer(data)
+        pop_est = torch.mul(buildings, scale)
         if self.bayesian:
             # Variance Propagation
-            pred_var = False
-            if pred_var:
-                var = inputs[:,1:2,:,:]
+            if self.pred_var:
+                var = self.var_layer(data)
             else:
-                var = torch.exp(inputs[:,1:2,:,:])
+                var = torch.exp(self.var_layer(data))
                 # if torch.any(log_var>30 ) or torch.any(log_var<-30 ):
                 #     raise Exception("Brace yourself, numerical problems are coming!")
             scale = torch.cat([scale, var], 1)
-            inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), var)
-
-            # inputs[:,1:2,:,:] = torch.mul(torch.square(buildings), torch.exp(log_var))
+            pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), var)], 1) 
         
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
-            inputs = inputs.exp() 
+            #TODO: change this part
+            pop_est = pop_est.exp() 
         
         # Check if masking should be applied
         if mask is not None:
             mask = mask.to(self.device)
-            return inputs.sum((0,2,3)).cpu()
+            return pop_est.sum((0,2,3)).cpu()
         else:
             # check if the output should be the map or the sum
             if not predict_map:
-                return inputs.sum((0,2,3)).cpu()
+                return pop_est.sum((0,2,3)).cpu()
             else:
-                return inputs.cpu(), scale.cpu()
+                return pop_est.cpu(), scale.cpu()
 
 
     def forward_batchwise(self, inputs, mask=None, predict_map=False, return_scale=False, forward_only=False): 
