@@ -359,6 +359,7 @@ def superpixel_with_pix_data(
             del this_dataset, this_dataset_list
 
         training_source[ds] = []
+        del train_variables, this_dataset_list, this_validation_data, this_disaggregation_data
         training_source[ds] = {"features": h5_filename, "vars": train_var_filename}
 
     # calculate_norm = False
