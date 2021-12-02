@@ -354,12 +354,14 @@ def superpixel_with_pix_data(
                 this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
             
                 prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename,  test_var_filename, test_disag_filename)
+                
+
+                del this_disaggregation_data, this_validation_data
 
             # Free up RAM
-            del this_dataset, this_dataset_list
-
+            del train_variables, this_dataset, this_dataset_list
+            
         training_source[ds] = []
-        del train_variables, this_dataset_list, this_validation_data, this_disaggregation_data
         training_source[ds] = {"features": h5_filename, "vars": train_var_filename}
 
     # calculate_norm = False

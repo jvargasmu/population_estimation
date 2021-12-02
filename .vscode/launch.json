@@ -377,7 +377,7 @@
                 "-optim", "adam",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "-mm", "m",
+                "-mm", "d",
                 "-lstep", "200",
                 "--validation_fold", "0"
             ]
