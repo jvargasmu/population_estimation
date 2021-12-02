@@ -394,7 +394,7 @@ def PixAdminTransform(
                             dataset_name=test_dataset_name, return_scale=True
                         )
 
-                        log_images = True
+                        log_images = False
                         if log_images:
                             if len(res['scales'].shape)==3:
                                 this_log_dict["viz/scales"] = wandb.Image(res['scales'][0])
