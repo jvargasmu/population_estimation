@@ -333,15 +333,16 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.Masks_train = {}
         self.Masks_val = {}
         self.weight_list = {}
-        self.eval_vars = {}
+        self.memory_vars = {}
+        self.memory_disag = {}
         for i, (name, rs) in (enumerate(datalocations.items())):
 
             with open(rs['train_vars'], "rb") as f:
                 _, _, _, tY, tMasks, tBBox = pickle.load(f)
             with open(rs['eval_vars'], "rb") as f:
-                self.eval_vars['memory_vars'] = pickle.load(f)
+                self.memory_vars[name] = pickle.load(f)
             with open(rs['disag'], "rb") as f:
-                self.eval_vars['memory_disag'] = pickle.load(f)
+                self.memory_disag[name] = pickle.load(f)
 
             if memory_mode[i]=='m':
                 self.features[name] = h5py.File(rs["features"], 'r')["features"][:]

@@ -367,7 +367,7 @@ def PixAdminTransform(
                     log_dict = {}
                     
                     # Validation
-                    if params["validation_split"]>0.:
+                    if params["validation_split"]>0. or (params["validation"] is not None):
                         for name in datalocations.keys():
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
@@ -384,15 +384,17 @@ def PixAdminTransform(
                             torch.cuda.empty_cache()
 
                     # Evaluation Model
-                    for test_dataset_name, values in validation_data.items():
-                        logging.info(f'Testing dataset of {test_dataset_name}')
-                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
-                        val_features = values["features_disk"]
+                    # for test_dataset_name, values in validation_data.items():
+                    for name in datalocations.keys():
+
+                        logging.info(f'Testing dataset of {name}')
+                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = train_data.memory_vars[name]
+                        val_features = train_data.features[name]
                         
                         res, this_log_dict = eval_my_model(
                             mynet, val_features, val_valid_data_mask, val_regions,
                             val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
-                            disaggregation_data=values['memory_disag'],
+                            disaggregation_data=train_data.memory_disag[name],
                             dataset_name=test_dataset_name, return_scale=True
                         )
 
@@ -416,8 +418,8 @@ def PixAdminTransform(
                     log_dict['epoch'] = epoch
 
                     # if val_fine_map is not None:
-                    tnr.set_postfix(R2=log_dict[list(validation_data.keys())[0]+'/r2'],
-                                    zMAEc=log_dict[list(validation_data.keys())[0]+'/mae'])
+                    tnr.set_postfix(R2=log_dict[list(datalocations.keys())[-1]+'/r2'],
+                                    zMAEc=log_dict[list(datalocations.keys())[-1]+'/mae'])
                     wandb.log(log_dict)
                         
                     mynet.train() 
