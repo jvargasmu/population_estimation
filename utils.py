@@ -312,33 +312,33 @@ class PatchDataset(torch.utils.data.Dataset):
 
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
-    def __init__(self, datalocations, train_dataset_name, test_dataset_name, memory_mode, device, validation_split, validation_fold, loss_weights, sampler_weights):
+    def __init__(self, datalocations, train_dataset_name, train_level, memory_mode, device,
+        validation_split, validation_fold, loss_weights, sampler_weights):
+
         self.device = device
         
         print("Preparing dataloader for: ", list(datalocations.keys()))
         self.features = {}
-        self.loc_list = []
-        self.loc_list_train = []
-        self.loc_list_val = []
-        self.all_weights = []
-        self.all_sampler_weights = []
-        self.all_natural_weights = []
-        self.BBox = {}
-        self.BBox_train = {}
-        self.BBox_val = {}
-        self.Ys = {}
-        self.Ys_train = {}
-        self.Ys_val = {}
-        self.Masks = {}
-        self.Masks_train = {}
-        self.Masks_val = {}
+        self.loc_list, self.loc_list_train, self.loc_list_val = [],[],[]
+        self.all_weights, self.all_sampler_weights,  self.all_natural_weights = [],[],[]
+        self.BBox, self.BBox_train, self.BBox_val = {},{},{}
+        self.Ys, self.Ys_train, self.Ys_val = {},{},{}
+        self.tregid, self.max_tregid = {},{}
+        self.Masks, self.Masks_train, self.Masks_val = {},{},{}
         self.weight_list = {}
-        self.memory_vars = {}
-        self.memory_disag = {}
+        self.memory_vars, self.memory_disag = {},{}
         for i, (name, rs) in (enumerate(datalocations.items())):
 
-            with open(rs['train_vars'], "rb") as f:
-                _, _, _, tY, tMasks, tBBox = pickle.load(f)
+            with open(rs['train_vars_f'], "rb") as f:
+                _, _, _, tY_f, tregid_f, tMasks_f, tBBox_f = pickle.load(f)
+            with open(rs['train_vars_c'], "rb") as f:
+                _, _, _, tY_c, tregid_c, tMasks_c, tBBox_c = pickle.load(f)
+            if train_level[i]=='f':
+                tY, tregid, tMasks, tBBox = tY_f, tregid_f, tMasks_f, tBBox_f
+            elif train_level[i]=='c':
+                tY, tregid, tMasks, tBBox = tY_c, tregid_c, tMasks_c, tBBox_c
+
+            
             with open(rs['eval_vars'], "rb") as f:
                 self.memory_vars[name] = pickle.load(f)
             with open(rs['disag'], "rb") as f:
@@ -354,6 +354,12 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             tY = np.asarray(tY)
             tMasks = np.asarray(tMasks, dtype=object)
             tBBox = np.asarray(tBBox)
+            tregid = np.asarray(tregid).astype(np.int16)
+
+            tY_f = np.asarray(tY_f)
+            tMasks_f = np.asarray(tMasks_f, dtype=object)
+            tBBox_f = np.asarray(tBBox_f)
+            tregid_f = np.asarray(tregid_f).astype(np.int16)
 
             np.random.seed(1610)
             if validation_fold is not None:
@@ -380,18 +386,21 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
             # Prepare the training variables
             self.BBox_train[name] = tBBox[ind_train]
-            valid_boxes = (self.BBox_train[name][:,1]-self.BBox_train[name][:,0]) * (self.BBox_train[name][:,3]-self.BBox_train[name][:,2])>0
-            self.BBox_train[name] = self.BBox_train[name][valid_boxes] 
-            self.Ys_train[name] =  tY[ind_train][valid_boxes]
-            self.Masks_train[name] = tMasks[ind_train][valid_boxes]
-            self.loc_list_train.extend( [(name, k) for k,_ in enumerate(self.BBox_train[name])])
+            valid_train_boxes = (self.BBox_train[name][:,1]-self.BBox_train[name][:,0]) * (self.BBox_train[name][:,3]-self.BBox_train[name][:,2])>0
+            self.BBox_train[name] = self.BBox_train[name][valid_train_boxes] 
+            self.Ys_train[name] =  tY[ind_train][valid_train_boxes]
+            self.Masks_train[name] = tMasks[ind_train][valid_train_boxes]
+            if name in train_dataset_name:
+                self.loc_list_train.extend( [(name, k) for k,_ in enumerate(self.BBox_train[name])])
 
-            # Prepare the complete variables
-            self.BBox[name] = tBBox
+            # Prepare the complete variables, we only use the finest level for this
+            self.BBox[name] = tBBox_f
             valid_boxes = (self.BBox[name][:,1]-self.BBox[name][:,0]) * (self.BBox[name][:,3]-self.BBox[name][:,2])>0
             self.BBox[name] = self.BBox[name][valid_boxes] 
-            self.Ys[name] =  tY[valid_boxes]
-            self.Masks[name] = tMasks[valid_boxes]
+            self.Ys[name] =  tY_f[valid_boxes]
+            self.tregid[name] = tregid_f[valid_boxes]
+            self.max_tregid[name] = np.max(self.tregid[name])
+            self.Masks[name] = tMasks_f[valid_boxes]
             self.loc_list.extend( [(name, k) for k,_ in enumerate(self.BBox[name])])
 
             # Initialize sample weights
@@ -428,10 +437,17 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
 
     def __len__(self):
+        # this will return the length when the data is used for training with a dataloader
         return self.all_sample_ids.__len__()
     
     def len_val(self):
         return len(self.loc_list_val)
+    
+    def len_all_samples(self, name=None):
+        # length when we merge training and validation together
+        if name is not None:
+            return len(self.Ys[name])
+        return len(self.loc_list)
 
     def idx_to_loc(self, idx):
         return self.loc_list[idx]
@@ -445,21 +461,21 @@ class MultiPatchDataset(torch.utils.data.Dataset):
     def num_feats(self):
         return self.dims
 
-    def get_single_item(self, idx):
-        raise Exception("not bug free yet")
-        #TODO: might also need to output the id?
-        output = []
+    def get_single_item(self, idx, name=None): 
+        if name is None:
+            name, k = self.idx_to_loc_val(idx)
+        else:
+            k = idx
         name, k = self.idx_to_loc(idx)
         rmin, rmax, cmin, cmax = self.BBox[name][k]
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys[name][k])
-        Mask = torch.tensor(self.Masks[name][k])
-        weight = self.weight_list[name][k]
-        return X, Y, Mask, weight
+        Mask = torch.tensor(self.Masks[name][k]) 
+        census_id = torch.tensor(self.tregid[name][k])
+        return X, Y, Mask, census_id
 
 
-    def get_single_training_item(self, idx):
-        output = []
+    def get_single_training_item(self, idx): 
         name, k = self.idx_to_loc_train(idx)
         rmin, rmax, cmin, cmax = self.BBox_train[name][k]
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
@@ -468,8 +484,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         weight = self.weight_list[name][k]
         return X, Y, Mask, weight
 
-    def get_single_validation_item(self, idx, name=None):
-        output = []
+    def get_single_validation_item(self, idx, name=None): 
         if name is None:
             name, k = self.idx_to_loc_val(idx)
         else:
@@ -483,8 +498,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         return X, Y, Mask
 
     def __getitem__(self,idx):
-        idxs = self.all_sample_ids[idx]
-
+        idxs = self.all_sample_ids[idx] 
         sample = []
         for i in idxs:
             sample.append(self.get_single_training_item(i))

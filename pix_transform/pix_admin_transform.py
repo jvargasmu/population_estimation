@@ -58,19 +58,60 @@ def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
 
 
     scalings_array = torch.tensor(list(scalings.values())).numpy()
-    metrics = {
+    log_dict = {
     "disaggregation/scalings_": wandb.Histogram(scalings_array), "disaggregation/mean_scaling": np.mean(scalings_array),
     "disaggregation/median_scaling": np.median(scalings_array), "disaggregation/min_scaling": np.min(scalings_array),
     "disaggregation/max_scaling": np.max(scalings_array)  }
 
-    return predicted_target_img_adjusted.cpu(), metrics
+    return predicted_target_img_adjusted.cpu(), log_dict
 
+def disag_wo_map(agg_preds_arr, disaggregation_data):
+
+    # Get device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Unfold disagg data
+    target_to_source, source_census, source_regions = disaggregation_data
+ 
+    agg_preds_cr_arr = np.zeros(target_to_source.unique().max()+1)
+    for finereg in target_to_source.unique(): 
+        agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
+    
+    agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
+    scalings = {id: torch.tensor(source_census[id]/agg_preds_cr[id]) for id in source_census.keys()}
+    
+    agg_preds_arr_adj = agg_preds_arr.clone()
+
+    for id,s in scalings.items():
+        mask = target_to_source==id 
+        agg_preds_arr_adj[mask] = agg_preds_arr[mask] * s
+
+    scalings_array = torch.tensor(list(scalings.values())).numpy()
+    log_dict = {
+    "disaggregation/scalings_": wandb.Histogram(scalings_array), "disaggregation/mean_scaling": np.mean(scalings_array),
+    "disaggregation/median_scaling": np.median(scalings_array), "disaggregation/min_scaling": np.min(scalings_array),
+    "disaggregation/max_scaling": np.max(scalings_array)  }
+
+    return agg_preds_arr_adj, log_dict
+
+
+def disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data):
+ 
+    
+    # Do the disagregation without the map
+    agg_preds_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
+
+    metrics = compute_performance_metrics(agg_preds_adj, validation_census)
+    for key,value in metrics.items():
+        log_dict["adjusted/"+key] = value 
+
+    return agg_preds_adj, log_dict
 
 def disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
     num_validation_ids, validation_ids, validation_census, disaggregation_data):
 
     predicted_target_img_adjusted, log_dict = disag_map(predicted_target_img, agg_preds_arr, disaggregation_data)
-
+    
     # Aggregate by fine administrative boundary
     agg_preds_adj_arr = compute_accumulated_values_by_region(
         validation_regions.numpy().astype(np.uint32),
@@ -78,68 +119,126 @@ def disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, 
         valid_validation_ids.numpy().astype(np.uint32),
         num_validation_ids
     )
-    agg_preds_adj = {id: agg_preds_adj_arr[id] for id in validation_ids}
+    agg_preds_adj = {id: agg_preds_adj_arr[id] for id in validation_ids} 
+    predicted_target_img = predicted_target_img.cpu()
+   
     metrics = compute_performance_metrics(agg_preds_adj, validation_census)
     for key,value in metrics.items():
-        log_dict["adjusted/"+key] = value
-    # log_dict = {"adjusted/r2": r2_adj, "adjusted/mae": mae_adj, "adjusted/mse": mse_adj, "adjusted/mape": mape_adj} 
+        log_dict["adjusted/"+key] = value 
 
-    predicted_target_img = predicted_target_img.cpu()
     return predicted_target_img_adjusted.cpu(), log_dict
     
 
 def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
     valid_validation_ids, num_validation_ids, validation_ids, validation_census,
+    dataset,
     disaggregation_data=None, return_scale=False,
-    dataset_name="unspecifed_dataset"):
+    dataset_name="unspecifed_dataset",
+    full_eval=True):
 
     res = {}
+    metrics = {}
 
     with torch.no_grad():
         mynet.eval()
-
-        # batchwise passing for whole image
-        return_vals = mynet.forward_batchwise(
-            guide_img,
-            predict_map=True,
-            return_scale=return_scale,
-            forward_only=True
-        )
-        if return_scale:
-            predicted_target_img, scales = return_vals
-            res["scales"] = scales.squeeze()
-        else:
-            predicted_target_img = return_vals
-
-        if len(predicted_target_img.shape)==3:
-            res["variances"] = predicted_target_img[1]
-            predicted_target_img = predicted_target_img[0]
         
-        # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
-        predicted_target_img[~valid_mask] = 1e-10
+        if full_eval:
 
-        res["predicted_target_img"] = predicted_target_img
+            logging.info(f'Classic eval started')
+            # batchwise passing for whole image
+            return_vals = mynet.forward_batchwise(
+                guide_img,
+                predict_map=True,
+                return_scale=return_scale,
+                forward_only=True
+            )
+            if return_scale:
+                predicted_target_img, scales = return_vals
+                res["scales"] = scales.squeeze()
+            else:
+                predicted_target_img = return_vals
 
-        # Aggregate by fine administrative boundary
-        agg_preds_arr = compute_accumulated_values_by_region(
-            validation_regions.numpy().astype(np.uint32),
-            predicted_target_img.cpu().numpy().astype(np.float32),
-            valid_validation_ids.numpy().astype(np.uint32),
-            num_validation_ids
-        )
-        agg_preds = {id: agg_preds_arr[id] for id in validation_ids}
-        metrics = compute_performance_metrics(agg_preds, validation_census)
-        # log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
+            if len(predicted_target_img.shape)==3:
+                res["variances"] = predicted_target_img[1]
+                predicted_target_img = predicted_target_img[0]
+            
+            # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
+            predicted_target_img[~valid_mask] = 1e-16
 
-        if disaggregation_data is not None:
+            res["predicted_target_img"] = predicted_target_img
 
-            predicted_target_img_adjusted, adj_logs = disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
-                num_validation_ids, validation_ids, validation_census, disaggregation_data)
-            metrics.update(adj_logs)
+            # Aggregate by fine administrative boundary
+            agg_preds_arr = compute_accumulated_values_by_region(
+                validation_regions.numpy().astype(np.uint32),
+                predicted_target_img.cpu().numpy().astype(np.float32),
+                valid_validation_ids.numpy().astype(np.uint32),
+                num_validation_ids
+            )
+            agg_preds = {id: agg_preds_arr[id] for id in validation_ids}
+            metrics = compute_performance_metrics(agg_preds, validation_census)
+            # log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
+            
+            logging.info(f'Classic eval finished')
 
-            res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
-            predicted_target_img_adjusted = predicted_target_img_adjusted.cpu()
-            predicted_target_img = predicted_target_img.cpu()
+            if disaggregation_data is not None:
+
+                logging.info(f'Classic disag started')
+
+                predicted_target_img_adjusted, adj_logs = disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
+                    num_validation_ids, validation_ids, validation_census, disaggregation_data)
+                metrics.update(adj_logs)
+                logging.info(f'Classic disag finsihed')
+
+                res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
+                predicted_target_img_adjusted = predicted_target_img_adjusted.cpu()
+                predicted_target_img = predicted_target_img.cpu()
+
+        else: 
+
+            logging.info(f'Samplewise eval started')
+            agg_preds2 = {}
+            agg_preds_arr = torch.zeros((dataset.max_tregid[dataset_name]+1,))
+            for idx in tqdm(range(dataset.len_all_samples(dataset_name))):
+                X, Y, Mask, census_id = dataset.get_single_item(idx, dataset_name) 
+                prediction = mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy()
+
+                if prediction.size>1:
+                    raise Exception("bayes and samplewise eval not implemented yet")
+                    prediction = prediction[0]
+                agg_preds2[census_id.item()] = prediction.item()
+                agg_preds_arr[census_id.item()] = prediction.item()
+
+            agg_preds3 = {id: agg_preds_arr[id].item() for id in validation_ids}
+
+            logging.info(f'Samplewise eval finished')
+            logging.info(f'fast disag started')
+
+            for cid in validation_census.keys():
+                if cid not in agg_preds3.keys():
+                    agg_preds3[cid] = 0
+
+            this_metrics = compute_performance_metrics(agg_preds3, validation_census)
+            metrics.update(this_metrics)
+
+            if disaggregation_data is not None:
+
+                for cid in validation_regions.unique():
+                    if cid.item() not in agg_preds3.keys():
+                        agg_preds3[cid.item()] = 0
+
+                # Do the disagregation without the map
+                agg_preds_arr_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
+                metrics.update(log_dict)
+                
+                agg_preds_adj = {id: agg_preds_arr_adj[id].item() for id in validation_ids}
+                this_metrics = compute_performance_metrics(agg_preds_adj, validation_census)
+                for key,value in this_metrics.items():
+                    metrics["adjusted/"+key] = value 
+
+            # predicted_target_img_adjusted, adj_logs = disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data)
+
+            logging.info(f'fast disag finished')
+
 
     return res, metrics
 
@@ -203,33 +302,19 @@ def PixAdminTransform(
     # unique_datasets = set(list(validation_data.keys()) + list(training_source.keys()))
 
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(datalocations, train_dataset_name, test_dataset_name, params['memory_mode'], device, 
+        dataset = MultiPatchDataset(datalocations, train_dataset_name, params["train_level"], params['memory_mode'], device, 
             params["validation_split"], params["validation_fold"], params["weights"], params["custom_sampler_weights"])
     else:
-        train_data = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
+        dataset = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
     if params["sampler"] in ['custom', 'natural']:
-        weights = train_data.all_natural_weights if params["sampler"]=="natural" else train_data.custom_sampler_weights
+        weights = dataset.all_natural_weights if params["sampler"]=="natural" else dataset.custom_sampler_weights
         sampler = torch.utils.data.WeightedRandomSampler(weights, len(weights), replacement=False)
         shuffle = False
     else:
         logging.info(f'Using no weighted sampler') 
         sampler = None
         shuffle = True
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=shuffle, sampler=sampler, num_workers=0)
-
-    # load test data into memory
-    # for name,v in validation_data.items(): 
-    #     with open(v['vars'], "rb") as f:
-    #         v['memory_vars'] = pickle.load(f)
-    #     with open(v['disag'], "rb") as f:
-    #         v['memory_disag'] = pickle.load(f)
-        
-    #     # check if we can reuse the features from the training
-    #     if name in train_data.features:
-    #         v['features_disk'] = train_data.features[name]
-    #     else:
-    #         v['features_disk'] = h5py.File(v["features"], 'r')["features"]
-
+    train_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=shuffle, sampler=sampler, num_workers=0)
 
     # Fix all random seeds
     torch.manual_seed(params["random_seed"])
@@ -258,11 +343,11 @@ def PixAdminTransform(
         raise Exception("unknown loss!")
         
     if params['Net']=='PixNet':
-        mynet = PixTransformNet(channels_in=train_data.num_feats(),
+        mynet = PixTransformNet(channels_in=dataset.num_feats(),
                                 weights_regularizer=params['weights_regularizer'],
                                 device=device).train().to(device)
     elif params['Net']=='ScaleNet':
-            mynet = PixScaleNet(channels_in=train_data.num_feats(),
+            mynet = PixScaleNet(channels_in=dataset.num_feats(),
                             weights_regularizer=params['weights_regularizer'],
                             device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                             dropout=params["dropout"]
@@ -371,8 +456,8 @@ def PixAdminTransform(
                         for name in datalocations.keys():
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
-                            for idx in range(len(train_data.Ys_val[name])):
-                                X, Y, Mask = train_data.get_single_validation_item(idx, name) 
+                            for idx in range(len(dataset.Ys_val[name])):
+                                X, Y, Mask = dataset.get_single_validation_item(idx, name) 
                                 agg_preds.append(mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy())
                                 val_census.append(Y.cpu().numpy())
 
@@ -388,16 +473,17 @@ def PixAdminTransform(
                     for name in datalocations.keys():
 
                         logging.info(f'Testing dataset of {name}')
-                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = train_data.memory_vars[name]
-                        val_features = train_data.features[name]
+                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = dataset.memory_vars[name]
+                        val_features = dataset.features[name]
                         
                         res, this_log_dict = eval_my_model(
                             mynet, val_features, val_valid_data_mask, val_regions,
-                            val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
-                            disaggregation_data=train_data.memory_disag[name],
-                            dataset_name=test_dataset_name, return_scale=True
+                            val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
+                            dataset=dataset,
+                            disaggregation_data=dataset.memory_disag[name],
+                            dataset_name=name, return_scale=True
                         )
-
+ 
                         log_images = False
                         if log_images:
                             if len(res['scales'].shape)==3:

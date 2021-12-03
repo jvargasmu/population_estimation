@@ -98,7 +98,6 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
             features = features[bmakeepers]
             feature_names.remove('buildings_maxar_mean_area') 
             
-
     # Assert that first input is a building variable
     assert(feature_names[0] in building_features)
 
@@ -192,7 +191,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Iterate throuh the image an cut out examples
-    tX,tY,tMasks,tBBox = [],[],[],[]
+    tX,tY,tregid,tMasks,tBBox = [],[],[],[],[]
 
     tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask, level = training_source
     
@@ -205,6 +204,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
         rmin, rmax, cmin, cmax = boundingbox
         tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
         tY.append(np.asarray(tr_census[regid]))
+        tregid.append(np.asarray(regid))
         tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
         boundingbox = [rmin.cpu(), rmax.cpu(), cmin.cpu(), cmax.cpu()]
         tBBox.append(boundingbox)
@@ -221,7 +221,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
                 h5_features[:,i] = feat
         
     with open(var_filename, 'wb') as handle:
-        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tMasks, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tregid, tMasks, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
@@ -338,64 +338,32 @@ def superpixel_with_pix_data(
         this_level = train_level[i]
 
         h5_filename = f"datasets/{ds}/data.hdf5"
-        train_var_filename = f"datasets/{ds}/additional_train_vars_{this_level}.pkl"
+        train_var_filename_c = f"datasets/{ds}/additional_train_vars_c.pkl"
+        train_var_filename_f = f"datasets/{ds}/additional_train_vars_f.pkl"
         eval_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
         eval_disag_filename = f"datasets/{ds}/disag_vars.pkl"
         parent_dir = f"datasets/{ds}/"
 
-        if not (os.path.isfile(h5_filename) and os.path.isfile(train_var_filename) and os.path.isfile(eval_var_filename) and os.path.isfile(eval_disag_filename)):
+        if not (os.path.isfile(h5_filename) and os.path.isfile(train_var_filename_f) and os.path.isfile(train_var_filename_c) \
+            and os.path.isfile(eval_var_filename) and os.path.isfile(eval_disag_filename)):
+            Path(parent_dir).mkdir(parents=True, exist_ok=True)
 
             this_dataset = get_dataset(ds, params, building_features, related_building_features) 
-            train_variables = fine_train_source_vars if train_level[i]=="f" else cr_train_source_vars
-            this_dataset_list = build_variable_list(this_dataset, train_variables)
+            prep_train_hdf5_file(build_variable_list(this_dataset, fine_train_source_vars), h5_filename, train_var_filename_f)
+            prep_train_hdf5_file(build_variable_list(this_dataset, cr_train_source_vars), h5_filename, train_var_filename_c)
             
-            Path(parent_dir).mkdir(parents=True, exist_ok=True)
-            prep_train_hdf5_file(this_dataset_list, h5_filename, train_var_filename)
-
             # Build testdataset here to avoid dublicate executions later
             this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
-            this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
-        
+            this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars) 
             prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename,  eval_var_filename, eval_disag_filename)
             
             # Free up RAM
             del this_disaggregation_data, this_validation_data
-            del train_variables, this_dataset, this_dataset_list
+            del this_dataset 
 
-        datalocations[ds] = {"features": h5_filename, "train_vars": train_var_filename, "eval_vars": eval_var_filename, "disag": eval_disag_filename}
+        datalocations[ds] = {"features": h5_filename, "train_vars_f": train_var_filename_f, "train_vars_c": train_var_filename_c,
+            "eval_vars": eval_var_filename, "disag": eval_disag_filename}
 
-    # calculate_norm = False
-    # if calculate_norm:
-    #     feats = torch.zeros((train_dataset[ds]["features"].shape[0],0))
-    #     for i,ds in enumerate(train_dataset_name):
-    #         feats = torch.cat([ feats, train_dataset[ds]["features"][:,train_dataset[ds]["valid_data_mask"]] ],1)
-    #     print("means", feats.mean(1))
-    #     print("stds", feats.std(1))
-
-    # for ds in test_dataset_name: 
-    #     this_level = train_level[i]
-
-    #     h5_filename = f"datasets/{ds}/data.hdf5"
-    #     eval_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
-    #     eval_disag_filename = f"datasets/{ds}/disag_vars.pkl"
-    #     parent_dir = f"datasets/{ds}/"
-
-    #     if not (os.path.isfile(h5_filename) and os.path.isfile(eval_var_filename) and os.path.isfile(eval_disag_filename)):
-
-    #         this_dataset = get_dataset(ds, params, building_features, related_building_features)
-    #         this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
-    #         this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
-
-    #         del this_dataset
-
-    #         Path(parent_dir).mkdir(parents=True, exist_ok=True)
-    #         prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename, eval_var_filename, eval_disag_filename)
-            
-    #         # Free up RAM
-    #         del this_validation_data, this_disaggregation_data
-
-    #     validation_data[ds] = {"features": h5_filename, "eval_vars": eval_var_filename, "disag": eval_disag_filename }
-    
     res = PixAdminTransform(
         datalocations=datalocations,
         train_dataset_name=train_dataset_name,

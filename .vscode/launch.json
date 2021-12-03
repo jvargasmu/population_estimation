@@ -219,7 +219,7 @@
             "args": [ 
                 "-train", "uga",
                 "-train_lvl", "c",
-                "-test", "uga,tza",
+                "-test", "uga",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.0001",
