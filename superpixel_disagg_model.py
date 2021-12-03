@@ -327,19 +327,23 @@ def superpixel_with_pix_data(
 
     assert(all(elem=="c" or elem=="f" for elem in train_level))
 
-    training_source = {}
-    validation_data ={}
-    disaggregation_data={}
-    for i,ds in enumerate(train_dataset_name):
+    datalocations = {} 
+    all_dataset_names = set(train_dataset_name + test_dataset_name)
+    train_level = pad_list(train_level, fill='f', target_len=len(all_dataset_names))    
+    params["memory_mode"] = pad_list(params["memory_mode"], fill='d', target_len=len(all_dataset_names))    
+    params["weights"] = pad_list(params["weights"], fill=1., target_len=len(all_dataset_names))    
+    params["custom_sampler_weights"] = pad_list(params["custom_sampler_weights"], fill=1., target_len=len(all_dataset_names))    
+
+    for i,ds in enumerate(all_dataset_names):
         this_level = train_level[i]
 
         h5_filename = f"datasets/{ds}/data.hdf5"
         train_var_filename = f"datasets/{ds}/additional_train_vars_{this_level}.pkl"
-        test_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
-        test_disag_filename = f"datasets/{ds}/disag_vars.pkl"
+        eval_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
+        eval_disag_filename = f"datasets/{ds}/disag_vars.pkl"
         parent_dir = f"datasets/{ds}/"
 
-        if not (os.path.isfile(h5_filename) and os.path.isfile(train_var_filename)):
+        if not (os.path.isfile(h5_filename) and os.path.isfile(train_var_filename) and os.path.isfile(eval_var_filename) and os.path.isfile(eval_disag_filename)):
 
             this_dataset = get_dataset(ds, params, building_features, related_building_features) 
             train_variables = fine_train_source_vars if train_level[i]=="f" else cr_train_source_vars
@@ -349,20 +353,16 @@ def superpixel_with_pix_data(
             prep_train_hdf5_file(this_dataset_list, h5_filename, train_var_filename)
 
             # Build testdataset here to avoid dublicate executions later
-            if ds in test_dataset_name and (not (os.path.isfile(h5_filename) and os.path.isfile(test_var_filename) and os.path.isfile(test_disag_filename))):
-                this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
-                this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
+            this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
+            this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
+        
+            prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename,  eval_var_filename, eval_disag_filename)
             
-                prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename,  test_var_filename, test_disag_filename)
-                
-
-                del this_disaggregation_data, this_validation_data
-
             # Free up RAM
+            del this_disaggregation_data, this_validation_data
             del train_variables, this_dataset, this_dataset_list
-            
-        training_source[ds] = []
-        training_source[ds] = {"features": h5_filename, "vars": train_var_filename}
+
+        datalocations[ds] = {"features": h5_filename, "train_vars": train_var_filename, "eval_vars": eval_var_filename, "disag": eval_disag_filename}
 
     # calculate_norm = False
     # if calculate_norm:
@@ -372,37 +372,35 @@ def superpixel_with_pix_data(
     #     print("means", feats.mean(1))
     #     print("stds", feats.std(1))
 
-    for ds in test_dataset_name: 
-        this_level = train_level[i]
+    # for ds in test_dataset_name: 
+    #     this_level = train_level[i]
 
-        h5_filename = f"datasets/{ds}/data.hdf5"
-        test_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
-        test_disag_filename = f"datasets/{ds}/disag_vars.pkl"
-        parent_dir = f"datasets/{ds}/"
+    #     h5_filename = f"datasets/{ds}/data.hdf5"
+    #     eval_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
+    #     eval_disag_filename = f"datasets/{ds}/disag_vars.pkl"
+    #     parent_dir = f"datasets/{ds}/"
 
-        if not (os.path.isfile(h5_filename) and os.path.isfile(test_var_filename) and os.path.isfile(test_disag_filename)):
+    #     if not (os.path.isfile(h5_filename) and os.path.isfile(eval_var_filename) and os.path.isfile(eval_disag_filename)):
 
-            this_dataset = get_dataset(ds, params, building_features, related_building_features)
-            this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
-            this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
+    #         this_dataset = get_dataset(ds, params, building_features, related_building_features)
+    #         this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
+    #         this_disaggregation_data = build_variable_list(this_dataset, cr_disaggregation_data_vars)
 
-            del this_dataset
+    #         del this_dataset
 
-            Path(parent_dir).mkdir(parents=True, exist_ok=True)
-            prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename, test_var_filename, test_disag_filename)
+    #         Path(parent_dir).mkdir(parents=True, exist_ok=True)
+    #         prep_test_hdf5_file(this_validation_data, this_disaggregation_data, h5_filename, eval_var_filename, eval_disag_filename)
             
-            # Free up RAM
-            del this_validation_data, this_disaggregation_data
+    #         # Free up RAM
+    #         del this_validation_data, this_disaggregation_data
 
-        
-        validation_data[ds] = []
-        validation_data[ds] = {"features": h5_filename, "vars": test_var_filename, "disag": test_disag_filename }
+    #     validation_data[ds] = {"features": h5_filename, "eval_vars": eval_var_filename, "disag": eval_disag_filename }
     
     res = PixAdminTransform(
-        training_source=training_source,
-        validation_data=validation_data,
-        params=params,
-        disaggregation_data=disaggregation_data,
+        datalocations=datalocations,
+        train_dataset_name=train_dataset_name,
+        test_dataset_name=test_dataset_name,
+        params=params, 
     )
 
     f, ax = plot_result(
@@ -434,11 +432,15 @@ def superpixel_with_pix_data(
 
     return
 
-def unroll_arglist(arg_list, fill=None, target_len=None):
-    arg_list = arg_list.split(",")
+
+def pad_list(arg_list, fill, target_len):
     if fill is not None:
         arg_list.extend([fill]*(target_len- len(arg_list)))
     return arg_list
+
+def unroll_arglist(arg_list, fill=None, target_len=None):
+    arg_list = arg_list.split(",")
+    return pad_list(arg_list, fill, target_len)
 
 def main():
     parser = argparse.ArgumentParser()

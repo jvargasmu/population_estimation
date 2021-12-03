@@ -191,18 +191,20 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
 
 
 def PixAdminTransform(
-    training_source,
-    validation_data=None,
-    disaggregation_data=None,
-    params=None,
+    datalocations,
+    train_dataset_name,
+    test_dataset_name,
+    params,  
     save_ds=True):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     #### prepare Dataset #########################################################################
+    # unique_datasets = set(list(validation_data.keys()) + list(training_source.keys()))
 
     if params["admin_augment"]:
-        train_data = MultiPatchDataset(training_source, params['memory_mode'], device, params["validation_split"], params["validation_fold"], params["weights"], params["custom_sampler_weights"])
+        train_data = MultiPatchDataset(datalocations, train_dataset_name, test_dataset_name, params['memory_mode'], device, 
+            params["validation_split"], params["validation_fold"], params["weights"], params["custom_sampler_weights"])
     else:
         train_data = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
     if params["sampler"] in ['custom', 'natural']:
@@ -216,17 +218,17 @@ def PixAdminTransform(
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=shuffle, sampler=sampler, num_workers=0)
 
     # load test data into memory
-    for name,v in validation_data.items(): 
-        with open(v['vars'], "rb") as f:
-            v['memory_vars'] = pickle.load(f)
-        with open(v['disag'], "rb") as f:
-            v['memory_disag'] = pickle.load(f)
+    # for name,v in validation_data.items(): 
+    #     with open(v['vars'], "rb") as f:
+    #         v['memory_vars'] = pickle.load(f)
+    #     with open(v['disag'], "rb") as f:
+    #         v['memory_disag'] = pickle.load(f)
         
-        # check if we can reuse the features from the training
-        if name in train_data.features:
-            v['features_disk'] = train_data.features[name]
-        else:
-            v['features_disk'] = h5py.File(v["features"], 'r')["features"]
+    #     # check if we can reuse the features from the training
+    #     if name in train_data.features:
+    #         v['features_disk'] = train_data.features[name]
+    #     else:
+    #         v['features_disk'] = h5py.File(v["features"], 'r')["features"]
 
 
     # Fix all random seeds
@@ -285,14 +287,14 @@ def PixAdminTransform(
             val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
             val_features = values["features_disk"]
 
-            res, this_log_dict = eval_my_model(
-                mynet, val_features, val_valid_data_mask, val_regions,
-                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
-                val_map, device,
-                disaggregation_data=disaggregation_data[test_dataset_name],
-                # fine_to_cr, val_cr_census, val_cr_regions,
-                return_scale=True, dataset_name=test_dataset_name
-            )
+            # res, this_log_dict = eval_my_model(
+            #     mynet, val_features, val_valid_data_mask, val_regions,
+            #     val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
+            #     val_map, device,
+            #     disaggregation_data=disaggregation_data[test_dataset_name],
+            #     # fine_to_cr, val_cr_census, val_cr_regions,
+            #     return_scale=True, dataset_name=test_dataset_name
+            # )
 
             res, this_log_dict = eval_my_model(
                 mynet, val_features, val_valid_data_mask, val_regions,
@@ -316,7 +318,7 @@ def PixAdminTransform(
 
     # initialize the best score variables
     best_scores, best_val_scores = {}, {}
-    for test_dataset_name in validation_data.keys():
+    for test_dataset_name in datalocations.keys():
         best_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
         best_val_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
 
@@ -366,7 +368,7 @@ def PixAdminTransform(
                     
                     # Validation
                     if params["validation_split"]>0.:
-                        for name in training_source.keys():
+                        for name in datalocations.keys():
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
                             for idx in range(len(train_data.Ys_val[name])):
