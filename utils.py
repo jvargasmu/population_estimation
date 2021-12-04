@@ -327,7 +327,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.Masks, self.Masks_train, self.Masks_val = {},{},{}
         self.weight_list = {}
         self.memory_vars, self.memory_disag = {},{}
-        for i, (name, rs) in (enumerate(datalocations.items())):
+        for i, (name, rs) in tqdm(enumerate(datalocations.items())):
 
             with open(rs['train_vars_f'], "rb") as f:
                 _, _, _, tY_f, tregid_f, tMasks_f, tBBox_f = pickle.load(f)
@@ -435,6 +435,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.custom_sampler_weights = [ self.all_sampler_weights[idx1]+self.all_sampler_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
         self.natural_sampler_weights = [ self.all_natural_weights[idx1]+self.all_natural_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
 
+        print("Dataloader ready.")
 
     def __len__(self):
         # this will return the length when the data is used for training with a dataloader

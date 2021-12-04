@@ -78,7 +78,14 @@ def disag_wo_map(agg_preds_arr, disaggregation_data):
         agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
     
     agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
-    scalings = {id: torch.tensor(source_census[id]/agg_preds_cr[id]) for id in source_census.keys()}
+
+    scalings = {}
+    for id in source_census.keys():
+        if agg_preds_cr[id]==0:
+            scalings[id] = torch.tensor(1)
+        else:
+            scalings[id] = torch.tensor(source_census[id]/agg_preds_cr[id])
+    scalings = { torch.tensor(1) if agg_preds_cr[id]==0 else id: torch.tensor(source_census[id]/agg_preds_cr[id]) for id in source_census.keys()}
     
     agg_preds_arr_adj = agg_preds_arr.clone()
 
@@ -134,7 +141,7 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
     dataset,
     disaggregation_data=None, return_scale=False,
     dataset_name="unspecifed_dataset",
-    full_eval=True):
+    full_eval=False):
 
     res = {}
     metrics = {}
@@ -202,8 +209,7 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 X, Y, Mask, census_id = dataset.get_single_item(idx, dataset_name) 
                 prediction = mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy()
 
-                if prediction.size>1:
-                    raise Exception("bayes and samplewise eval not implemented yet")
+                if isinstance(prediction, np.ndarray):
                     prediction = prediction[0]
                 agg_preds2[census_id.item()] = prediction.item()
                 agg_preds_arr[census_id.item()] = prediction.item()
@@ -238,7 +244,6 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             # predicted_target_img_adjusted, adj_logs = disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data)
 
             logging.info(f'fast disag finished')
-
 
     return res, metrics
 

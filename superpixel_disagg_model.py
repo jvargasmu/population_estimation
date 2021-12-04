@@ -328,7 +328,8 @@ def superpixel_with_pix_data(
     assert(all(elem=="c" or elem=="f" for elem in train_level))
 
     datalocations = {} 
-    all_dataset_names = set(train_dataset_name + test_dataset_name)
+    test_but_not_train = list(set(test_dataset_name) - set(train_dataset_name) )
+    all_dataset_names = train_dataset_name + test_but_not_train
     train_level = pad_list(train_level, fill='f', target_len=len(all_dataset_names))    
     params["memory_mode"] = pad_list(params["memory_mode"], fill='d', target_len=len(all_dataset_names))    
     params["weights"] = pad_list(params["weights"], fill=1., target_len=len(all_dataset_names))    
