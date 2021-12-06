@@ -102,17 +102,17 @@ def disag_wo_map(agg_preds_arr, disaggregation_data):
     return agg_preds_arr_adj, log_dict
 
 
-def disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data):
+# def disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data):
  
-    
-    # Do the disagregation without the map
-    agg_preds_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
+#     # Do the disagregation without the map
+#     agg_preds_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
 
-    metrics = compute_performance_metrics(agg_preds_adj, validation_census)
-    for key,value in metrics.items():
-        log_dict["adjusted/"+key] = value 
+#     metrics = compute_performance_metrics(agg_preds_adj, validation_census)
+#     for key,value in metrics.items():
+#         log_dict["adjusted/"+key] = value 
 
-    return agg_preds_adj, log_dict
+#     return agg_preds_adj, log_dict
+
 
 def disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
     num_validation_ids, validation_ids, validation_census, disaggregation_data):
@@ -151,8 +151,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         
         if full_eval:
 
-            logging.info(f'Classic eval started')
             # batchwise passing for whole image
+            logging.info(f'Classic eval started')
             return_vals = mynet.forward_batchwise(
                 guide_img,
                 predict_map=True,
@@ -182,15 +182,12 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 num_validation_ids
             )
             agg_preds = {id: agg_preds_arr[id] for id in validation_ids}
-            metrics = compute_performance_metrics(agg_preds, validation_census)
-            # log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
-            
+            metrics = compute_performance_metrics(agg_preds, validation_census) 
             logging.info(f'Classic eval finished')
 
             if disaggregation_data is not None:
 
-                logging.info(f'Classic disag started')
-
+                logging.info(f'Classic disag started') 
                 predicted_target_img_adjusted, adj_logs = disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
                     num_validation_ids, validation_ids, validation_census, disaggregation_data)
                 metrics.update(adj_logs)
@@ -216,17 +213,16 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
 
             agg_preds3 = {id: agg_preds_arr[id].item() for id in validation_ids}
 
-            logging.info(f'Samplewise eval finished')
-            logging.info(f'fast disag started')
-
             for cid in validation_census.keys():
                 if cid not in agg_preds3.keys():
                     agg_preds3[cid] = 0
 
             this_metrics = compute_performance_metrics(agg_preds3, validation_census)
             metrics.update(this_metrics)
+            logging.info(f'Samplewise eval finished')
 
-            if disaggregation_data is not None:
+            if disaggregation_data is not None: 
+                logging.info(f'Fast disag started') 
 
                 for cid in validation_regions.unique():
                     if cid.item() not in agg_preds3.keys():
@@ -235,13 +231,15 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 # Do the disagregation without the map
                 agg_preds_arr_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
                 metrics.update(log_dict)
+                logging.info(f'Fast disag finished') 
+
+                #TODO: "fake" new dissagregation data and reuse the function
+                
                 
                 agg_preds_adj = {id: agg_preds_arr_adj[id].item() for id in validation_ids}
                 this_metrics = compute_performance_metrics(agg_preds_adj, validation_census)
                 for key,value in this_metrics.items():
-                    metrics["adjusted/"+key] = value 
-
-            # predicted_target_img_adjusted, adj_logs = disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data)
+                    metrics["adjusted/"+key] = value  
 
             logging.info(f'fast disag finished')
 
