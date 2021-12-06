@@ -187,7 +187,7 @@ class PixScaleNet(nn.Module):
         
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
-            #TODO: change this part
+            #TODO: change this part when using a new loss function
             pop_est = pop_est.exp() 
         
         # Check if masking should be applied

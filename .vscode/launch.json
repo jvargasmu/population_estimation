@@ -137,7 +137,7 @@
                 "-adamwr", "0.",
                 "-lstep", "2000",
                 "-mm", "m",
-                "-vs", "0.2"
+                "--validation_fold", "0"
             ]
         },
         {
@@ -589,7 +589,7 @@
             ]
         },
         {
-            "name": "ALL->COD superpixel_disagg_model.py",
+            "name": "ALL->COD Bayes superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
