@@ -85,7 +85,7 @@ def disag_wo_map(agg_preds_arr, disaggregation_data):
             scalings[id] = torch.tensor(1)
         else:
             scalings[id] = torch.tensor(source_census[id]/agg_preds_cr[id])
-    scalings = { torch.tensor(1) if agg_preds_cr[id]==0 else id: torch.tensor(source_census[id]/agg_preds_cr[id]) for id in source_census.keys()}
+    # scalings = { torch.tensor(1) if agg_preds_cr[id]==0 else id: torch.tensor(source_census[id]/agg_preds_cr[id]) for id in source_census.keys()}
     
     agg_preds_arr_adj = agg_preds_arr.clone()
 
