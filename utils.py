@@ -466,8 +466,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         if name is None:
             name, k = self.idx_to_loc_val(idx)
         else:
-            k = idx
-        # name, k = self.idx_to_loc(idx)
+            k = idx 
         rmin, rmax, cmin, cmax = self.BBox[name][k]
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys[name][k])
