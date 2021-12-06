@@ -200,50 +200,50 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 predicted_target_img_adjusted = predicted_target_img_adjusted.cpu()
                 predicted_target_img = predicted_target_img.cpu()
 
-    
-        # Fast evaluation pipeline
-        logging.info(f'Samplewise eval started')
-        agg_preds2 = {}
-        agg_preds_arr = torch.zeros((dataset.max_tregid[dataset_name]+1,))
-        for idx in tqdm(range(dataset.len_all_samples(dataset_name))):
-            X, Y, Mask, census_id = dataset.get_single_item(idx, dataset_name) 
-            prediction = mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy()
+        else:
+            # Fast evaluation pipeline
+            logging.info(f'Samplewise eval started')
+            agg_preds2 = {}
+            agg_preds_arr = torch.zeros((dataset.max_tregid[dataset_name]+1,))
+            for idx in tqdm(range(dataset.len_all_samples(dataset_name))):
+                X, Y, Mask, census_id = dataset.get_single_item(idx, dataset_name) 
+                prediction = mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy()
 
-            if isinstance(prediction, np.ndarray):
-                prediction = prediction[0]
-            agg_preds2[census_id.item()] = prediction.item()
-            agg_preds_arr[census_id.item()] = prediction.item()
+                if isinstance(prediction, np.ndarray):
+                    prediction = prediction[0]
+                agg_preds2[census_id.item()] = prediction.item()
+                agg_preds_arr[census_id.item()] = prediction.item()
 
-        agg_preds3 = {id: agg_preds_arr[id].item() for id in validation_ids}
+            agg_preds3 = {id: agg_preds_arr[id].item() for id in validation_ids}
 
-        logging.info(f'Samplewise eval finished')
-        logging.info(f'fast disag started')
+            logging.info(f'Samplewise eval finished')
+            logging.info(f'fast disag started')
 
-        for cid in validation_census.keys():
-            if cid not in agg_preds3.keys():
-                agg_preds3[cid] = 0
+            for cid in validation_census.keys():
+                if cid not in agg_preds3.keys():
+                    agg_preds3[cid] = 0
 
-        this_metrics = compute_performance_metrics(agg_preds3, validation_census)
-        metrics.update(this_metrics)
+            this_metrics = compute_performance_metrics(agg_preds3, validation_census)
+            metrics.update(this_metrics)
 
-        if disaggregation_data is not None:
+            if disaggregation_data is not None:
 
-            for cid in validation_regions.unique():
-                if cid.item() not in agg_preds3.keys():
-                    agg_preds3[cid.item()] = 0
+                for cid in validation_regions.unique():
+                    if cid.item() not in agg_preds3.keys():
+                        agg_preds3[cid.item()] = 0
 
-            # Do the disagregation without the map
-            agg_preds_arr_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
-            metrics.update(log_dict)
-            
-            agg_preds_adj = {id: agg_preds_arr_adj[id].item() for id in validation_ids}
-            this_metrics = compute_performance_metrics(agg_preds_adj, validation_census)
-            for key,value in this_metrics.items():
-                metrics["adjusted/"+key] = value 
+                # Do the disagregation without the map
+                agg_preds_arr_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
+                metrics.update(log_dict)
+                
+                agg_preds_adj = {id: agg_preds_arr_adj[id].item() for id in validation_ids}
+                this_metrics = compute_performance_metrics(agg_preds_adj, validation_census)
+                for key,value in this_metrics.items():
+                    metrics["adjusted/"+key] = value 
 
-        # predicted_target_img_adjusted, adj_logs = disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data)
+            # predicted_target_img_adjusted, adj_logs = disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data)
 
-        logging.info(f'fast disag finished')
+            logging.info(f'fast disag finished')
 
     return res, metrics
 
