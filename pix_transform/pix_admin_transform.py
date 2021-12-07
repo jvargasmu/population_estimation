@@ -103,18 +103,6 @@ def disag_wo_map(agg_preds_arr, disaggregation_data):
     return agg_preds_arr_adj, log_dict
 
 
-# def disag_and_eval_wo_map(agg_preds_arr, validation_census, disaggregation_data):
- 
-#     # Do the disagregation without the map
-#     agg_preds_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
-
-#     metrics = compute_performance_metrics(agg_preds_adj, validation_census)
-#     for key,value in metrics.items():
-#         log_dict["adjusted/"+key] = value 
-
-#     return agg_preds_adj, log_dict
-
-
 def disag_and_eval_map(predicted_target_img, agg_preds_arr, validation_regions, valid_validation_ids,
     num_validation_ids, validation_ids, validation_census, disaggregation_data):
 
