@@ -73,7 +73,8 @@ def disag_wo_map(agg_preds_arr, disaggregation_data):
     # Unfold disagg data
     target_to_source, source_census, source_regions = disaggregation_data
  
-    agg_preds_cr_arr = np.zeros(target_to_source.unique().max()+1)
+    # agg_preds_cr_arr = np.zeros((target_to_source.unique().max()+1).type(torch.int).item())
+    agg_preds_cr_arr = np.zeros((target_to_source.unique().max()+1))
     for finereg in target_to_source.unique(): 
         agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
     
@@ -230,16 +231,30 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
 
                 # Do the disagregation without the map
                 agg_preds_arr_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data)
-                metrics.update(log_dict)
+                for key,value in log_dict.items():
+                    metrics["adjusted/coarse/"+key] = value 
                 logging.info(f'Fast disag finished') 
-
-                #TODO: "fake" new dissagregation data and reuse the function
-                
-                
-                agg_preds_adj = {id: agg_preds_arr_adj[id].item() for id in validation_ids}
+                agg_preds_adj = {id: agg_preds_arr_adj[id].item() for id in validation_ids}                
                 this_metrics = compute_performance_metrics(agg_preds_adj, validation_census)
                 for key,value in this_metrics.items():
-                    metrics["adjusted/"+key] = value  
+                    metrics["adjusted/coarse/"+key] = value  
+
+                # "fake" new dissagregation data and reuse the function
+                # Do the disagregation on country level 
+                disaggregation_data_coarsest = \
+                    [torch.zeros(disaggregation_data[0].shape, dtype=int), {0: sum(list(disaggregation_data[1].values()))}, disaggregation_data[2] ]
+              
+                agg_preds_arr_country_adj, log_dict = disag_wo_map(agg_preds_arr, disaggregation_data_coarsest)
+                for key,value in log_dict.items():
+                    metrics["adjusted/country/"+key] = value 
+                metrics["country/pred"] = agg_preds_arr.sum()
+                metrics["country/gt"] = disaggregation_data_coarsest[1][0]
+
+                # metrics.update(log_dict)
+                agg_preds_country_adj = {id: agg_preds_arr_country_adj[id].item() for id in validation_ids}                
+                this_metrics = compute_performance_metrics(agg_preds_country_adj, validation_census)
+                for key,value in this_metrics.items():
+                    metrics["adjusted/country/"+key] = value  
 
             logging.info(f'fast disag finished')
 
