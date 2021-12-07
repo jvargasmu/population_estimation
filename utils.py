@@ -11,6 +11,8 @@ import torch
 import pickle
 import h5py
 import wandb
+import psutil
+import os
 
 
 def get_properties_dict(data_dict_orig):
@@ -345,7 +347,14 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 self.memory_disag[name] = pickle.load(f)
 
             if memory_mode[i]=='m':
+                process = psutil.Process(os.getpid())
+                print("images",process.memory_info().rss/1000/1000,"mb used")
+                # self.features[name] = h5py.File(rs["features"], 'r', driver='core')["features"]
+                # print("images",process.memory_info().rss/1000/1000,"mb used")
+                # self.features[name] = []
                 self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
+                print("images",process.memory_info().rss/1000/1000,"mb used")
+
             elif memory_mode[i]=='d':
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
             else:
