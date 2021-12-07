@@ -5,7 +5,8 @@ import os
 # Data root path
 # if os.isdir()
 root_paths = ["/home/john.vargas/data/wpop/",
-    "/scratch/Nando/HAC2/data/"]
+    "/scratch/Nando/HAC2/data/",
+    "/cluster/work/igp_psr/metzgern/HAC/data"]
 for dir in root_paths:
     if os.path.isdir(dir):
         root_path = dir
