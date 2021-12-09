@@ -4,8 +4,6 @@ import argparse
 import pickle
 import numpy as np
 import torch
-from sklearn.linear_model import LinearRegression
-from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt 
 from osgeo import gdal
 import wandb
@@ -226,7 +224,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
 
 def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = validation_data
+    val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask, geo_metadata, cr_map = validation_data
 
     dim, h, w = val_features.shape
 
@@ -239,7 +237,8 @@ def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename, 
     with open(var_filename, 'wb') as handle:
         pickle.dump(
             [val_census, val_regions, val_map, val_valid_ids,\
-            val_map_valid_ids, val_guide_res, val_valid_data_mask], 
+            val_map_valid_ids, val_guide_res, val_valid_data_mask,
+            geo_metadata, cr_map], 
             handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(disag_filename, 'wb') as handle:
@@ -272,7 +271,9 @@ def superpixel_with_pix_data(
     sampler,
     custom_sampler_weights,
     dropout,
-    loss
+    loss,
+    load_state,
+    eval_only
     ):
 
     ####  define parameters  ########################################################
@@ -284,11 +285,9 @@ def superpixel_with_pix_data(
             'loss': loss,
 
             "admin_augment": True,
-            "load_state": None, #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
-            "eval_only": False,
+            "load_state": load_state, #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
+            "eval_only": eval_only,
             "Net": 'ScaleNet', # Choose between ScaleNet and PixNet
-
-            'PCA': None,
 
             'optim': optimizer,
             'lr': learning_rate,
@@ -313,7 +312,8 @@ def superpixel_with_pix_data(
 
     fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "guide_res", "valid_data_mask", "fine"]
     cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "guide_res", "valid_data_mask", "coarse"]
-    fine_val_data_vars = ["features", "fine_census", "fine_regions", "fine_map", "valid_ids", "map_valid_ids", "guide_res", "valid_data_mask"]
+    fine_val_data_vars = ["features", "fine_census", "fine_regions", "fine_map", "valid_ids", "map_valid_ids", "guide_res",
+                            "valid_data_mask", "geo_metadata", "cr_map"]
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
     wandb.init(project="HAC", entity="nandometzger", config=params)
@@ -365,39 +365,65 @@ def superpixel_with_pix_data(
         datalocations[ds] = {"features": h5_filename, "train_vars_f": train_var_filename_f, "train_vars_c": train_var_filename_c,
             "eval_vars": eval_var_filename, "disag": eval_disag_filename}
 
-    res = PixAdminTransform(
+    res, log_dict = PixAdminTransform(
         datalocations=datalocations,
         train_dataset_name=train_dataset_name,
         test_dataset_names=test_dataset_name,
         params=params, 
     )
 
-    f, ax = plot_result(
-        cr_map.numpy(), predicted_target_img.numpy(),
-        predicted_target_img_adj.numpy(), fine_map.numpy() )
-    plt.show()
-
     # save as geoTIFF files
     save_files = True
     if save_files:
-        cr_map[~valid_data_mask]= np.nan
-        predicted_target_img[~valid_data_mask]= np.nan
-        predicted_target_img_adj[~valid_data_mask]= np.nan
-        fine_map[~valid_data_mask]= np.nan
-        dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
-        if not os.path.exists(dest_folder):
-            os.makedirs(dest_folder)
+        for name in test_dataset_name:
+            with open(datalocations[name]['eval_vars'], "rb") as f:
+                _, _, fine_map, _, _, _, valid_data_mask, geo_metadata, cr_map = pickle.load(f) 
 
-        write_geolocated_image( cr_map.numpy(), dest_folder+'/source_map.tiff'.format(wandb.run.name),
-            geo_metadata["geo_transform"], geo_metadata["projection"] )
-        write_geolocated_image( predicted_target_img.numpy(), dest_folder+'/predicted_target_img.tiff'.format(wandb.run.name),
-            geo_metadata["geo_transform"], geo_metadata["projection"] )
-        write_geolocated_image( predicted_target_img_adj.numpy(), dest_folder+'/predicted_target_img_adj.tiff'.format(wandb.run.name),
-            geo_metadata["geo_transform"], geo_metadata["projection"] )
-        write_geolocated_image( fine_map.numpy(), dest_folder+'/validation_map.tiff'.format(wandb.run.name),
-            geo_metadata["geo_transform"], geo_metadata["projection"] )
-        write_geolocated_image( scales.numpy(), dest_folder+'/scales.tiff'.format(wandb.run.name),
-            geo_metadata["geo_transform"], geo_metadata["projection"] )
+            predicted_target_img = res[name+'/predicted_target_img']
+            predicted_target_img_adjusted = res[name+'/predicted_target_img_adjusted']
+            scales = res[name+'/scales']
+
+            if name+'/variances' in list(res.keys()):
+                variances = res[name+'/variances']
+                variances[~valid_data_mask]= np.nan
+
+            scale_vars_available = False
+            if scales.shape.__len__()==3:
+                scale_vars = scales[1]
+                scale_vars[~valid_data_mask]= np.nan
+                scales = scales[0]
+                scale_vars_available = True
+                
+
+            cr_map[~valid_data_mask]= np.nan
+            predicted_target_img[~valid_data_mask]= np.nan
+            predicted_target_img_adjusted[~valid_data_mask]= np.nan
+            scales[~valid_data_mask]= np.nan
+            fine_map[~valid_data_mask]= np.nan
+
+            #Prepate the output folder
+            dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
+            if not os.path.exists(dest_folder):
+                os.makedirs(dest_folder)
+
+            write_geolocated_image( cr_map.numpy(), dest_folder+'/{}_source_map.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
+            write_geolocated_image( predicted_target_img.numpy(), dest_folder+'/{}_predicted_target_img.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
+            write_geolocated_image( predicted_target_img_adjusted.numpy(), dest_folder+'/{}_predicted_target_img_adjusted.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
+            write_geolocated_image( fine_map.numpy(), dest_folder+'/{}_validation_map.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
+            write_geolocated_image( scales.numpy(), dest_folder+'/{}_scales.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
+
+            if name+'/variances' in list(res.keys()):
+                write_geolocated_image( variances.numpy(), dest_folder+'/{}_variances.tiff'.format(name),
+                    geo_metadata["geo_transform"], geo_metadata["projection"] )
+            if scale_vars_available:
+                write_geolocated_image( scale_vars.numpy(), dest_folder+'/{}_scale_variances.tiff'.format(name),
+                    geo_metadata["geo_transform"], geo_metadata["projection"] )
+
 
     return
 
@@ -438,6 +464,9 @@ def main():
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
     parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run.")
     
+    parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
+    parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
+
     args = parser.parse_args()
 
 
@@ -481,7 +510,9 @@ def main():
         args.sampler,
         args.custom_sampler_weights,
         args.dropout,
-        args.loss
+        args.loss,
+        args.load_state,
+        args.eval_only
     )
 
 
