@@ -359,13 +359,15 @@ def PixAdminTransform(
                             dropout=params["dropout"]
                             ).train().to(device)
 
+    #Optimizer
     if params["optim"]=="adam":
         optimizer = optim.Adam(mynet.params_with_regularizer, lr=params['lr'])
     elif params["optim"]=="adamw":
         optimizer = optim.AdamW(mynet.params_with_regularizer, lr=params['lr'], weight_decay=params["weights_regularizer_adamw"])
 
+    # Load from state
     if params["load_state"] is not None:
-        checkpoint = torch.load('checkpoints/best_r2_{}.pth'.format(params["load_state"]))
+        checkpoint = torch.load('checkpoints/best_mape_{}_{}.pth'.format(test_dataset_names[0], params["load_state"]))
         mynet.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     wandb.watch(mynet)
@@ -375,34 +377,65 @@ def PixAdminTransform(
         #TODO: CV with 5 models here
         #TODO: evaluate 1 model here
         log_dict = {}
+        res_dict = {}
         for name in test_dataset_names:
+            
+            if params["validation_split"]>0. or (params["validation"] is not None):
                 
-            for test_dataset_name, values in validation_data.items():
-                val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
-                val_features = values["features_disk"]
+                logging.info(f'Validating dataset of {name}')
+                agg_preds,val_census = [],[]
+                for idx in tqdm(range(len(dataset.Ys_val[name]))):
+                    X, Y, Mask = dataset.get_single_validation_item(idx, name) 
+                    agg_preds.append(mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy())
+                    val_census.append(Y.cpu().numpy())
 
-                # res, this_log_dict = eval_my_model(
-                #     mynet, val_features, val_valid_data_mask, val_regions,
-                #     val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
-                #     val_map, device,
-                #     disaggregation_data=disaggregation_data[test_dataset_name],
-                #     # fine_to_cr, val_cr_census, val_cr_regions,
-                #     return_scale=True, dataset_name=test_dataset_name
-                # )
+                metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
+                for key in metrics.keys():
+                    log_dict[name + '/validation/' + key ] = metrics[key]
+                torch.cuda.empty_cache()
 
-                res, this_log_dict = eval_my_model(
-                    mynet, val_features, val_valid_data_mask, val_regions,
-                    val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
-                    disaggregation_data=values['memory_disag'],
-                    dataset_name=test_dataset_name, return_scale=True
-                )
+        # Evaluation Model
+        for name in test_dataset_names: 
 
-                for key in this_log_dict.keys():
-                    log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
+            logging.info(f'Testing dataset of {name}')
+            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
+            val_features = dataset.features[name]
+            
+            res, this_log_dict = eval_my_model(
+                mynet, val_features, val_valid_data_mask, val_regions,
+                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
+                dataset=dataset,
+                disaggregation_data=dataset.memory_disag[name],
+                dataset_name=name, return_scale=True, full_eval=True
+            )
 
+            log_images = True
+            if log_images:
+                if len(res['scales'].shape)==3:
+                    this_log_dict["viz/scales"] = wandb.Image(res['scales'][0])
+                    this_log_dict["viz/scales_var"] = wandb.Image(res['scales'][1])
+                    this_log_dict["viz/predicted_target_img"] = wandb.Image(res['predicted_target_img'])
+                    this_log_dict["viz/predicted_target_img_var"] = wandb.Image(res['variances'])
+                    this_log_dict["viz/predicted_target_img_adjusted"] = wandb.Image(res['predicted_target_img_adjusted'])
+
+            # Model log collection
+            for key in res.keys():
+                res_dict[name+'/'+key] = res[key]
+
+            for key in this_log_dict.keys():
+                log_dict[name+'/'+key] = this_log_dict[key]
+
+            torch.cuda.empty_cache()
+
+        # log_dict['train/loss'] = loss 
+        log_dict['batchiter'] = 0
+        log_dict['epoch'] = 0
         wandb.log(log_dict)
-                
-        return res
+            
+        mynet.train() 
+        torch.cuda.empty_cache()
+                        
+        return res_dict, log_dict
     
     #### train network ############################################################################
 
@@ -482,7 +515,7 @@ def PixAdminTransform(
                     for name in test_dataset_names: 
 
                         logging.info(f'Testing dataset of {name}')
-                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = dataset.memory_vars[name]
+                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
                         val_features = dataset.features[name]
                         
                         res, this_log_dict = eval_my_model(
@@ -530,7 +563,7 @@ def PixAdminTransform(
         log_dict = {}
         res = {}
         for test_dataset_name, values in validation_data.items():
-            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
+            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = values['memory_vars']
             val_features = values["features_disk"]
             this_res, log_dict, best_scores = eval_my_model(
                 mynet, val_features, val_valid_data_mask, val_regions,
