@@ -567,7 +567,7 @@
             ]
         },
         {
-            "name": "ALL->COD superpixel_disagg_model.py",
+            "name": "ALLother->COD superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
@@ -589,7 +589,7 @@
             ]
         },
         {
-            "name": "ALL->COD Bayes superpixel_disagg_model.py",
+            "name": "ALL+COD->COD Bayes superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
@@ -598,8 +598,8 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,tza,rwa,nga,moz",
-                "-train_lvl", "f,f,f,f,f",
+                "-train", "uga,tza,rwa,nga,moz,cod",
+                "-train_lvl", "f,f,f,f,f,c",
                 "-test", "tza,uga,cod,rwa",
                 "-lr", "0.00003",
                 "-optim", "adam",
@@ -607,8 +607,9 @@
                 "-adamwr", "0.",
                 "-lstep", "200",
                 "--validation_fold", "0",
-                "-mm", "m,m,m,m,d",
-                "--loss", "laplaceNLL"
+                "-mm", "m,m,m,m,d,m",
+                "--loss", "laplaceNLL",
+                "--custom_sampler_weights", "1,1,1,1,1,10000"
             ]
         },
     ]

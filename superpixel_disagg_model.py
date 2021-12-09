@@ -368,7 +368,7 @@ def superpixel_with_pix_data(
     res = PixAdminTransform(
         datalocations=datalocations,
         train_dataset_name=train_dataset_name,
-        test_dataset_name=test_dataset_name,
+        test_dataset_names=test_dataset_name,
         params=params, 
     )
 
@@ -455,6 +455,14 @@ def main():
     args.custom_sampler_weights = [ float(el) for el in args.custom_sampler_weights ]
     args.custom_sampler_weights =  [ el/sum(args.custom_sampler_weights) for el in args.custom_sampler_weights ]
 
+
+    import gc
+    for obj in gc.get_objects():   # Browse through ALL objects
+        if isinstance(obj, h5py.File):   # Just HDF5 files
+            try:
+                obj.close()
+            except:
+                pass # Was already closed
 
     superpixel_with_pix_data( 
         args.train_dataset_name,

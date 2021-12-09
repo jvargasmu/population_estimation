@@ -298,7 +298,7 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
 def PixAdminTransform(
     datalocations,
     train_dataset_name,
-    test_dataset_name,
+    test_dataset_names,
     params,  
     save_ds=True):
 
@@ -409,7 +409,7 @@ def PixAdminTransform(
 
     # initialize the best score variables
     best_scores, best_val_scores = {}, {}
-    for test_dataset_name in datalocations.keys():
+    for test_dataset_name in test_dataset_names:
         best_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
         best_val_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
 
@@ -459,7 +459,7 @@ def PixAdminTransform(
                     
                     # Validation
                     if params["validation_split"]>0. or (params["validation"] is not None):
-                        for name in datalocations.keys():
+                        for name in test_dataset_names:
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
                             for idx in range(len(dataset.Ys_val[name])):
@@ -476,7 +476,7 @@ def PixAdminTransform(
 
                     # Evaluation Model
                     # for test_dataset_name, values in validation_data.items():
-                    for name in datalocations.keys():
+                    for name in test_dataset_names: 
 
                         logging.info(f'Testing dataset of {name}')
                         val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = dataset.memory_vars[name]
