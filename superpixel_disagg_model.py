@@ -4,8 +4,6 @@ import argparse
 import pickle
 import numpy as np
 import torch
-from sklearn.linear_model import LinearRegression
-from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt 
 from osgeo import gdal
 import wandb
@@ -272,7 +270,9 @@ def superpixel_with_pix_data(
     sampler,
     custom_sampler_weights,
     dropout,
-    loss
+    loss,
+    load_state,
+    eval_only
     ):
 
     ####  define parameters  ########################################################
@@ -284,11 +284,9 @@ def superpixel_with_pix_data(
             'loss': loss,
 
             "admin_augment": True,
-            "load_state": None, #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
-            "eval_only": False,
+            "load_state": load_state, #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
+            "eval_only": eval_only,
             "Net": 'ScaleNet', # Choose between ScaleNet and PixNet
-
-            'PCA': None,
 
             'optim': optimizer,
             'lr': learning_rate,
@@ -372,6 +370,8 @@ def superpixel_with_pix_data(
         params=params, 
     )
 
+    #TODO: fix saving the variables here
+
     f, ax = plot_result(
         cr_map.numpy(), predicted_target_img.numpy(),
         predicted_target_img_adj.numpy(), fine_map.numpy() )
@@ -438,6 +438,9 @@ def main():
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
     parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run.")
     
+    parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
+    parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
+
     args = parser.parse_args()
 
 
@@ -481,7 +484,9 @@ def main():
         args.sampler,
         args.custom_sampler_weights,
         args.dropout,
-        args.loss
+        args.loss,
+        args.load_state,
+        args.eval_only
     )
 
 

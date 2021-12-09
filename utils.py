@@ -329,7 +329,10 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.Masks, self.Masks_train, self.Masks_val = {},{},{}
         self.weight_list = {}
         self.memory_vars, self.memory_disag = {},{}
+        process = psutil.Process(os.getpid())
         for i, (name, rs) in tqdm(enumerate(datalocations.items())):
+            print("Preparing", name)
+            print("Initial:",process.memory_info().rss/1000/1000,"mb used")
 
             with open(rs['train_vars_f'], "rb") as f:
                 _, _, _, tY_f, tregid_f, tMasks_f, tBBox_f = pickle.load(f)
@@ -337,28 +340,29 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 _, _, _, tY_c, tregid_c, tMasks_c, tBBox_c = pickle.load(f)
             if train_level[i]=='f':
                 tY, tregid, tMasks, tBBox = tY_f, tregid_f, tMasks_f, tBBox_f
+                tY_c, tregid_c, tMasks_c, tBBox_c = [],[],[],[]
             elif train_level[i]=='c':
                 tY, tregid, tMasks, tBBox = tY_c, tregid_c, tMasks_c, tBBox_c
+                tY_c, tregid_c, tMasks_c, tBBox_c = [],[],[],[]
 
-            
             with open(rs['eval_vars'], "rb") as f:
                 self.memory_vars[name] = pickle.load(f)
             with open(rs['disag'], "rb") as f:
                 self.memory_disag[name] = pickle.load(f)
 
+            print("After loading of variables",process.memory_info().rss/1000/1000,"mb used")
+
             if memory_mode[i]=='m':
-                process = psutil.Process(os.getpid())
-                print("images",process.memory_info().rss/1000/1000,"mb used")
-                # self.features[name] = h5py.File(rs["features"], 'r', driver='core')["features"]
+                self.features[name] = h5py.File(rs["features"], 'r', driver='core')["features"]
                 # print("images",process.memory_info().rss/1000/1000,"mb used")
                 # self.features[name] = []
-                self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
-                print("images",process.memory_info().rss/1000/1000,"mb used")
+                # self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
 
             elif memory_mode[i]=='d':
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
             else:
                 raise Exception(f"Wrong memory mode for {name}. It should be 'd' or 'm' in a comma separated list")
+            print("after loading of features",process.memory_info().rss/1000/1000,"mb used")
             
             tY = np.asarray(tY)
             tMasks = np.asarray(tMasks, dtype=object)
@@ -417,6 +421,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.all_weights.extend(self.weight_list[name])
             self.all_sampler_weights.extend( [sampler_weights[i]] * len(self.Ys_train[name]) )
             self.all_natural_weights.extend([len(self.Ys_train[name])] * len(self.Ys_train[name]))
+            print("final usage",process.memory_info().rss/1000/1000,"mb used")
+
 
         self.dims = self.features[name].shape[1]
         

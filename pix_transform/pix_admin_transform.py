@@ -465,7 +465,7 @@ def PixAdminTransform(
                         for name in test_dataset_names:
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
-                            for idx in range(len(dataset.Ys_val[name])):
+                            for idx in tqdm(range(len(dataset.Ys_val[name]))):
                                 X, Y, Mask = dataset.get_single_validation_item(idx, name) 
                                 agg_preds.append(mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy())
                                 val_census.append(Y.cpu().numpy())
