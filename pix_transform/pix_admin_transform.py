@@ -373,29 +373,32 @@ def PixAdminTransform(
     if params['eval_only']:
 
         #TODO: CV with 5 models here
+        #TODO: evaluate 1 model here
         log_dict = {}
-        for test_dataset_name, values in validation_data.items():
-            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
-            val_features = values["features_disk"]
+        for name in test_dataset_names:
+                
+            for test_dataset_name, values in validation_data.items():
+                val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask = values['memory_vars']
+                val_features = values["features_disk"]
 
-            # res, this_log_dict = eval_my_model(
-            #     mynet, val_features, val_valid_data_mask, val_regions,
-            #     val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
-            #     val_map, device,
-            #     disaggregation_data=disaggregation_data[test_dataset_name],
-            #     # fine_to_cr, val_cr_census, val_cr_regions,
-            #     return_scale=True, dataset_name=test_dataset_name
-            # )
+                # res, this_log_dict = eval_my_model(
+                #     mynet, val_features, val_valid_data_mask, val_regions,
+                #     val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
+                #     val_map, device,
+                #     disaggregation_data=disaggregation_data[test_dataset_name],
+                #     # fine_to_cr, val_cr_census, val_cr_regions,
+                #     return_scale=True, dataset_name=test_dataset_name
+                # )
 
-            res, this_log_dict = eval_my_model(
-                mynet, val_features, val_valid_data_mask, val_regions,
-                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
-                disaggregation_data=values['memory_disag'],
-                dataset_name=test_dataset_name, return_scale=True
-            )
+                res, this_log_dict = eval_my_model(
+                    mynet, val_features, val_valid_data_mask, val_regions,
+                    val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
+                    disaggregation_data=values['memory_disag'],
+                    dataset_name=test_dataset_name, return_scale=True
+                )
 
-            for key in this_log_dict.keys():
-                log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
+                for key in this_log_dict.keys():
+                    log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
 
         wandb.log(log_dict)
                 
