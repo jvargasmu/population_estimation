@@ -139,8 +139,8 @@ class PixScaleNet(nn.Module):
                             )
 
         self.scale_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.ReLU(inplace=True) )
-        self.var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.ReLU(inplace=True) if pred_var else nn.Identity(inplace=True) )
-        
+        self.var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
+        print("softplus", pred_var)
         self.params_with_regularizer = []
         self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]
 
@@ -180,8 +180,6 @@ class PixScaleNet(nn.Module):
                 var = self.var_layer(data)
             else:
                 var = torch.exp(self.var_layer(data))
-                # if torch.any(log_var>30 ) or torch.any(log_var<-30 ):
-                #     raise Exception("Brace yourself, numerical problems are coming!")
             scale = torch.cat([scale, var], 1)
             pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), var)], 1) 
         
