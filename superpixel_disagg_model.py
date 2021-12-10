@@ -406,13 +406,13 @@ def superpixel_with_pix_data(
             if not os.path.exists(dest_folder):
                 os.makedirs(dest_folder)
 
-            write_geolocated_image( cr_map.numpy(), dest_folder+'/{}_source_map.tiff'.format(name),
+            write_geolocated_image( cr_map.numpy(), dest_folder+'/{}_cr_map.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( predicted_target_img.numpy(), dest_folder+'/{}_predicted_target_img.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( predicted_target_img_adjusted.numpy(), dest_folder+'/{}_predicted_target_img_adjusted.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
-            write_geolocated_image( fine_map.numpy(), dest_folder+'/{}_validation_map.tiff'.format(name),
+            write_geolocated_image( fine_map.numpy(), dest_folder+'/{}_fine_map.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( scales.numpy(), dest_folder+'/{}_scales.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )

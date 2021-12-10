@@ -336,7 +336,7 @@
                 "--log_step", "1000",
                 "--validation_fold", "1",
                 "--loss", "laplaceNLL",
-                "--load_state", "still-shadow-1014",
+                "--load_state", "stellar-aardvark-1041",
                 "--eval_only", "True"
             ]
         },
