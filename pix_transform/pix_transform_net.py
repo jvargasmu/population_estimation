@@ -102,13 +102,16 @@ class PixScaleNet(nn.Module):
 
     def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
-        exp_max_clamp=20, pred_var = True):
+        exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None):
         super(PixScaleNet, self).__init__()
 
         self.channels_in = channels_in
         self.device = device
         self.exp_max_clamp = exp_max_clamp
         self.pred_var = pred_var
+        self.input_scaling = input_scaling
+        self.output_scaling = output_scaling
+        self.datanames = datanames
 
         self.exptransform_outputs = loss in ['LogoutputL1', 'LogoutputL2']
         self.bayesian = loss in ['gaussNLL', 'laplaceNLL']
@@ -119,6 +122,22 @@ class PixScaleNet(nn.Module):
         n3 = 128
         k1,k2,k3,k4 = kernel_size 
         self.convnet = torch.any(torch.tensor(kernel_size)>1)
+
+        if self.input_scaling and (datanames is not None):
+            print("using elementwise input scaling")
+            self.in_scale = {}
+            self.in_bias = {}
+            for name in datanames:
+                self.in_scale[name] = nn.Parameter(torch.Tensor(channels_in-1))
+                self.in_bias[name] = nn.Parameter(torch.Tensor(channels_in-1))
+            
+        if self.output_scaling and (datanames is not None):
+            print("using elementwise input scaling")
+            self.out_scale = {}
+            self.out_bias = {}
+            for name in datanames:
+                self.out_scale[name] = nn.Parameter(torch.Tensor(1))
+                self.out_bias[name] = nn.Parameter(torch.Tensor(1))
 
         if dropout>0.0:
             self.scalenet = nn.Sequential(
@@ -145,12 +164,12 @@ class PixScaleNet(nn.Module):
         self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]
 
 
-    def forward(self, inputs, mask=None, predict_map=False, forward_only=False):
+    def forward(self, inputs, mask=None, name=None, predict_map=False, forward_only=False):
 
         # Check if the image is too large for singe forward pass
         PS = 1500 if forward_only else 1500
         if torch.tensor(inputs.shape[2:4]).prod()>PS**2:
-            return self.forward_batchwise(inputs, mask)
+            return self.forward_batchwise(inputs, mask, name)
 
         if mask is not None and len(mask.shape)==2:
             mask = mask.unsqueeze(0)
@@ -171,17 +190,23 @@ class PixScaleNet(nn.Module):
         buildings = inputs[:,0:1,:,:]
         data = inputs[:,1:,:,:]
 
+        if self.input_scaling:
+            inputs = self.perform_scale_inputs(inputs)
+
         data = self.scalenet(data)
         scale = self.scale_layer(data)
         pop_est = torch.mul(buildings, scale)
         if self.bayesian:
-            # Variance Propagation
             if self.pred_var:
                 var = self.var_layer(data)
             else:
                 var = torch.exp(self.var_layer(data))
+            # Variance Propagation
             scale = torch.cat([scale, var], 1)
-            pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), var)], 1) 
+            pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), var)], 1)
+
+        if self.output_scaling:
+            pop_est = self.perform_scale_output(pop_est)
         
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
@@ -200,7 +225,42 @@ class PixScaleNet(nn.Module):
                 return pop_est.cpu(), scale.cpu()
 
 
-    def forward_batchwise(self, inputs, mask=None, predict_map=False, return_scale=False, forward_only=False): 
+    def perform_scale_inputs(self, inputs, name):
+        if name not in self.datanames:
+            self.calculate_mean_input_scale()
+            return inputs*self.mean_in_scale[name] + self.mean_in_bias[name]
+        else:
+            return inputs*self.in_scale[name] + self.in_bias[name]
+
+
+    def calculate_mean_input_scale(self):
+        self.mean_in_scale = 0
+        self.mean_in_bias = 0
+        for name in self.datanames:
+            self.mean_in_scale += self.in_scale[name]
+            self.mean_in_bias += self.in_bias[name]
+        self.mean_in_scale = self.mean_in_scale[name]/self.datanames.__len__()
+        self.mean_in_bias = self.mean_in_bias[name]/self.datanames.__len__()
+
+    def perform_scale_inputs(self, inputs, name):
+        if name not in self.datanames:
+            self.calculate_mean_input_scale()
+            return inputs*self.mean_in_scale[name] + self.mean_in_bias[name]
+        else:
+            return inputs*self.in_scale[name] + self.in_bias[name]
+
+
+    def calculate_mean_input_scale(self):
+        self.mean_in_scale = 0
+        self.mean_in_bias = 0
+        for name in self.datanames:
+            self.mean_in_scale += self.in_scale[name]
+            self.mean_in_bias += self.in_bias[name]
+        self.mean_in_scale = self.mean_in_scale[name]/self.datanames.__len__()
+        self.mean_in_bias = self.mean_in_bias[name]/self.datanames.__len__()
+
+
+    def forward_batchwise(self, inputs, mask=None, name=None, predict_map=False, return_scale=False, forward_only=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
         PS = 1300 if forward_only else 1300
@@ -221,7 +281,7 @@ class PixScaleNet(nn.Module):
                     out, _ = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True)
                     outvar += out.sum().cpu()
                 else:
-                    outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True, forward_only=forward_only)
+                    outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], name=name, predict_map=True, forward_only=forward_only)
 
         if predict_map:    
             out = outvar.squeeze()
@@ -240,7 +300,7 @@ class PixScaleNet(nn.Module):
         for i, inp in enumerate(sample):
             if inp[2].sum()>0:
 
-                summings.append( self(inp[0], inp[2]).cpu())
+                summings.append( self(inp[0], inp[2], inp[3]).cpu())
                 valid_samples += 1
 
         if valid_samples==0:

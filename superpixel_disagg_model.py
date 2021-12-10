@@ -273,7 +273,9 @@ def superpixel_with_pix_data(
     dropout,
     loss,
     load_state,
-    eval_only
+    eval_only,
+    input_scaling,
+    output_scaling,
     ):
 
     ####  define parameters  ########################################################
@@ -304,7 +306,9 @@ def superpixel_with_pix_data(
             'weights': weights,
             'sampler': sampler,
             'custom_sampler_weights': custom_sampler_weights,
-            'dropout': dropout
+            'dropout': dropout,
+            'input_scaling': input_scaling,
+            'output_scaling': output_scaling,
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -467,6 +471,9 @@ def main():
     parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
     parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
 
+    parser.add_argument("--input_scaling", "-is", type=bool, default=False, help="Countrywise input feature scaling.")
+    parser.add_argument("--output_scaling", "-os", type=bool, default=False, help="Countrywise output scaling.")
+
     args = parser.parse_args()
 
 
@@ -512,7 +519,9 @@ def main():
         args.dropout,
         args.loss,
         args.load_state,
-        args.eval_only
+        args.eval_only,
+        args.input_scaling,
+        args.output_scaling,
     )
 
 

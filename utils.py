@@ -487,7 +487,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         Y = torch.tensor(self.Ys[name][k])
         Mask = torch.tensor(self.Masks[name][k]) 
         census_id = torch.tensor(self.tregid[name][k])
-        return X, Y, Mask, census_id
+        return X, Y, Mask, name, census_id
 
 
     def get_single_training_item(self, idx): 
@@ -497,7 +497,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         Y = torch.tensor(self.Ys_train[name][k])
         Mask = torch.tensor(self.Masks_train[name][k])
         weight = self.weight_list[name][k]
-        return X, Y, Mask, weight
+        return X, Y, Mask, name, weight
 
     def get_single_validation_item(self, idx, name=None): 
         if name is None:
@@ -510,7 +510,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         Mask = torch.tensor(self.Masks_val[name][k])
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
-        return X, Y, Mask
+        return X, Y, Mask, name
 
     def __getitem__(self,idx):
         idxs = self.all_sample_ids[idx] 

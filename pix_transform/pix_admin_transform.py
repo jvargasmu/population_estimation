@@ -353,11 +353,13 @@ def PixAdminTransform(
                                 weights_regularizer=params['weights_regularizer'],
                                 device=device).train().to(device)
     elif params['Net']=='ScaleNet':
-            mynet = PixScaleNet(channels_in=dataset.num_feats(),
-                            weights_regularizer=params['weights_regularizer'],
-                            device=device, loss=params['loss'], kernel_size=params['kernel_size'],
-                            dropout=params["dropout"]
-                            ).train().to(device)
+        mynet = PixScaleNet(channels_in=dataset.num_feats(),
+                        weights_regularizer=params['weights_regularizer'],
+                        device=device, loss=params['loss'], kernel_size=params['kernel_size'],
+                        dropout=params["dropout"],
+                        input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
+                        datasetnames=train_dataset_name
+                        ).train().to(device)
 
     #Optimizer
     if params["optim"]=="adam":
