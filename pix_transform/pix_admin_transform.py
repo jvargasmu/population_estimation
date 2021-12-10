@@ -506,7 +506,7 @@ def PixAdminTransform(
 
                             metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
                             # this_log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
-                            best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, name, best_val_scores[name])
+                            best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, name+'_VAL', best_val_scores[name])
                             for key in metrics.keys():
                                 log_dict[name + '/validation/' + key ] = metrics[key]
                             torch.cuda.empty_cache()
