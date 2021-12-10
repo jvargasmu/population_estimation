@@ -192,8 +192,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             agg_preds2 = {}
             agg_preds_arr = torch.zeros((dataset.max_tregid[dataset_name]+1,))
             for idx in tqdm(range(dataset.len_all_samples(dataset_name))):
-                X, Y, Mask, census_id = dataset.get_single_item(idx, dataset_name) 
-                prediction = mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy()
+                X, Y, Mask, name, census_id = dataset.get_single_item(idx, dataset_name) 
+                prediction = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
 
                 if isinstance(prediction, np.ndarray):
                     prediction = prediction[0]

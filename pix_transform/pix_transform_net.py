@@ -123,26 +123,30 @@ class PixScaleNet(nn.Module):
         k1,k2,k3,k4 = kernel_size 
         self.convnet = torch.any(torch.tensor(kernel_size)>1)
 
+        self.params_with_regularizer = []
+
         if self.input_scaling and (datanames is not None):
             print("using elementwise input scaling")
             self.in_scale = {}
             self.in_bias = {}
             for name in datanames:
-                self.in_scale[name] = nn.Parameter(torch.Tensor(1,channels_in-1,1,1)).to(self.device)
-                self.in_scale[name].data.fill_(1.)
-                self.in_bias[name] = nn.Parameter(torch.Tensor(1,channels_in-1,1,1)).to(self.device)
-                self.in_bias[name].data.fill_(0.)
+                self.in_scale[name] = torch.ones( (1,channels_in-1,1,1), requires_grad=True, device=device)
+                self.in_bias[name] = torch.zeros( (1,channels_in-1,1,1), requires_grad=True, device=device)
+                self.params_with_regularizer += [{'params':self.in_scale[name],'weight_decay':weights_regularizer}]
+                self.params_with_regularizer += [{'params':self.in_bias[name],'weight_decay':weights_regularizer}]
             
         if self.output_scaling and (datanames is not None):
             print("using elementwise input scaling")
             self.out_scale = {}
             self.out_bias = {}
             for name in datanames:
-                self.out_scale[name] = nn.Parameter(torch.Tensor(1)).to(self.device)
-                self.out_scale[name].data.fill_(1.)
-                self.out_bias[name] = nn.Parameter(torch.Tensor(1)).to(self.device)
-                self.out_bias[name].data.fill_(0.)
-
+                self.out_scale[name] = torch.ones( (1), requires_grad=True, device=device)
+                # self.out_scale[name].data.fill_(1.)
+                self.out_bias[name] =  torch.zeros( (1), requires_grad=True, device=device)
+                # self.out_bias[name].data.fill_(0.)
+                self.params_with_regularizer += [{'params':self.out_scale[name],'weight_decay':weights_regularizer}]
+                self.params_with_regularizer += [{'params':self.out_bias[name],'weight_decay':weights_regularizer}]
+            
         if dropout>0.0:
             self.scalenet = nn.Sequential(
                             nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
@@ -164,8 +168,9 @@ class PixScaleNet(nn.Module):
         self.scale_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
         self.var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
  
-        self.params_with_regularizer = []
         self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]
+        self.params_with_regularizer += [{'params':self.scale_layer.parameters(),'weight_decay':weights_regularizer}]
+        self.params_with_regularizer += [{'params':self.var_layer.parameters(),'weight_decay':weights_regularizer}]
 
 
     def forward(self, inputs, mask=None, name=None, predict_map=False, forward_only=False):
