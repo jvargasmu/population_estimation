@@ -138,9 +138,9 @@ class PixScaleNet(nn.Module):
                             # nn.ReLU(inplace=True)
                             )
 
-        self.scale_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.ReLU(inplace=True) )
+        self.scale_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
         self.var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
-        print("softplus", pred_var)
+ 
         self.params_with_regularizer = []
         self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]
 
