@@ -358,7 +358,7 @@ def PixAdminTransform(
                         device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                         dropout=params["dropout"],
                         input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
-                        datasetnames=train_dataset_name
+                        datanames=train_dataset_name
                         ).train().to(device)
 
     #Optimizer
@@ -387,8 +387,8 @@ def PixAdminTransform(
                 logging.info(f'Validating dataset of {name}')
                 agg_preds,val_census = [],[]
                 for idx in tqdm(range(len(dataset.Ys_val[name]))):
-                    X, Y, Mask = dataset.get_single_validation_item(idx, name) 
-                    agg_preds.append(mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy())
+                    X, Y, Mask, name = dataset.get_single_validation_item(idx, name) 
+                    agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
                     val_census.append(Y.cpu().numpy())
 
                 metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
@@ -464,8 +464,8 @@ def PixAdminTransform(
                     continue
                 
                 # Sum over the census data per patch 
-                y_pred = torch.stack([pred*samp[3] for pred,samp in zip(y_pred_list, sample)]).sum(0)
-                y_gt = torch.tensor([samp[1]*samp[3] for samp in sample]).sum()
+                y_pred = torch.stack([pred*samp[4] for pred,samp in zip(y_pred_list, sample)]).sum(0)
+                y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum()
 
                 # Backwards
                 loss = myloss(y_pred, y_gt)
@@ -502,8 +502,8 @@ def PixAdminTransform(
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
                             for idx in tqdm(range(len(dataset.Ys_val[name]))):
-                                X, Y, Mask = dataset.get_single_validation_item(idx, name) 
-                                agg_preds.append(mynet.forward(X, Mask, forward_only=True).detach().cpu().numpy())
+                                X, Y, Mask, name = dataset.get_single_validation_item(idx, name) 
+                                agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
                                 val_census.append(Y.cpu().numpy())
 
                             metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
