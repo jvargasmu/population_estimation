@@ -136,7 +136,7 @@ class PixScaleNet(nn.Module):
                 self.params_with_regularizer += [{'params':self.in_bias[name],'weight_decay':weights_regularizer}]
             
         if self.output_scaling and (datanames is not None):
-            print("using elementwise input scaling")
+            print("using elementwise output scaling")
             self.out_scale = {}
             self.out_bias = {}
             for name in datanames:
@@ -284,7 +284,7 @@ class PixScaleNet(nn.Module):
             for oi in range(0,ow,PS):
                 if (not predict_map) and (not self.convnet):
                     if mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
-                        outvar += self( inputs[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3), forward_only=forward_only)
+                        outvar += self( inputs[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3), name=name, forward_only=forward_only)
                 elif (not predict_map) and self.convnet:
                     out, _ = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True)
                     outvar += out.sum().cpu()
