@@ -95,9 +95,9 @@ def compute_performance_metrics_arrays(preds, gt):
     metrics.update({
     "r2": r2, "mae": mae, "mse": mse, "mape": mape,
     "aux/errors/errors": errors, "aux/errors/min_errors": np.min(errors), "aux/errors/max_errors":  np.max(errors), "aux/errors/median_error":  np.median(errors), "aux/errors/mean_error":  np.mean(errors), "aux/errors/std_error":  np.std(errors), 
-    "aux/errors/abs/abs_errors": np.abs(errors), "aux/errors/abs/min_abs_errors": np.min(np.abs(errors)), "aux/errors/abs/max_abs_error":  np.max(np.abs(errors)), "aux/errors/abs/median_abs_error":  np.median(np.abs(errors)), "aux/errors/abs/mean_abs_error": np.mean(np.abs(errors)), "aux/errors/abs/std_abs_error": np.std(np.abs(errors)),
+    # "aux/errors/abs/abs_errors": np.abs(errors), "aux/errors/abs/min_abs_errors": np.min(np.abs(errors)), "aux/errors/abs/max_abs_error":  np.max(np.abs(errors)), "aux/errors/abs/median_abs_error":  np.median(np.abs(errors)), "aux/errors/abs/mean_abs_error": np.mean(np.abs(errors)), "aux/errors/abs/std_abs_error": np.std(np.abs(errors)),
     "aux/errors_percentage/percentage_errors": percentage_error, "aux/errors_percentage/min_percentage_errors": np.min(percentage_error), "aux/errors_percentage/max_percentage_error":  np.max(percentage_error), "aux/errors_percentage/median_percentage_error":  np.median(percentage_error), "aux/errors_percentage/mean_percentage_error":  np.mean(percentage_error), "aux/errors_percentage/std_percentage_error": np.std(percentage_error),
-    "aux/errors_percentage/abs/abs_percentage_errors": np.abs(percentage_error), "aux/errors_percentage/abs/min_abs_percentage_errors": np.min(np.abs(percentage_error)), "aux/errors_percentage/abs/max_abs_percentage_errors":  np.max(np.abs(percentage_error)), "aux/errors_percentage/abs/median_abs_percentage_error":  np.median(np.abs(percentage_error)), "aux/errors_percentage/abs/mean_abs_percentage_error":  np.mean(np.abs(percentage_error)), "aux/errors_percentage/abs/std_abs_percentage_error":  np.std(np.abs(percentage_error))
+    # "aux/errors_percentage/abs/abs_percentage_errors": np.abs(percentage_error), "aux/errors_percentage/abs/min_abs_percentage_errors": np.min(np.abs(percentage_error)), "aux/errors_percentage/abs/max_abs_percentage_errors":  np.max(np.abs(percentage_error)), "aux/errors_percentage/abs/median_abs_percentage_error":  np.median(np.abs(percentage_error)), "aux/errors_percentage/abs/mean_abs_percentage_error":  np.mean(np.abs(percentage_error)), "aux/errors_percentage/abs/std_abs_percentage_error":  np.std(np.abs(percentage_error))
     })
 
     return metrics
@@ -487,7 +487,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         Y = torch.tensor(self.Ys[name][k])
         Mask = torch.tensor(self.Masks[name][k]) 
         census_id = torch.tensor(self.tregid[name][k])
-        return X, Y, Mask, census_id
+        return X, Y, Mask, name, census_id
 
 
     def get_single_training_item(self, idx): 
@@ -497,7 +497,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         Y = torch.tensor(self.Ys_train[name][k])
         Mask = torch.tensor(self.Masks_train[name][k])
         weight = self.weight_list[name][k]
-        return X, Y, Mask, weight
+        return X, Y, Mask, name, weight
 
     def get_single_validation_item(self, idx, name=None): 
         if name is None:
@@ -510,7 +510,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         Mask = torch.tensor(self.Masks_val[name][k])
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
-        return X, Y, Mask
+        return X, Y, Mask, name
 
     def __getitem__(self,idx):
         idxs = self.all_sample_ids[idx] 

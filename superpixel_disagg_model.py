@@ -178,7 +178,6 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
         "num_valid_pix": valid_data_mask.sum(),
         "fine": "fine",
         "coarse": "coarse",
-
     }
     
     return dataset
@@ -191,7 +190,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
     # Iterate throuh the image an cut out examples
     tX,tY,tregid,tMasks,tBBox = [],[],[],[],[]
 
-    tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask, level = training_source
+    tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask, level, feature_names = training_source
     
     tr_regions = tr_regions.to(device)
     tr_valid_data_mask = tr_valid_data_mask.to(device)
@@ -217,7 +216,8 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
             h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0, chunks=(1,dim,512,512))
             for i,feat in tqdm(enumerate(tr_features)):
                 h5_features[:,i] = feat
-        
+    
+    # TODO: Add feature_names here!!! and unpack it in the datasetloader
     with open(var_filename, 'wb') as handle:
         pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tregid, tMasks, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -273,7 +273,9 @@ def superpixel_with_pix_data(
     dropout,
     loss,
     load_state,
-    eval_only
+    eval_only,
+    input_scaling,
+    output_scaling,
     ):
 
     ####  define parameters  ########################################################
@@ -304,14 +306,16 @@ def superpixel_with_pix_data(
             'weights': weights,
             'sampler': sampler,
             'custom_sampler_weights': custom_sampler_weights,
-            'dropout': dropout
+            'dropout': dropout,
+            'input_scaling': input_scaling,
+            'output_scaling': output_scaling,
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
     related_building_features = ['buildings_google_mean_area', 'buildings_maxar_mean_area', 'buildings_merge_mean_area']
 
-    fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "guide_res", "valid_data_mask", "fine"]
-    cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "guide_res", "valid_data_mask", "coarse"]
+    fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "guide_res", "valid_data_mask", "fine", "feature_names"]
+    cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "guide_res", "valid_data_mask", "coarse", "feature_names"]
     fine_val_data_vars = ["features", "fine_census", "fine_regions", "fine_map", "valid_ids", "map_valid_ids", "guide_res",
                             "valid_data_mask", "geo_metadata", "cr_map"]
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
@@ -467,6 +471,9 @@ def main():
     parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
     parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
 
+    parser.add_argument("--input_scaling", "-is", type=bool, default=False, help="Countrywise input feature scaling.")
+    parser.add_argument("--output_scaling", "-os", type=bool, default=False, help="Countrywise output scaling.")
+
     args = parser.parse_args()
 
 
@@ -512,7 +519,9 @@ def main():
         args.dropout,
         args.loss,
         args.load_state,
-        args.eval_only
+        args.eval_only,
+        args.input_scaling,
+        args.output_scaling,
     )
 
 
