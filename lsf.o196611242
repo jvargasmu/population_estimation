@@ -1,0 +1,110 @@
+Sender: LSF System <lsfadmin@eu-g3-035>
+Subject: Job 196611242: <popest> in cluster <euler> Exited
+
+Job <popest> was submitted from host <eu-login-22> by user <metzgern> in cluster <euler> at Mon Dec 13 15:55:33 2021
+Job was executed on host(s) <8*eu-g3-035>, in queue <gpu.4h>, as user <metzgern> in cluster <euler> at Mon Dec 13 15:56:07 2021
+</cluster/home/metzgern> was used as the home directory.
+</cluster/work/igp_psr/metzgern/HAC/code/repocode/population_estimation> was used as the working directory.
+Started at Mon Dec 13 15:56:07 2021
+Terminated at Mon Dec 13 15:56:26 2021
+Results reported at Mon Dec 13 15:56:26 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+
+#BSUB -W 4:00
+#BSUB -n 8
+#BSUB -R "rusage[mem=4000,ngpus_excl_p=1]"
+#BSUB -R "select[gpu_mtotal0>=5500]"
+##BSUB -R "rusage[scratch=12500]"
+#BSUB -J "popest"
+
+# job index (set this to your system job variable e.g. for parallel job arrays)
+# used to set model_idx and test_fold_idx below.
+#index=0   # index=0 --> model_idx=0, test_fold_idx=0
+index=$((LSB_JOBINDEX - 1))
+val_fold=$(( $index % 5 ))
+
+leave=Clipart
+
+# cp -r /scratch2/Code/stylebias/data/OfficeHome $TMPDIR/
+# cp -r /cluster/work/igp_psr/nkalischek/stylebias/data/OfficeHome $TMPDIR/
+# cp -r /cluster/work/igp_psr/metzgern/HAC/code/codeJohn main/population_estimation/datasets $TMPDIR/
+
+echo job index: $index
+echo leave: $leave
+echo val_fold: $val_fold
+
+source HACenv/bin/activate
+
+# load modules
+module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
+
+
+python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz,cod \
+                                    -train_lvl f,f,f,f,f,c \
+                                    -test uga,rwa,tza,nga,moz,cod \
+                                    -lr 0.0001 \
+                                    -optim adam \
+                                    -wr 0.001 \
+                                    -adamwr 0. \
+                                    -lstep 8000 \
+                                    --validation_fold ${val_fold} \
+                                    -mm m,m,m,m,d,d \
+                                    --loss laplaceNLL \
+                                    --custom_sampler_weights 1,1,1 \
+                                    --input_scaling True \
+                                    --output_scaling True
+
+# python3 train.py --optimizer ADAM \
+#                  --scheduler MultiStepLR \
+#                  --base_learning_rate 0.00001 \
+#                  --max_epochs 400 \
+
+(... more ...)
+------------------------------------------------------------
+
+Exited with exit code 127.
+
+Resource usage summary:
+
+    CPU time :                                   5.17 sec.
+    Max Memory :                                 405 MB
+    Average Memory :                             10.00 MB
+    Total Requested Memory :                     32000.00 MB
+    Delta Memory :                               31595.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                5
+    Run time :                                   18 sec.
+    Turnaround time :                            53 sec.
+
+The output (if any) follows:
+
+job index: -1
+leave: Clipart
+val_fold: -1
+/cluster/apps/nss/gcc-8.2.0/python/3.8.5/x86_64/lib64/python3.8/site-packages/torch/distributed/distributed_c10d.py:153: UserWarning: torch.distributed.reduce_op is deprecated, please use torch.distributed.ReduceOp instead
+  warnings.warn("torch.distributed.reduce_op is deprecated, please use "
+wandb: ERROR api_key not configured (no-tty). call wandb.login(key=[your_api_key])
+Traceback (most recent call last):
+  File "superpixel_disagg_model.py", line 529, in <module>
+    main()
+  File "superpixel_disagg_model.py", line 503, in main
+    superpixel_with_pix_data( 
+  File "superpixel_disagg_model.py", line 323, in superpixel_with_pix_data
+    wandb.init(project="HAC", entity="nandometzger", config=params)
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.8.5/x86_64/lib64/python3.8/site-packages/wandb/sdk/wandb_init.py", line 800, in init
+    wi.setup(kwargs)
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.8.5/x86_64/lib64/python3.8/site-packages/wandb/sdk/wandb_init.py", line 167, in setup
+    wandb_login._login(anonymous=anonymous, force=force, _disable_warning=True)
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.8.5/x86_64/lib64/python3.8/site-packages/wandb/sdk/wandb_login.py", line 268, in _login
+    wlogin.prompt_api_key()
+  File "/cluster/apps/nss/gcc-8.2.0/python/3.8.5/x86_64/lib64/python3.8/site-packages/wandb/sdk/wandb_login.py", line 203, in prompt_api_key
+    raise UsageError("api_key not configured (no-tty). call " + directive)
+wandb.errors.UsageError: api_key not configured (no-tty). call wandb.login(key=[your_api_key])
+/cluster/shadow/.lsbatch/1639407333.196611242.shell: line 44: --input_scaling: command not found
+/cluster/shadow/.lsbatch/1639407333.196611242.shell: line 45: --output_scaling: command not found
