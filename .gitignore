@@ -8,3 +8,4 @@ checkpoints/
 outputs/
 datasets/
 __pycache__/
+euler_job_submission/
