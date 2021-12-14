@@ -184,7 +184,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     return dataset
 
 
-def prep_train_hdf5_file(training_source, h5_filename, var_filename):
+def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode=True):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -196,7 +196,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
     tr_regions = tr_regions.to(device)
     tr_valid_data_mask = tr_valid_data_mask.to(device)
     
-    for regid in tqdm(tr_census.keys()):
+    for regid in tqdm(tr_census.keys(), disable=silent_mode):
         mask = (regid==tr_regions) * tr_valid_data_mask
         boundingbox = bbox2(mask)
         rmin, rmax, cmin, cmax = boundingbox
@@ -277,6 +277,7 @@ def superpixel_with_pix_data(
     eval_only,
     input_scaling,
     output_scaling,
+    silent_mode
     ):
 
     ####  define parameters  ########################################################
@@ -310,6 +311,7 @@ def superpixel_with_pix_data(
             'dropout': dropout,
             'input_scaling': input_scaling,
             'output_scaling': output_scaling,
+            'silent_mode': silent_mode
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -355,8 +357,8 @@ def superpixel_with_pix_data(
             Path(parent_dir).mkdir(parents=True, exist_ok=True)
 
             this_dataset = get_dataset(ds, params, building_features, related_building_features) 
-            prep_train_hdf5_file(build_variable_list(this_dataset, fine_train_source_vars), h5_filename, train_var_filename_f)
-            prep_train_hdf5_file(build_variable_list(this_dataset, cr_train_source_vars), h5_filename, train_var_filename_c)
+            prep_train_hdf5_file(build_variable_list(this_dataset, fine_train_source_vars), h5_filename, train_var_filename_f, silent_mode=silent_mode)
+            prep_train_hdf5_file(build_variable_list(this_dataset, cr_train_source_vars), h5_filename, train_var_filename_c, silent_mode=silent_mode)
             
             # Build testdataset here to avoid dublicate executions later
             this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
@@ -524,6 +526,7 @@ def main():
         args.eval_only,
         args.input_scaling,
         args.output_scaling,
+        args.silent_mode
     )
 
 
