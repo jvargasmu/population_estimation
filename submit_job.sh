@@ -6,7 +6,7 @@
 #BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
 #BSUB -R "select[gpu_mtotal0>=6000]"
 #BSUB -R "rusage[scratch=120000]"
-#BSUB -J "pop_ff[0-5]"
+#BSUB -J "pop_ff[1-5]"
 
 # job index (set this to your system job variable e.g. for parallel job arrays)
 # used to set model_idx and test_fold_idx below.
@@ -18,7 +18,7 @@ leave=Clipart
 
 # cp -r /scratch2/Code/stylebias/data/OfficeHome $TMPDIR/
 # cp -r /cluster/work/igp_psr/nkalischek/stylebias/data/OfficeHome $TMPDIR/
-cp -r -v /cluster/work/igp_psr/metzgern/HAC/code/codeJohn main/population_estimation/datasets $TMPDIR/
+cp -r -v /cluster/work/igp_psr/metzgern/HAC/code/repocode/population_estimation/datasets $TMPDIR/
 
 echo job index: $index
 echo leave: $leave
@@ -46,7 +46,7 @@ python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz,cod \
                                     --input_scaling True \
                                     --output_scaling True \
 				                    --silent_mode True \
-                                    --dataset_dir $TMPDIR
+                                    --dataset_dir $TMPDIR/datasets
 
 
 
