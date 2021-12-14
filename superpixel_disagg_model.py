@@ -428,7 +428,6 @@ def superpixel_with_pix_data(
                 write_geolocated_image( scale_vars.numpy(), dest_folder+'/{}_scale_variances.tiff'.format(name),
                     geo_metadata["geo_transform"], geo_metadata["projection"] )
 
-
     return
 
 
