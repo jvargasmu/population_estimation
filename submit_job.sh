@@ -6,7 +6,7 @@
 #BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
 #BSUB -R "select[gpu_mtotal0>=6000]"
 ##BSUB -R "rusage[scratch=12500]"
-#BSUB -J "popest"
+#BSUB -J "pop,ff"
 
 # job index (set this to your system job variable e.g. for parallel job arrays)
 # used to set model_idx and test_fold_idx below.
@@ -31,7 +31,7 @@ module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
 
 python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz,cod \
-                                    -train_lvl f,f,f,f,f,c \
+                                    -train_lvl f,f,f,f,f,f \
                                     -test uga,rwa,tza,nga,moz,cod \
                                     -lr 0.0001 \
                                     -optim adam \
@@ -43,7 +43,9 @@ python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz,cod \
                                     --loss laplaceNLL \
                                     --custom_sampler_weights 1,1,1 \
                                     --input_scaling True \
-                                    --output_scaling True
+                                    --output_scaling True \
+				    --silent_mode True
+
 
 
 
