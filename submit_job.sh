@@ -40,6 +40,7 @@ python superpixel_disagg_model.py   -train moz \
                                     -lstep 8000 \
                                     --validation_fold ${val_fold} \
                                     --loss laplaceNLL \
+                                    -mm m \
                                     --input_scaling True \
                                     --output_scaling True
 
