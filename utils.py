@@ -353,10 +353,10 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             print("After loading of variables",process.memory_info().rss/1000/1000,"mb used")
 
             if memory_mode[i]=='m':
-                self.features[name] = h5py.File(rs["features"], 'r', driver='core')["features"]
+                #self.features[name] = h5py.File(rs["features"], 'r', driver='core')["features"]
                 # print("images",process.memory_info().rss/1000/1000,"mb used")
                 # self.features[name] = []
-                # self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
+                self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
 
             elif memory_mode[i]=='d':
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
@@ -493,6 +493,10 @@ class MultiPatchDataset(torch.utils.data.Dataset):
     def get_single_training_item(self, idx): 
         name, k = self.idx_to_loc_train(idx)
         rmin, rmax, cmin, cmax = self.BBox_train[name][k]
+        #print("name", name)
+        #print("self.features", self.features)
+        #print("self.features[name]", self.features[name])
+        #print("self.features[name][0]", self.features[name][0])
         #pdb.set_trace()
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_train[name][k])

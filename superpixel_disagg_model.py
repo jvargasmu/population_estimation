@@ -184,7 +184,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     return dataset
 
 
-def prep_train_hdf5_file(training_source, h5_filename, var_filename):
+def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode=True):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -196,7 +196,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename):
     tr_regions = tr_regions.to(device)
     tr_valid_data_mask = tr_valid_data_mask.to(device)
     
-    for regid in tqdm(tr_census.keys()):
+    for regid in tqdm(tr_census.keys(), disable=silent_mode):
         mask = (regid==tr_regions) * tr_valid_data_mask
         boundingbox = bbox2(mask)
         rmin, rmax, cmin, cmax = boundingbox
@@ -277,6 +277,8 @@ def superpixel_with_pix_data(
     eval_only,
     input_scaling,
     output_scaling,
+    silent_mode,
+    dataset_dir
     ):
 
     ####  define parameters  ########################################################
@@ -310,6 +312,8 @@ def superpixel_with_pix_data(
             'dropout': dropout,
             'input_scaling': input_scaling,
             'output_scaling': output_scaling,
+            'silent_mode': silent_mode,
+            'dataset_dir': dataset_dir
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -343,20 +347,20 @@ def superpixel_with_pix_data(
     for i,ds in enumerate(all_dataset_names):
         this_level = train_level[i]
 
-        h5_filename = f"datasets/{ds}/data.hdf5"
-        train_var_filename_c = f"datasets/{ds}/additional_train_vars_c.pkl"
-        train_var_filename_f = f"datasets/{ds}/additional_train_vars_f.pkl"
-        eval_var_filename = f"datasets/{ds}/additional_test_vars.pkl"
-        eval_disag_filename = f"datasets/{ds}/disag_vars.pkl"
-        parent_dir = f"datasets/{ds}/"
+        h5_filename = f"{dataset_dir}/{ds}/data.hdf5"
+        train_var_filename_c = f"{dataset_dir}/{ds}/additional_train_vars_c.pkl"
+        train_var_filename_f = f"{dataset_dir}/{ds}/additional_train_vars_f.pkl"
+        eval_var_filename = f"{dataset_dir}/{ds}/additional_test_vars.pkl"
+        eval_disag_filename = f"{dataset_dir}/{ds}/disag_vars.pkl"
+        parent_dir = f"{dataset_dir}/{ds}/"
 
         if not (os.path.isfile(h5_filename) and os.path.isfile(train_var_filename_f) and os.path.isfile(train_var_filename_c) \
             and os.path.isfile(eval_var_filename) and os.path.isfile(eval_disag_filename)):
             Path(parent_dir).mkdir(parents=True, exist_ok=True)
 
             this_dataset = get_dataset(ds, params, building_features, related_building_features) 
-            prep_train_hdf5_file(build_variable_list(this_dataset, fine_train_source_vars), h5_filename, train_var_filename_f)
-            prep_train_hdf5_file(build_variable_list(this_dataset, cr_train_source_vars), h5_filename, train_var_filename_c)
+            prep_train_hdf5_file(build_variable_list(this_dataset, fine_train_source_vars), h5_filename, train_var_filename_f, silent_mode=silent_mode)
+            prep_train_hdf5_file(build_variable_list(this_dataset, cr_train_source_vars), h5_filename, train_var_filename_c, silent_mode=silent_mode)
             
             # Build testdataset here to avoid dublicate executions later
             this_validation_data = build_variable_list(this_dataset, fine_val_data_vars)
@@ -474,6 +478,9 @@ def main():
     parser.add_argument("--input_scaling", "-is", type=bool, default=False, help="Countrywise input feature scaling.")
     parser.add_argument("--output_scaling", "-os", type=bool, default=False, help="Countrywise output scaling.")
 
+    parser.add_argument("--silent_mode", "-silent", type=bool, default=False, help="Surpresses tqdm output mostly")
+    parser.add_argument("--dataset_dir", "-dd", type=bool, default='datasets', help="Directory of the hdf5 files")
+
     args = parser.parse_args()
 
 
@@ -522,6 +529,8 @@ def main():
         args.eval_only,
         args.input_scaling,
         args.output_scaling,
+        args.silent_mode,
+        args.dataset_dir
     )
 
 

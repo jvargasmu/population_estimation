@@ -130,7 +130,7 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
     dataset,
     disaggregation_data=None, return_scale=False,
     dataset_name="unspecifed_dataset",
-    full_eval=False):
+    full_eval=False, silent_mode=True):
 
     res = {}
     metrics = {}
@@ -191,7 +191,7 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             logging.info(f'Samplewise eval started')
             agg_preds2 = {}
             agg_preds_arr = torch.zeros((dataset.max_tregid[dataset_name]+1,))
-            for idx in tqdm(range(dataset.len_all_samples(dataset_name))):
+            for idx in tqdm(range(dataset.len_all_samples(dataset_name)), disable=silent_mode):
                 X, Y, Mask, name, census_id = dataset.get_single_item(idx, dataset_name) 
                 prediction = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
 
@@ -388,7 +388,7 @@ def PixAdminTransform(
                 
                 logging.info(f'Validating dataset of {name}')
                 agg_preds,val_census = [],[]
-                for idx in tqdm(range(len(dataset.Ys_val[name]))):
+                for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
                     X, Y, Mask, name = dataset.get_single_validation_item(idx, name) 
                     agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
                     val_census.append(Y.cpu().numpy())
@@ -453,9 +453,9 @@ def PixAdminTransform(
         best_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
         best_val_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
 
-    with tqdm(range(0, epochs), leave=True) as tnr:
+    with tqdm(range(0, epochs), leave=True, disable=params["silent_mode"]) as tnr:
         for epoch in tnr:
-            for sample in tqdm(train_loader):
+            for sample in tqdm(train_loader, disable=params["silent_mode"]):
                 optimizer.zero_grad()
                 
                 # Feed forward the network
@@ -477,16 +477,17 @@ def PixAdminTransform(
 
                 # logging
                 train_log_dict = {}
-                if len(y_pred)==2:
-                    train_log_dict["train/y_pred_"] = y_pred[0]
-                    train_log_dict["train/y_var"] = y_pred[1]
-                else:
-                    train_log_dict["train/y_pred"] = y_pred
-                train_log_dict["train/y_gt"] = y_gt
-                train_log_dict['train/loss'] = loss 
-                train_log_dict['batchiter'] = batchiter
-                train_log_dict['epoch'] = epoch 
-                wandb.log(train_log_dict)
+                if batchiter % 50 == 0: 
+                    if len(y_pred)==2:
+                        train_log_dict["train/y_pred_"] = y_pred[0]
+                        train_log_dict["train/y_var"] = y_pred[1]
+                    else:
+                        train_log_dict["train/y_pred"] = y_pred
+                    train_log_dict["train/y_gt"] = y_gt
+                    train_log_dict['train/loss'] = loss 
+                    train_log_dict['epoch'] = epoch 
+                    train_log_dict['batchiter'] = batchiter
+                    wandb.log(train_log_dict)
 
                 itercounter += 1
                 batchiter += 1
@@ -503,13 +504,12 @@ def PixAdminTransform(
                         for name in test_dataset_names:
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
-                            for idx in tqdm(range(len(dataset.Ys_val[name]))):
+                            for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
                                 X, Y, Mask, name = dataset.get_single_validation_item(idx, name) 
                                 agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
                                 val_census.append(Y.cpu().numpy())
 
-                            metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
-                            # this_log_dict = {"r2": r2, "mae": mae, "mse": mse, "mape": mape}
+                            metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
                             best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, name+'_VAL', best_val_scores[name])
                             for key in metrics.keys():
                                 log_dict[name + '/validation/' + key ] = metrics[key]
@@ -528,7 +528,7 @@ def PixAdminTransform(
                             val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
                             dataset=dataset,
                             disaggregation_data=dataset.memory_disag[name],
-                            dataset_name=name, return_scale=True
+                            dataset_name=name, return_scale=True, silent_mode=params["silent_mode"]
                         )
  
                         log_images = False
