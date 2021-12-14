@@ -2,7 +2,7 @@
 
 #BSUB -W 24:00
 #BSUB -n 8
-#BSUB -o /cluster/work/igp_psr/metzgern/HAC/euleroutputs/outfile_${object}.%J.%I.txt
+#BSUB -o euleroutputs/outfile_${object}.%J.%I.txt
 #BSUB -R "rusage[mem=14000,ngpus_excl_p=1]"
 #BSUB -R "select[gpu_mtotal0>=6000]"
 ##BSUB -R "rusage[scratch=12500]"
