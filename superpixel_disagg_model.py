@@ -474,6 +474,8 @@ def main():
     parser.add_argument("--input_scaling", "-is", type=bool, default=False, help="Countrywise input feature scaling.")
     parser.add_argument("--output_scaling", "-os", type=bool, default=False, help="Countrywise output scaling.")
 
+    parser.add_argument("--silent_mode", "-silent", type=bool, default=False, help="Surpresses tqdm output mostly")
+
     args = parser.parse_args()
 
 
