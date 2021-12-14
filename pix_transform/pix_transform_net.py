@@ -237,7 +237,7 @@ class PixScaleNet(nn.Module):
     def perform_scale_inputs(self, data, name):
         if name not in self.datanames:
             self.calculate_mean_input_scale()
-            return data*self.mean_in_scale[name] + self.mean_in_bias[name]
+            return data*self.mean_in_scale + self.mean_in_bias
         else:
             return data*self.in_scale[name] + self.in_bias[name]
 
@@ -247,14 +247,14 @@ class PixScaleNet(nn.Module):
         for name in self.datanames:
             self.mean_in_scale += self.in_scale[name]
             self.mean_in_bias += self.in_bias[name]
-        self.mean_in_scale = self.mean_in_scale[name]/self.datanames.__len__()
-        self.mean_in_bias = self.mean_in_bias[name]/self.datanames.__len__()
+        self.mean_in_scale = self.mean_in_scale/self.datanames.__len__()
+        self.mean_in_bias = self.mean_in_bias/self.datanames.__len__()
 
 
     def perform_scale_output(self, preds, name):
         if name not in self.datanames:
-            self.calculate_mean_input_scale()
-            return preds*self.mean_out_scale[name] + self.mean_out_bias[name]
+            self.calculate_mean_output_scale()
+            return preds*self.mean_out_scale + self.mean_out_bias
         else:
             return preds*self.out_scale[name] + self.out_bias[name]
 
@@ -264,8 +264,8 @@ class PixScaleNet(nn.Module):
         for name in self.datanames:
             self.mean_out_scale += self.out_scale[name]
             self.mean_out_bias += self.out_bias[name]
-        self.mean_out_scale = self.mean_out_scale[name]/self.datanames.__len__()
-        self.mean_out_bias = self.mean_out_bias[name]/self.datanames.__len__()
+        self.mean_out_scale = self.mean_out_scale/self.datanames.__len__()
+        self.mean_out_bias = self.mean_out_bias/self.datanames.__len__()
 
 
     def forward_batchwise(self, inputs, mask=None, name=None, predict_map=False, return_scale=False, forward_only=False): 

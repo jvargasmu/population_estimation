@@ -31,9 +31,9 @@ source HACenv/bin/activate
 module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
 
-python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz \
+python superpixel_disagg_model.py   -train uga \
                                     -train_lvl f,f,f,f,f \
-                                    -test uga,rwa,tza,nga,moz,cod \
+                                    -test uga,rwa \
                                     -lr 0.0001 \
                                     -optim adam \
                                     -wr 0.001 \
