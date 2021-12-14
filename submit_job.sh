@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #BSUB -W 24:00
-#BSUB -n 8
-#BSUB -o euleroutputs/outfile_${object}.%J.%I.txt
-#BSUB -R "rusage[mem=14000,ngpus_excl_p=1]"
+#BSUB -n 1 
+#BSUB -o euleroutputs/outfile_%J.%I.txt
+#BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
 #BSUB -R "select[gpu_mtotal0>=6000]"
 ##BSUB -R "rusage[scratch=12500]"
 #BSUB -J "popest"
@@ -11,7 +11,7 @@
 # job index (set this to your system job variable e.g. for parallel job arrays)
 # used to set model_idx and test_fold_idx below.
 #index=0   # index=0 --> model_idx=0, test_fold_idx=0
-index=$((LSB_JOBINDEX - 1))
+index=$((LSB_JOBINDEX))
 val_fold=$(( $index % 5 ))
 
 leave=Clipart
@@ -30,9 +30,9 @@ source HACenv/bin/activate
 module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
 
-python superpixel_disagg_model.py   -train nga \
+python superpixel_disagg_model.py   -train tza \
                                     -train_lvl f \
-                                    -test nga \
+                                    -test tza \
                                     -lr 0.0001 \
                                     -optim adam \
                                     -wr 0.001 \
@@ -42,7 +42,7 @@ python superpixel_disagg_model.py   -train nga \
                                     --loss laplaceNLL \
                                     -mm m \
                                     --input_scaling True \
-                                    --output_scaling True
+                                    --output_scaling False
 
 # python3 train.py --optimizer ADAM \
 #                  --scheduler MultiStepLR \
