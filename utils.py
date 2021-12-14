@@ -13,7 +13,7 @@ import h5py
 import wandb
 import psutil
 import os
-
+import pdb
 
 def get_properties_dict(data_dict_orig):
     data_dict = []
@@ -493,6 +493,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
     def get_single_training_item(self, idx): 
         name, k = self.idx_to_loc_train(idx)
         rmin, rmax, cmin, cmax = self.BBox_train[name][k]
+        #pdb.set_trace()
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_train[name][k])
         Mask = torch.tensor(self.Masks_train[name][k])
