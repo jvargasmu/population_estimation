@@ -253,7 +253,7 @@ class PixScaleNet(nn.Module):
 
     def perform_scale_output(self, preds, name):
         if name not in self.datanames:
-            self.calculate_mean_input_scale()
+            self.calculate_mean_output_scale()
             return preds*self.mean_out_scale + self.mean_out_bias
         else:
             return preds*self.out_scale[name] + self.out_bias[name]
