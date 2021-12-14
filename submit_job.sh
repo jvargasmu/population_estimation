@@ -3,7 +3,7 @@
 #BSUB -W 24:00
 #BSUB -n 1 
 #BSUB -o euleroutputs/outfile_%J.%I.txt
-#BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
+#BSUB -R "rusage[mem=40000,ngpus_excl_p=1]"
 #BSUB -R "select[gpu_mtotal0>=6000]"
 ##BSUB -R "rusage[scratch=12500]"
 #BSUB -J "popest"
@@ -30,9 +30,9 @@ source HACenv/bin/activate
 module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
 
-python superpixel_disagg_model.py   -train tza \
+python superpixel_disagg_model.py   -train nga \
                                     -train_lvl f \
-                                    -test tza \
+                                    -test nga \
                                     -lr 0.0001 \
                                     -optim adam \
                                     -wr 0.001 \
