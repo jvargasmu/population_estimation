@@ -6,7 +6,7 @@
 #BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
 #BSUB -R "select[gpu_mtotal0>=6000]"
 #BSUB -R "rusage[scratch=120000]"
-#BSUB -J "pop,ff"
+#BSUB -J "pop_ff[0-5]"
 
 # job index (set this to your system job variable e.g. for parallel job arrays)
 # used to set model_idx and test_fold_idx below.
