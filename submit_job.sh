@@ -12,7 +12,7 @@
 # used to set model_idx and test_fold_idx below.
 #index=0   # index=0 --> model_idx=0, test_fold_idx=0
 index=$((LSB_JOBINDEX))
-rs=$(( $index % 5 ))
+rseed=$(( $index % 5 ))
 
 leave=Clipart
 
@@ -22,7 +22,7 @@ cp -r -v /cluster/work/igp_psr/metzgern/HAC/code/repocode/population_estimation/
 
 echo job index: $index
 echo leave: $leave
-echo val_fold: $val_fold
+echo val_fold: $rseed
 echo TEMPDIR: $TMPDIR
 
 source HACenv/bin/activate
@@ -40,7 +40,7 @@ python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz \
                                     -adamwr 0. \
                                     -lstep 8000 \
                                     --validation_fold 0 \
-                                    --rs ${rs} \
+                                    -rs ${rseed} \
                                     -mm m,m,m,m,m \
                                     --loss laplaceNLL \
                                     --input_scaling True \
