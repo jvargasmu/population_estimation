@@ -353,6 +353,7 @@ def superpixel_with_pix_data(
         eval_var_filename = f"{dataset_dir}/{ds}/additional_test_vars.pkl"
         eval_disag_filename = f"{dataset_dir}/{ds}/disag_vars.pkl"
         parent_dir = f"{dataset_dir}/{ds}/"
+        print("h5_filename", h5_filename)
 
         if not (os.path.isfile(h5_filename) and os.path.isfile(train_var_filename_f) and os.path.isfile(train_var_filename_c) \
             and os.path.isfile(eval_var_filename) and os.path.isfile(eval_disag_filename)):
@@ -479,7 +480,7 @@ def main():
     parser.add_argument("--output_scaling", "-os", type=bool, default=False, help="Countrywise output scaling.")
 
     parser.add_argument("--silent_mode", "-silent", type=bool, default=False, help="Surpresses tqdm output mostly")
-    parser.add_argument("--dataset_dir", "-dd", type=bool, default='datasets', help="Directory of the hdf5 files")
+    parser.add_argument("--dataset_dir", "-dd", type=str, default='datasets', help="Directory of the hdf5 files")
 
     args = parser.parse_args()
 
