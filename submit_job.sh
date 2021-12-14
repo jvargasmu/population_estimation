@@ -12,7 +12,7 @@
 # used to set model_idx and test_fold_idx below.
 #index=0   # index=0 --> model_idx=0, test_fold_idx=0
 index=$((LSB_JOBINDEX))
-val_fold=$(( $index % 5 ))
+rs=$(( $index % 5 ))
 
 leave=Clipart
 
@@ -31,24 +31,22 @@ source HACenv/bin/activate
 module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
 
-python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz,cod \
-                                    -train_lvl f,f,f,f,f,f \
+python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz \
+                                    -train_lvl f,f,f,f,f \
                                     -test uga,rwa,tza,nga,moz,cod \
                                     -lr 0.0001 \
                                     -optim adam \
                                     -wr 0.001 \
                                     -adamwr 0. \
                                     -lstep 8000 \
-                                    --validation_fold ${val_fold} \
-                                    -mm m,m,m,m,m,m \
+                                    --validation_fold 0 \
+                                    --rs ${rs} \
+                                    -mm m,m,m,m,m \
                                     --loss laplaceNLL \
-                                    --custom_sampler_weights 1,1,1 \
                                     --input_scaling True \
                                     --output_scaling True \
 				                    --silent_mode True \
                                     --dataset_dir $TMPDIR/datasets
-
-
 
 
 
