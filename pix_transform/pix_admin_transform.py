@@ -251,6 +251,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
 
 def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_scores):
 
+    Path("checkpoints").mkdir(parents=True, exist_ok=True)
+    
     best_r2, best_mae, best_mape, best_r2_adj, best_mae_adj, best_mape_adj = best_scores
 
     if log_dict["r2"]>best_r2:
