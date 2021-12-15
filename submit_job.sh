@@ -6,7 +6,7 @@
 #BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
 #BSUB -R "select[gpu_mtotal0>=6000]"
 #BSUB -R "rusage[scratch=120000]"
-#BSUB -J "pop_ff[1-5]"
+#BSUB -J "do0_6[1-5]"
 
 # job index (set this to your system job variable e.g. for parallel job arrays)
 # used to set model_idx and test_fold_idx below.
@@ -31,12 +31,13 @@ source HACenv/bin/activate
 module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
 
-python superpixel_disagg_model.py   -train uga \
+python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz \
                                     -train_lvl f,f,f,f,f \
-                                    -test uga,rwa \
+                                    -test uga,rwa,tza,nga,moz,cod \
                                     -lr 0.0001 \
                                     -optim adam \
-                                    -wr 0.001 \
+                                    -wr 0.01 \
+				    --dropout 0.6 \
                                     -adamwr 0. \
                                     -lstep 8000 \
                                     --validation_fold 0 \
@@ -45,7 +46,7 @@ python superpixel_disagg_model.py   -train uga \
                                     --loss laplaceNLL \
                                     --input_scaling True \
                                     --output_scaling True \
-				                    --silent_mode True \
+				    --silent_mode True \
                                     --dataset_dir $TMPDIR/datasets
 
 
