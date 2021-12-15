@@ -471,7 +471,7 @@
             ]
         },
         {
-            "name": "TZA,UGA->TZA superpixel_disagg_model.py",
+            "name": "TZA,UGA,RWA->COD superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
@@ -481,19 +481,19 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             //"justMyCode": false,
             "args": [ 
-                "-train", "uga,tza",
-                "-train_lvl", "f,c",
-                "-test", "tza,uga",
-                "-lr", "0.00003",
+                "-train", "uga,rwa,tza",
+                "-train_lvl", "f,f,f",
+                "-test", "uga,rwa,tza,cod",
+                "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
-                "-adamwr", "0.001",
-                "-mm", "True",
+                "-adamwr", "0.", 
                 "--validation_fold", "0",
-                "-mm", "d,d",
-                "--sampler", "custom",
-                "--custom_sampler_weights", "1,1000",
-                "--dropout", "0.0"
+                "-mm", "m,m,m",
+                "-lstep", "200", 
+                "--dropout", "0.4",
+                "--input_scaling", "True",
+                "--output_scaling", "True"
             ]
         },
         {
@@ -692,7 +692,7 @@
             ]
         },
         {
-            "name": "UGA,RWA->UGA,RWA superpixel_disagg_model.py",
+            "name": "UGA,RWA->UGA,RWA bay-dropout superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",

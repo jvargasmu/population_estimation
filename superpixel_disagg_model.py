@@ -220,7 +220,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
     
     # TODO: Add feature_names here!!! and unpack it in the datasetloader
     with open(var_filename, 'wb') as handle:
-        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tregid, tMasks, tBBox], handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tregid, tMasks, tBBox, feature_names], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):

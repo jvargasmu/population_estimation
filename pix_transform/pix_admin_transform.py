@@ -245,6 +245,32 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                     metrics["adjusted/country/"+key] = value  
 
             logging.info(f'fast disag finished')
+    
+    if "in_scale" in dir(mynet):
+        if name in mynet.in_scale.keys():
+            in_scales = mynet.in_scale[name][0,:,0,0].detach().cpu().numpy()
+            in_biases = mynet.in_bias[name][0,:,0,0].detach().cpu().numpy() 
+            for i,(sc,bi) in enumerate(zip(in_scales[::-1], in_biases[::-1])):
+                fname = dataset.feature_names[name][-i]
+                metrics["input_scaling/"+fname] = sc
+                metrics["input_bias/"+fname] = bi
+
+        elif "mean_in_scale" in dir(mynet): 
+            in_scales = mynet.mean_in_scale[0,:,0,0].detach().cpu().numpy()
+            in_biases = mynet.mean_in_bias[0,:,0,0].detach().cpu().numpy() 
+            for i,(sc,bi) in enumerate(zip(in_scales[::-1], in_biases[::-1])):
+                fname = dataset.feature_names[name][-i]
+                metrics["input_scaling/"+fname] = sc
+                metrics["input_bias/"+fname] = bi
+
+    if "out_scale" in dir(mynet): 
+        if name in mynet.out_scale.keys():
+            metrics["output_scaling/output_scaling"] = mynet.out_scale[name].detach().cpu().numpy()
+            metrics["output_scaling/output_bias"] = mynet.out_bias[name].detach().cpu().numpy() 
+
+        elif "mean_out_scale" in dir(mynet): 
+            metrics["output_scaling/output_scaling"] = mynet.mean_out_scale.detach().cpu().numpy()
+            metrics["output_scaling/output_bias"] = mynet.mean_out_bias.detach().cpu().numpy()
 
     return res, metrics
 
