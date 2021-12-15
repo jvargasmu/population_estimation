@@ -630,14 +630,17 @@
             "args": [ 
                 "-train", "uga,tza,rwa,nga,moz",
                 "-train_lvl", "f,f,f,f,f",
-                "-test", "tza,uga,cod,rwa",
-                "-lr", "0.00003",
+                "-test", "uga,tza,rwa,nga,moz,cod",
+                "-lr", "0.0001",
                 "-optim", "adam",
-                "-wr", "0.1",
+                "-wr", "0.001",
+                "--loss", "laplaceNLL",
+                "--input_scaling", "True",
+                "--output_scaling", "True",
                 "-adamwr", "0.",
                 "-lstep", "200",
                 "--validation_fold", "0",
-                "-mm", "m,m,m,m,d"
+                "-mm", "m,d,m,d,d,d"
             ]
         },
         {
@@ -689,7 +692,7 @@
             ]
         },
         {
-            "name": "UGA,RWA->UGA,RWA inscaling superpixel_disagg_model.py",
+            "name": "UGA,RWA->UGA,RWA superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
@@ -700,17 +703,18 @@
             "args": [ 
                 "-train", "uga,rwa",
                 "-train_lvl", "f,f",
-                "-test", "uga,rwa",
+                "-test", "uga,rwa,nga",
                 "-lr", "0.0001",
                 "-optim", "adam",
-                "-wr", "0.001",
+                "-wr", "0.01",
+                "--dropout", "0.3",
                 "-adamwr", "0.",
                 "-lstep", "200",
                 "--validation_fold", "0",
                 "-mm", "m,m",
                 "--loss", "laplaceNLL",
-                "--custom_sampler_weights", "1,1",
-                "--input_scaling", "True"
+                //"--input_scaling", "True",
+                //"--output_scaling", "True"
             ]
         },
         {
