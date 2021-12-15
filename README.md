@@ -20,3 +20,15 @@ time python train_model_with_agg_data.py preprocessed_data.pkl raster_world_pop_
 
 
 time python superpixel_disagg_model.py -train tza,uga -train_lvl c,f -test tza,uga -lr 0.0001 -optim adam -wr 0.001 -lstep 400 
+
+
+
+## Installation Steps
+
+ - 'git clone' this repo
+ - 'virtualenv -p python3 env'
+ - 'source HACenv/bin/activate'
+ - 'pip install --upgrade pip'
+ - 'pip install gdal==3.2.1'
+ - 'pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==\`gdal-config --version'
+ - 'pip install numpy torch matplotlib h5py wandb tqdm torchvision fiona sklearn'
