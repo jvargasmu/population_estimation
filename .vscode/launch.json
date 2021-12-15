@@ -692,7 +692,7 @@
             ]
         },
         {
-            "name": "UGA,RWA->UGA,RWA superpixel_disagg_model.py",
+            "name": "UGA,RWA->UGA,RWA bay-dropout superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
