@@ -46,7 +46,7 @@ def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
     # agg_preds_cr_arr = np.zeros(len(target_to_source.unique()))
     agg_preds_cr_arr = np.zeros(target_to_source.unique().max()+1)
     for finereg in target_to_source.unique():
-        finregs_to_sum = torch.nonzero(target_to_source==finereg)
+        # finregs_to_sum = torch.nonzero(target_to_source==finereg)
         agg_preds_cr_arr[finereg] = agg_preds_arr[target_to_source==finereg].sum()
     
     agg_preds_cr = {id: agg_preds_cr_arr[id] for id in source_census.keys()}
@@ -55,7 +55,6 @@ def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
     for idx in (scalings.keys()):
         mask = [source_regions==idx]
         predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
-
 
     scalings_array = torch.tensor(list(scalings.values())).numpy()
     log_dict = {
