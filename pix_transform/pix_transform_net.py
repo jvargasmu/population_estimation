@@ -258,15 +258,18 @@ class PixScaleNet(nn.Module):
     def perform_scale_output(self, preds, name):
         if name not in self.datanames:
             self.calculate_mean_output_scale()
-            return preds*self.mean_out_scale + self.mean_out_bias
+            preds = preds*self.mean_out_scale + self.mean_out_bias
         else:
             if self.bayesian:
                 # Variance propagation for the predicted varianced in dim 2
                 preds_0 = preds[:,0:1]*self.out_scale[name] + self.out_bias[name]
                 preds_1 = preds[:,1:2]*torch.square(self.out_scale[name])
-                return torch.cat([preds_0,preds_1], 1) 
+                preds = torch.cat([preds_0,preds_1], 1) 
             else:
-                return preds*self.out_scale[name] + self.out_bias[name]
+                preds = preds*self.out_scale[name] + self.out_bias[name]
+        
+        # Ensure that there are no negative occ-rates and variances
+        return preds.clamp(min=0)
 
     def calculate_mean_output_scale(self):
         self.mean_out_scale = 0
