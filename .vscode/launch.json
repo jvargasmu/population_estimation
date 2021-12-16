@@ -269,7 +269,7 @@
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "--log_step", "1",
-                "--validation_fold", "1" 
+                "--validation_fold", "0" 
             ]
         },
         {
@@ -291,7 +291,7 @@
                 "-wr", "0.0001",
                 "-adamwr", "0.",
                 "--log_step", "200",
-                "--validation_fold", "1"
+                "--validation_fold", "0"
             ]
         },
         {
@@ -312,7 +312,7 @@
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "--log_step", "1000",
-                "--validation_fold", "1",
+                "--validation_fold", "0",
                 "--loss", "laplaceNLL",
                 "--output_scaling", "True"
             ]
@@ -335,7 +335,7 @@
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "--log_step", "1000",
-                "--validation_fold", "1",
+                "--validation_fold", "0",
                 "--loss", "laplaceNLL",
                 "--load_state", "stellar-aardvark-1041",
                 "--eval_only", "True"
@@ -468,7 +468,7 @@
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "-mm", "m,m",
-                "--validation_fold", "1"
+                "--validation_fold", "0"
             ]
         },
         {
