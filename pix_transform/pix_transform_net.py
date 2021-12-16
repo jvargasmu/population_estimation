@@ -132,8 +132,10 @@ class PixScaleNet(nn.Module):
             for name in datanames:
                 self.in_scale[name] = torch.ones( (1,channels_in-1,1,1), requires_grad=True, device=device)
                 self.in_bias[name] = torch.zeros( (1,channels_in-1,1,1), requires_grad=True, device=device)
-                self.params_with_regularizer += [{'params':self.in_scale[name],'weight_decay':weights_regularizer}]
-                self.params_with_regularizer += [{'params':self.in_bias[name],'weight_decay':weights_regularizer}]
+                # self.params_with_regularizer += [{'params':self.in_scale[name],'weight_decay':weights_regularizer}]
+                self.params_with_regularizer += [{'params':self.in_scale[name]}]
+                # self.params_with_regularizer += [{'params':self.in_bias[name],'weight_decay':weights_regularizer}]
+                self.params_with_regularizer += [{'params':self.in_bias[name]}]
             
         if self.output_scaling and (datanames is not None):
             print("using elementwise output scaling")
@@ -144,8 +146,10 @@ class PixScaleNet(nn.Module):
                 # self.out_scale[name].data.fill_(1.)
                 self.out_bias[name] =  torch.zeros( (1), requires_grad=True, device=device)
                 # self.out_bias[name].data.fill_(0.)
-                self.params_with_regularizer += [{'params':self.out_scale[name],'weight_decay':weights_regularizer}]
-                self.params_with_regularizer += [{'params':self.out_bias[name],'weight_decay':weights_regularizer}]
+                # self.params_with_regularizer += [{'params':self.out_scale[name],'weight_decay':weights_regularizer}]
+                self.params_with_regularizer += [{'params':self.out_scale[name]}]
+                # self.params_with_regularizer += [{'params':self.out_bias[name],'weight_decay':weights_regularizer}]
+                self.params_with_regularizer += [{'params':self.out_bias[name]}]
             
         if dropout>0.0:
             self.scalenet = nn.Sequential(
@@ -256,7 +260,13 @@ class PixScaleNet(nn.Module):
             self.calculate_mean_output_scale()
             return preds*self.mean_out_scale + self.mean_out_bias
         else:
-            return preds*self.out_scale[name] + self.out_bias[name]
+            if self.bayesian:
+                # Variance propagation for the predicted varianced in dim 2
+                preds_0 = preds[:,0:1]*self.out_scale[name] + self.out_bias[name]
+                preds_1 = preds[:,1:2]*torch.square(self.out_scale[name])
+                return torch.cat([preds_0,preds_1], 1) 
+            else:
+                return preds*self.out_scale[name] + self.out_bias[name]
 
     def calculate_mean_output_scale(self):
         self.mean_out_scale = 0
