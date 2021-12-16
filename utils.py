@@ -338,12 +338,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 _, _, _, tY_f, tregid_f, tMasks_f, tBBox_f, _ = pickle.load(f)
             with open(rs['train_vars_c'], "rb") as f:
                 _, _, _, tY_c, tregid_c, tMasks_c, tBBox_c, feature_names = pickle.load(f)
-            if train_level[i]=='f':
-                tY, tregid, tMasks, tBBox = tY_f, tregid_f, tMasks_f, tBBox_f
-                tY_c, tregid_c, tMasks_c, tBBox_c = [],[],[],[]
-            elif train_level[i]=='c':
-                tY, tregid, tMasks, tBBox = tY_c, tregid_c, tMasks_c, tBBox_c
-                tY_c, tregid_c, tMasks_c, tBBox_c = [],[],[],[]
+
             self.feature_names[name] = feature_names
 
             with open(rs['eval_vars'], "rb") as f:
@@ -363,6 +358,37 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 raise Exception(f"Wrong memory mode for {name}. It should be 'd' or 'm' in a comma separated list")
             print("After loading of features",process.memory_info().rss/1000/1000,"mb used")
             
+            # Validation split strategy:
+            # We always split the coarse patches into 5 folds, then we look up fine patches that belong to those coarse validation patches
+            np.random.seed(1610)
+            if validation_fold is not None:
+                kf = KFold(n_splits=5, shuffle=True, random_state=1610)
+                trainidxs, validxs = [],[]
+                for train_index, val_index in kf.split(tY_c):
+                    trainidxs.append(train_index)
+                    validxs.append(val_index)
+                choice_val_c = validxs[validation_fold]
+            else:
+                split_int =int(len(tY_c)*validation_split)
+                choice_val_c = np.random.choice(range(len(tY_c)), size=(split_int,), replace=False)   
+            ind_val_c = np.zeros(len(tY_c), dtype=bool)
+            ind_val_c[choice_val_c] = True 
+            ind_train_c = ~ind_val_c
+
+            # Prepare validation variables
+            # If we took the coarse level as training, we need to translate the ind_val to the fine level and get the fine level patches for validation!
+            choice_val_f = np.where(np.in1d(self.memory_disag[name][0],choice_val_c)[self.memory_vars[name][3]])[0] 
+            ind_val_f = np.zeros(len(tY_f), dtype=bool)
+            ind_val_f[choice_val_f] = True 
+            ind_train_f = ~ind_val_f
+
+            if train_level[i]=='f':
+                tY, tregid, tMasks, tBBox = tY_f, tregid_f, tMasks_f, tBBox_f
+                ind_train = ind_train_f
+            elif train_level[i]=='c':
+                tY, tregid, tMasks, tBBox = tY_c, tregid_c, tMasks_c, tBBox_c
+                ind_train = ind_train_c
+
             tY = np.asarray(tY)
             tMasks = np.asarray(tMasks, dtype=object)
             tBBox = np.asarray(tBBox)
@@ -373,27 +399,11 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             tBBox_f = np.asarray(tBBox_f)
             tregid_f = np.asarray(tregid_f).astype(np.int16)
 
-            np.random.seed(1610)
-            if validation_fold is not None:
-                kf = KFold(n_splits=5, shuffle=True, random_state=1610)
-                trainidxs, validxs = [],[]
-                for train_index, val_index in kf.split(tY):
-                    trainidxs.append(train_index)
-                    validxs.append(val_index)
-                choice_val = validxs[validation_fold]
-            else:
-                split_int =int(len(tY)*validation_split)
-                choice_val = np.random.choice(range(len(tY)), size=(split_int,), replace=False)   
-            ind_val = np.zeros(len(tY), dtype=bool)
-            ind_val[choice_val] = True 
-            ind_train = ~ind_val
-
-            # Prepare validation variables
-            self.BBox_val[name] = tBBox[ind_val]
+            self.BBox_val[name] = tBBox_f[ind_val_f]
             valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
             self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
-            self.Ys_val[name] =  tY[ind_val][valid_val_boxes]
-            self.Masks_val[name] = tMasks[ind_val][valid_val_boxes]
+            self.Ys_val[name] =  tY_f[ind_val_f][valid_val_boxes]
+            self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
             self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
 
             # Prepare the training variables
@@ -455,6 +465,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         return self.all_sample_ids.__len__()
     
     def len_val(self):
+        # this will return the length of the training dataset
         return len(self.loc_list_val)
     
     def len_all_samples(self, name=None):
