@@ -396,7 +396,7 @@ def PixAdminTransform(
 
     # Load from state
     if params["load_state"] is not None:
-        checkpoint = torch.load('checkpoints/best_mape_{}_{}.pth'.format(test_dataset_names[0], params["load_state"]))
+        checkpoint = torch.load('checkpoints/best_mape_{}_VAL_{}.pth'.format(test_dataset_names[0], params["load_state"]))
         mynet.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     wandb.watch(mynet)
