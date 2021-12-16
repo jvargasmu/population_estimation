@@ -389,6 +389,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             ind_train = ~ind_val
 
             # Prepare validation variables
+            # TODO: If we took the coarse level as training, we need to translate the ind_val to the fine level and get the fine level patches for validation!
             self.BBox_val[name] = tBBox[ind_val]
             valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
             self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
