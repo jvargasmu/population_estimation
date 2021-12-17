@@ -365,7 +365,7 @@
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
-                "--load_state", "stellar-aardvark-1041",
+                "--load_state", "",
                 "--eval_only", "True"
             ]
         },
