@@ -496,7 +496,10 @@
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "-mm", "m,m",
-                "--validation_fold", "0"
+                "--validation_fold", "0",
+                "--loss", "laplaceNLL",
+                "--sampler", "custom",
+                "--custom_sampler_weights", "100,1"
             ]
         },
         {
