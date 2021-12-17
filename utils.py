@@ -326,9 +326,11 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.BBox, self.BBox_train, self.BBox_val = {},{},{}
         self.Ys, self.Ys_train, self.Ys_val = {},{},{}
         self.tregid, self.max_tregid = {},{}
+        self.tregid_val, self.max_tregid_val = {},{}
         self.Masks, self.Masks_train, self.Masks_val = {},{},{}
         self.weight_list = {}
-        self.memory_vars, self.memory_disag, self.feature_names = {},{},{}
+        self.memory_vars, self.memory_disag, self.memory_disag_val, self.feature_names = {},{},{},{}
+        self.source_census_val = {}
         process = psutil.Process(os.getpid())
         for i, (name, rs) in tqdm(enumerate(datalocations.items())):
             print("Preparing", name)
@@ -375,9 +377,17 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             ind_val_c[choice_val_c] = True 
             ind_train_c = ~ind_val_c
 
+            tY_f = np.asarray(tY_f)
+            tMasks_f = np.asarray(tMasks_f, dtype=object)
+            tBBox_f = np.asarray(tBBox_f)
+            tregid_f = np.asarray(tregid_f).astype(np.int16)
+            tregid_c = np.asarray(tregid_c).astype(np.int16)
+
+            tregid_val_c = tregid_c[choice_val_c]
+
             # Prepare validation variables
             # If we took the coarse level as training, we need to translate the ind_val to the fine level and get the fine level patches for validation!
-            choice_val_f = np.where(np.in1d(self.memory_disag[name][0],choice_val_c)[self.memory_vars[name][3]])[0] 
+            choice_val_f = np.where(np.in1d(self.memory_disag[name][0],tregid_val_c)[self.memory_vars[name][3]])[0] 
             ind_val_f = np.zeros(len(tY_f), dtype=bool)
             ind_val_f[choice_val_f] = True 
             ind_train_f = ~ind_val_f
@@ -392,17 +402,19 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             tY = np.asarray(tY)
             tMasks = np.asarray(tMasks, dtype=object)
             tBBox = np.asarray(tBBox)
-            tregid = np.asarray(tregid).astype(np.int16)
 
-            tY_f = np.asarray(tY_f)
-            tMasks_f = np.asarray(tMasks_f, dtype=object)
-            tBBox_f = np.asarray(tBBox_f)
-            tregid_f = np.asarray(tregid_f).astype(np.int16)
 
             self.BBox_val[name] = tBBox_f[ind_val_f]
             valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
             self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
-            self.Ys_val[name] =  tY_f[ind_val_f][valid_val_boxes]
+            self.Ys_val[name] =  tY_f[ind_val_f][valid_val_boxes] 
+            self.tregid_val[name] = tregid_f[ind_val_f][valid_val_boxes]
+            target_to_source_val = self.memory_disag[name][0].clone()
+            target_to_source_val[~np.in1d(self.memory_disag[name][0], tregid_val_c)] = 0
+            # coarse_regid_val = self.memory_disag[name][0][self.tregid_val[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_val_c"
+            self.source_census_val[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_val_c}
+            self.memory_disag_val[name] = target_to_source_val, self.source_census_val[name], self.memory_disag[name][2]
+            self.max_tregid_val[name] = np.max(self.tregid_val[name])
             self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
             self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
 
@@ -522,9 +534,10 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_val[name][k])
         Mask = torch.tensor(self.Masks_val[name][k])
+        census_id = torch.tensor(self.tregid_val[name][k])
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
-        return X, Y, Mask, name
+        return X, Y, Mask, name, census_id
 
     def __getitem__(self,idx):
         idxs = self.all_sample_ids[idx] 
