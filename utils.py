@@ -355,7 +355,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             elif memory_mode[i]=='d':
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
             else:
-                raise Exception(f"Wrong memory mode for {name}. It should be 'd' or 'm' in a comma separated list")
+                raise Exception(f"Wrong memory mode for {name}. It should be 'd' or 'm' in a comma separated list. No spaces!")
             print("After loading of features",process.memory_info().rss/1000/1000,"mb used")
             
             # Validation split strategy:

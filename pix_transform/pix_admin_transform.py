@@ -339,6 +339,12 @@ def PixAdminTransform(
             params["validation_split"], params["validation_fold"], params["weights"], params["custom_sampler_weights"])
     else:
         dataset = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
+
+    # Fix all random seeds
+    torch.manual_seed(params["random_seed"])
+    random.seed(params["random_seed"])
+    np.random.seed(params["random_seed"])
+
     if params["sampler"] in ['custom', 'natural']:
         weights = dataset.all_natural_weights if params["sampler"]=="natural" else dataset.custom_sampler_weights
         sampler = torch.utils.data.WeightedRandomSampler(weights, len(weights), replacement=False)
@@ -348,11 +354,6 @@ def PixAdminTransform(
         sampler = None
         shuffle = True
     train_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=shuffle, sampler=sampler, num_workers=0)
-
-    # Fix all random seeds
-    torch.manual_seed(params["random_seed"])
-    random.seed(params["random_seed"])
-    np.random.seed(params["random_seed"])
 
     #### setup loss/network ############################################################################
 
