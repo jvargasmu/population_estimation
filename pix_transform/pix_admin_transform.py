@@ -188,7 +188,7 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         else:
             # Fast evaluation pipeline
             logging.info(f'Samplewise eval started')
-            agg_preds2 = {}
+            # agg_preds2 = {}
             agg_preds_arr = torch.zeros((dataset.max_tregid[dataset_name]+1,))
             for idx in tqdm(range(dataset.len_all_samples(dataset_name)), disable=silent_mode):
                 X, Y, Mask, name, census_id = dataset.get_single_item(idx, dataset_name) 
@@ -196,7 +196,7 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
 
                 if isinstance(prediction, np.ndarray):
                     prediction = prediction[0]
-                agg_preds2[census_id.item()] = prediction.item()
+                # agg_preds2[census_id.item()] = prediction.item()
                 agg_preds_arr[census_id.item()] = prediction.item()
 
             agg_preds3 = {id: agg_preds_arr[id].item() for id in validation_ids}
@@ -414,8 +414,10 @@ def PixAdminTransform(
                 
                 logging.info(f'Validating dataset of {name}')
                 agg_preds,val_census = [],[]
+                agg_preds_arr = torch.zeros((dataset.max_tregid_val[name]+1,))
+
                 for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
-                    X, Y, Mask, name = dataset.get_single_validation_item(idx, name) 
+                    X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name) 
                     agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
                     val_census.append(Y.cpu().numpy())
 
@@ -530,15 +532,59 @@ def PixAdminTransform(
                         for name in test_dataset_names:
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
+                            agg_preds_arr = torch.zeros((dataset.max_tregid[name]+1,))
+
                             for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
-                                X, Y, Mask, name = dataset.get_single_validation_item(idx, name) 
-                                agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
+                                X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name)
+                                pred = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
+                                agg_preds.append(pred)
                                 val_census.append(Y.cpu().numpy())
+                                if isinstance(pred, np.ndarray):
+                                    pred = pred[0] 
+                                agg_preds_arr[census_id.item()] = pred.item()
+
+                            agg_preds_arr[dataset.tregid_val[name]],
 
                             metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
                             best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, name+'_VAL', best_val_scores[name])
                             for key in metrics.keys():
                                 log_dict[name + '/validation/' + key ] = metrics[key]
+                            
+                            # Disaggregation per coarse val census
+                            agg_preds_arr_adj, this_metrics = disag_wo_map(agg_preds_arr, dataset.memory_disag_val[name])
+                            for key,value in this_metrics.items():
+                                log_dict[name + "/validation/adjusted/coarse/"+key] = value  
+                            # agg_preds_arr_adj[dataset.tregid_val[name]]
+                            this_metrics = compute_performance_metrics_arrays(agg_preds_arr_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
+                            for key,value in this_metrics.items():
+                                log_dict[name + "/validation/adjusted/coarse/"+key] = value  
+
+                            # "fake" new dissagregation data and reuse the function
+                            # Do the disagregation on country level
+                            dataset.memory_disag_val[name][0]
+                            tts = torch.zeros(dataset.memory_disag_val[name][0].shape, dtype=int)
+                            tts[torch.where(dataset.memory_disag_val[name][0])] = 1
+                            disaggregation_data_coarsest_val = \
+                                [tts, {1: sum(list(dataset.memory_disag_val[name][1].values()))}, dataset.memory_disag_val[name][2] ]
+                        
+                            agg_preds_arr_country_adj, this_metrics_cl = disag_wo_map(agg_preds_arr, disaggregation_data_coarsest_val)
+                            for key,value in this_metrics_cl.items():
+                                log_dict[name + "/validation/adjusted/country_like/"+key] = value  
+                            # agg_preds_arr_adj[dataset.tregid_val[name]]
+                            this_metrics_cl = compute_performance_metrics_arrays(agg_preds_arr_country_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
+                            for key,value in this_metrics_cl.items():
+                                log_dict[name + "/validation/adjusted/country_like/"+key] = value  
+
+                            # agg_preds3 = {id: agg_preds_arr[id].item() for id in validation_ids}
+
+                            # for cid in validation_census.keys():
+                            #     if cid not in agg_preds3.keys():
+                            #         agg_preds3[cid] = 0
+
+                            # this_metrics = compute_performance_metrics(agg_preds3, validation_census)
+                            # metrics.update(this_metrics)
+
+                            
                             torch.cuda.empty_cache()
 
                     # Evaluation Model
