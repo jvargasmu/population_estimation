@@ -278,7 +278,8 @@ def superpixel_with_pix_data(
     input_scaling,
     output_scaling,
     silent_mode,
-    dataset_dir
+    dataset_dir,
+    max_step
     ):
 
     ####  define parameters  ########################################################
@@ -298,6 +299,7 @@ def superpixel_with_pix_data(
             'lr': learning_rate,
             "epochs": 100,
             'logstep': log_step,
+            'maxstep': max_step,
             'train_dataset_name': train_dataset_name,
             'train_level': train_level,
             'test_dataset_name': test_dataset_name,
@@ -468,6 +470,7 @@ def main():
 
     parser.add_argument("--memory_mode", "-mm", type=str, default='m', help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory! m:load into memory; d: load from a hdf5 file on disk. (separated by commas)")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
+    parser.add_argument("--max_step", "-mstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
 
     parser.add_argument("--validation_split", "-vs", type=float, default=0.2, help="Evealuate the model after 'logstep' batchiterations.")
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
@@ -531,7 +534,8 @@ def main():
         args.input_scaling,
         args.output_scaling,
         args.silent_mode,
-        args.dataset_dir
+        args.dataset_dir,
+        args.max_step
     )
 
 

@@ -304,18 +304,20 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "rwa",
-                "-train_lvl", "c",
+                "-train", "uga",
+                "-train_lvl", "c,c",
                 "-test", "rwa",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-lstep", "100",
                 "-wr", "0.001",
                 "-adamwr", "0.",
-                "--log_step", "1000",
+                "--log_step", "100",
                 "--validation_fold", "0",
                 "--loss", "laplaceNLL",
-                "--output_scaling", "True"
+                "--output_scaling", "True",
+                "-mm", "m,m,m",
+                "--max_step", "300"
             ]
         },
         {
@@ -687,15 +689,15 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
                 "-train", "uga,tza,rwa,nga,moz,cod",
-                "-train_lvl", "f,f,f,f,f,c",
+                "-train_lvl", "f,f,f,f,f,f",
                 "-test", "tza,uga,cod,rwa",
                 "-lr", "0.00003",
                 "-optim", "adam",
                 "-wr", "0.1",
                 "-adamwr", "0.",
-                "-lstep", "2000",
+                "-lstep", "100",
                 "--validation_fold", "0",
-                "-mm", "m,m,m,m,d,m",
+                "-mm", "m,m,m,m,d,d",
                 "--loss", "laplaceNLL",
                 "--custom_sampler_weights", "1,1,1,1,1,10000"
             ]

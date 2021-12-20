@@ -246,11 +246,11 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             logging.info(f'fast disag finished')
     
     if "in_scale" in dir(mynet):
-        if name in mynet.in_scale.keys():
-            in_scales = mynet.in_scale[name][0,:,0,0].detach().cpu().numpy()
-            in_biases = mynet.in_bias[name][0,:,0,0].detach().cpu().numpy() 
+        if dataset_name in mynet.in_scale.keys():
+            in_scales = mynet.in_scale[dataset_name][0,:,0,0].detach().cpu().numpy()
+            in_biases = mynet.in_bias[dataset_name][0,:,0,0].detach().cpu().numpy() 
             for i,(sc,bi) in enumerate(zip(in_scales[::-1], in_biases[::-1])):
-                fname = dataset.feature_names[name][-i]
+                fname = dataset.feature_names[dataset_name][-i]
                 metrics["input_scaling/"+fname] = sc
                 metrics["input_bias/"+fname] = bi
 
@@ -258,14 +258,14 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             in_scales = mynet.mean_in_scale[0,:,0,0].detach().cpu().numpy()
             in_biases = mynet.mean_in_bias[0,:,0,0].detach().cpu().numpy() 
             for i,(sc,bi) in enumerate(zip(in_scales[::-1], in_biases[::-1])):
-                fname = dataset.feature_names[name][-i]
+                fname = dataset.feature_names[dataset_name][-i]
                 metrics["input_scaling/"+fname] = sc
                 metrics["input_bias/"+fname] = bi
 
     if "out_scale" in dir(mynet): 
-        if name in mynet.out_scale.keys():
-            metrics["output_scaling/output_scaling"] = mynet.out_scale[name].detach().cpu().numpy()
-            metrics["output_scaling/output_bias"] = mynet.out_bias[name].detach().cpu().numpy() 
+        if dataset_name in mynet.out_scale.keys():
+            metrics["output_scaling/output_scaling"] = mynet.out_scale[dataset_name].detach().cpu().numpy()
+            metrics["output_scaling/output_bias"] = mynet.out_bias[dataset_name].detach().cpu().numpy() 
 
         elif "mean_out_scale" in dir(mynet): 
             metrics["output_scaling/output_scaling"] = mynet.mean_out_scale.detach().cpu().numpy()
@@ -441,7 +441,7 @@ def PixAdminTransform(
                 dataset_name=name, return_scale=True, full_eval=True
             )
 
-            log_images = True
+            log_images = False
             if log_images:
                 if len(res['scales'].shape)==3:
                     this_log_dict["viz/scales"] = wandb.Image(res['scales'][0])
@@ -543,29 +543,25 @@ def PixAdminTransform(
                                     pred = pred[0] 
                                 agg_preds_arr[census_id.item()] = pred.item()
 
-                            agg_preds_arr[dataset.tregid_val[name]],
-
                             metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
                             best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, name+'_VAL', best_val_scores[name])
                             for key in metrics.keys():
                                 log_dict[name + '/validation/' + key ] = metrics[key]
                             
                             # Disaggregation per coarse val census
-                            agg_preds_arr_adj, this_metrics = disag_wo_map(agg_preds_arr, dataset.memory_disag_val[name])
-                            for key,value in this_metrics.items():
+                            agg_preds_arr_adj, this_metrics_dis = disag_wo_map(agg_preds_arr, dataset.memory_disag_val[name])
+                            for key,value in this_metrics_dis.items():
                                 log_dict[name + "/validation/adjusted/coarse/"+key] = value  
-                            # agg_preds_arr_adj[dataset.tregid_val[name]]
+                                
                             this_metrics = compute_performance_metrics_arrays(agg_preds_arr_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
                             for key,value in this_metrics.items():
                                 log_dict[name + "/validation/adjusted/coarse/"+key] = value  
 
                             # "fake" new dissagregation data and reuse the function
                             # Do the disagregation on country level
-                            dataset.memory_disag_val[name][0]
                             tts = torch.zeros(dataset.memory_disag_val[name][0].shape, dtype=int)
                             tts[torch.where(dataset.memory_disag_val[name][0])] = 1
-                            disaggregation_data_coarsest_val = \
-                                [tts, {1: sum(list(dataset.memory_disag_val[name][1].values()))}, dataset.memory_disag_val[name][2] ]
+                            disaggregation_data_coarsest_val = [tts, {1: sum(list(dataset.memory_disag_val[name][1].values()))}, dataset.memory_disag_val[name][2] ]
                         
                             agg_preds_arr_country_adj, this_metrics_cl = disag_wo_map(agg_preds_arr, disaggregation_data_coarsest_val)
                             for key,value in this_metrics_cl.items():
@@ -574,16 +570,6 @@ def PixAdminTransform(
                             this_metrics_cl = compute_performance_metrics_arrays(agg_preds_arr_country_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
                             for key,value in this_metrics_cl.items():
                                 log_dict[name + "/validation/adjusted/country_like/"+key] = value  
-
-                            # agg_preds3 = {id: agg_preds_arr[id].item() for id in validation_ids}
-
-                            # for cid in validation_census.keys():
-                            #     if cid not in agg_preds3.keys():
-                            #         agg_preds3[cid] = 0
-
-                            # this_metrics = compute_performance_metrics(agg_preds3, validation_census)
-                            # metrics.update(this_metrics)
-
                             
                             torch.cuda.empty_cache()
 
@@ -623,36 +609,56 @@ def PixAdminTransform(
                     log_dict['epoch'] = epoch
 
                     # if val_fine_map is not None:
-                    tnr.set_postfix(R2=log_dict[list(datalocations.keys())[-1]+'/r2'],
-                                    zMAEc=log_dict[list(datalocations.keys())[-1]+'/mae'])
+                    tnr.set_postfix(R2=log_dict[test_dataset_names[-1]+'/r2'],
+                                    zMAEc=log_dict[test_dataset_names[-1]+'/mae'])
                     wandb.log(log_dict)
                         
                     mynet.train() 
                     torch.cuda.empty_cache()
 
+                    if batchiter>=params["maxstep"]:
+                        maxstep_reached = True
+                        break
+            else:
+                # Continue if the inner loop wasn't broken.
+                continue
+            break
+
     # compute final prediction, un-normalize, and back to numpy
     with torch.no_grad():
         mynet.eval()
 
-        checkpoint = torch.load('checkpoints/best_r2_{}.pth'.format(wandb.run.name) )
-        mynet.load_state_dict(checkpoint['model_state_dict'])
+        torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
+            'checkpoints/best_r2_{}_{}.pth'.format(name+'_maxstepstate', wandb.run.name) )
+        torch.cuda.empty_cache()
 
+        # Validate and Test the model and save model
         log_dict = {}
-        res = {}
-        for test_dataset_name, values in validation_data.items():
-            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = values['memory_vars']
-            val_features = values["features_disk"]
-            this_res, log_dict, best_scores = eval_my_model(
-                mynet, val_features, val_valid_data_mask, val_regions,
-                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census, 
-                val_map, device,
-                best_scores[test_dataset_name], optimizer=optimizer,
-                disaggregation_data=values['memory_disag'], return_scale=True,
-                dataset_name=test_dataset_name
-            )
-            for key in this_log_dict.keys():
-                log_dict[test_dataset_name+'/'+key] = this_log_dict[key]
-            res[test_dataset_name] = this_res
-            
+        res_dict = {}
 
-    return res
+        # Evaluation Model
+        # for test_dataset_name, values in validation_data.items():
+        for name in test_dataset_names: 
+
+            logging.info(f'Testing dataset of {name}')
+            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
+            val_features = dataset.features[name]
+            
+            res, this_log_dict = eval_my_model(
+                mynet, val_features, val_valid_data_mask, val_regions,
+                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
+                dataset=dataset,
+                disaggregation_data=dataset.memory_disag[name],
+                dataset_name=name, return_scale=True, silent_mode=params["silent_mode"], full_eval=True
+            )
+
+            # Model log collection
+            for key in res.keys():
+                res_dict[name+'/'+key] = res[key]
+
+            for key in this_log_dict.keys():
+                log_dict[name+'/'+key] = this_log_dict[key]
+                
+        wandb.log(log_dict)
+        
+    return res_dict, log_dict 
