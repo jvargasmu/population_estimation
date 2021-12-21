@@ -629,7 +629,7 @@ def PixAdminTransform(
         mynet.eval()
 
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
-            'checkpoints/best_r2_{}_{}.pth'.format(name+'_maxstepstate', wandb.run.name) )
+            'checkpoints/{}_{}.pth'.format('Final/Maxstepstate_', wandb.run.name) )
         torch.cuda.empty_cache()
 
         # Validate and Test the model and save model
