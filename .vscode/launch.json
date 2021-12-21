@@ -304,12 +304,12 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga",
+                "-train", "uga,tza",
                 "-train_lvl", "c,c",
-                "-test", "rwa",
+                "-test", "rwa,uga",
                 "-lr", "0.0001",
                 "-optim", "adam",
-                "-lstep", "100",
+                "-lstep", "500",
                 "-wr", "0.001",
                 "-adamwr", "0.",
                 "--log_step", "100",
@@ -317,7 +317,7 @@
                 "--loss", "laplaceNLL",
                 "--output_scaling", "True",
                 "-mm", "m,m,m",
-                "--max_step", "300"
+                //"--max_step", "300"
             ]
         },
         {

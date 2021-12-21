@@ -470,7 +470,7 @@ def main():
 
     parser.add_argument("--memory_mode", "-mm", type=str, default='m', help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory! m:load into memory; d: load from a hdf5 file on disk. (separated by commas)")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
-    parser.add_argument("--max_step", "-mstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
+    parser.add_argument("--max_step", "-mstep", type=float, default=np.inf, help="Evealuate the model after 'logstep' batchiterations.")
 
     parser.add_argument("--validation_split", "-vs", type=float, default=0.2, help="Evealuate the model after 'logstep' batchiterations.")
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
