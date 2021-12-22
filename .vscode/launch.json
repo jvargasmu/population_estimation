@@ -315,7 +315,7 @@
                 "--log_step", "100",
                 "--validation_fold", "0",
                 "--loss", "laplaceNLL",
-                "--output_scaling", "True",
+                "--input_scaling", "True",
                 "-mm", "m,m,m",
                 //"--max_step", "300"
             ]
