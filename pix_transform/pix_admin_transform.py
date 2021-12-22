@@ -634,7 +634,7 @@ def PixAdminTransform(
     with torch.no_grad():
         mynet.eval()
         
-        Path('checkpoints/{}'.format('Final').mkdir(parents=True, exist_ok=True) 
+        Path('checkpoints/{}'.format('Final')).mkdir(parents=True, exist_ok=True) 
 
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
             'checkpoints/{}{}.pth'.format('Final/Maxstepstate_', wandb.run.name) )

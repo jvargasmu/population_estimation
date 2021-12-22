@@ -283,15 +283,21 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             //"justMyCode": false,
             "args": [ 
-                "-train", "rwa",
-                "-train_lvl", "f",
-                "-test", "rwa",
+                "-train", "rwa,uga,tza",
+                "-train_lvl", "c,c",
+                "-test", "rwa,uga",
                 "-lr", "0.0001",
                 "-optim", "adam",
-                "-wr", "0.0001",
+                "-lstep", "500",
+                "-wr", "0.001",
                 "-adamwr", "0.",
-                "--log_step", "200",
-                "--validation_fold", "0"
+                "--log_step", "100",
+                "--validation_fold", "0",
+                //"--loss", "laplaceNLL",
+                "--input_scaling", "True",
+                "-mm", "m,m,m",
+                "--sampler", "custom"
+                //"--max_step", "300"
             ]
         },
         {
@@ -304,7 +310,7 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,tza",
+                "-train", "rwa,uga,tza",
                 "-train_lvl", "c,c",
                 "-test", "rwa,uga",
                 "-lr", "0.0001",
