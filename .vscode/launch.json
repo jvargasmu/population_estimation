@@ -317,6 +317,7 @@
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "-mm", "m,m,m",
+                "--sampler", "custom"
                 //"--max_step", "300"
             ]
         },
