@@ -277,6 +277,12 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
 def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_scores):
 
     Path("checkpoints").mkdir(parents=True, exist_ok=True)
+    Path('checkpoints/best_r2{}'.format(dataset_name)).mkdir(parents=True, exist_ok=True)
+    Path('checkpoints/best_mae{}'.format(dataset_name)).mkdir(parents=True, exist_ok=True)
+    Path('checkpoints/best_mape{}'.format(dataset_name)).mkdir(parents=True, exist_ok=True)
+    Path('checkpoints/best_r2_adj{}'.format(dataset_name)).mkdir(parents=True, exist_ok=True)
+    Path('checkpoints/best_mae_adj{}'.format(dataset_name)).mkdir(parents=True, exist_ok=True)
+    Path('checkpoints/best_mape_adj{}'.format(dataset_name)).mkdir(parents=True, exist_ok=True) 
     
     best_r2, best_mae, best_mape, best_r2_adj, best_mae_adj, best_mape_adj = best_scores
 
@@ -284,38 +290,38 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
         best_r2 = log_dict["r2"]
         log_dict["best_r2"] = best_r2
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
-            'checkpoints/best_r2_{}_{}.pth'.format(dataset_name, wandb.run.name) )
+            'checkpoints/best_r2{}{}.pth'.format(dataset_name, wandb.run.name) )
     
     if log_dict["mae"]<best_mae:
         best_mae =log_dict["mae"]
         log_dict["best_mae"] = best_mae
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
-            'checkpoints/best_mae_{}_{}.pth'.format(dataset_name, wandb.run.name) )
+            'checkpoints/best_mae{}{}.pth'.format(dataset_name, wandb.run.name) )
 
     if log_dict["mape"]<best_mape:
         best_mape =log_dict["mape"]
         log_dict["best_mape"] = best_mape
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
-            'checkpoints/best_mape_{}_{}.pth'.format(dataset_name, wandb.run.name) )
+            'checkpoints/best_mape{}{}.pth'.format(dataset_name, wandb.run.name) )
     
     if "adjusted/r2" in log_dict.keys() and log_dict["adjusted/r2"]>best_r2_adj:
         best_r2_adj = log_dict["adjusted/r2"]
         log_dict["adjusted/best_r2"] = best_r2_adj
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
-            'checkpoints/best_r2_adj_{}_{}.pth'.format(dataset_name, wandb.run.name) )
+            'checkpoints/best_r2_adj{}{}.pth'.format(dataset_name, wandb.run.name) )
 
     if "adjusted/mae" in log_dict.keys() and log_dict["adjusted/mae"]<best_mae_adj:
         best_mae_adj = log_dict["adjusted/mae"]
         log_dict["adjusted/best_mae"] = best_mae_adj
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
-            'checkpoints/best_mae_adj_{}_{}.pth'.format(dataset_name, wandb.run.name) )
+            'checkpoints/best_mae_adj{}{}.pth'.format(dataset_name, wandb.run.name) )
 
 
     if "adjusted/mape" in log_dict.keys() and log_dict["adjusted/mape"]<best_mape_adj:
         best_mape_adj = log_dict["adjusted/mape"]
         log_dict["adjusted/best_mape"] = best_mape_adj
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
-            'checkpoints/best_mape_adj_{}_{}.pth'.format(dataset_name, wandb.run.name) )
+            'checkpoints/best_mape_adj{}{}.pth'.format(dataset_name, wandb.run.name) )
 
     best_scores = best_r2, best_mae, best_mape, best_r2_adj, best_mae_adj, best_mape_adj
 
@@ -544,7 +550,7 @@ def PixAdminTransform(
                                 agg_preds_arr[census_id.item()] = pred.item()
 
                             metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
-                            best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, name+'_VAL', best_val_scores[name])
+                            best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
                             for key in metrics.keys():
                                 log_dict[name + '/validation/' + key ] = metrics[key]
                             
@@ -599,7 +605,7 @@ def PixAdminTransform(
                                 this_log_dict["viz/predicted_target_img_adjusted"] = wandb.Image(res['predicted_target_img_adjusted'])
 
                         # Model checkpointing and update best scores
-                        best_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, this_log_dict, name, best_scores[test_dataset_name])
+                        best_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, this_log_dict,  '/'+name+'/ALL/', best_scores[test_dataset_name])
                         for key in this_log_dict.keys():
                             log_dict[name+'/'+key] = this_log_dict[key]
                         torch.cuda.empty_cache()
@@ -627,9 +633,11 @@ def PixAdminTransform(
     # compute final prediction, un-normalize, and back to numpy
     with torch.no_grad():
         mynet.eval()
+        
+        Path('checkpoints/{}'.format('Final')).mkdir(parents=True, exist_ok=True) 
 
         torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
-            'checkpoints/best_r2_{}_{}.pth'.format(name+'_maxstepstate', wandb.run.name) )
+            'checkpoints/{}{}.pth'.format('Final/Maxstepstate_', wandb.run.name) )
         torch.cuda.empty_cache()
 
         # Validate and Test the model and save model
