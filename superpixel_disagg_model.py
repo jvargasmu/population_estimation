@@ -23,6 +23,7 @@ from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_
 from pix_transform.pix_admin_transform import PixAdminTransform
 from pix_transform.pix_transform import PixTransform
 from pix_transform_utils.utils import downsample,align_images
+from pix_transform.evaluation import Eval5Fold_PixAdminTransform
 # from prox_tv import tvgen
 from pix_transform_utils.plots import plot_result
 
@@ -279,7 +280,8 @@ def superpixel_with_pix_data(
     output_scaling,
     silent_mode,
     dataset_dir,
-    max_step
+    max_step,
+    eval_5fold
     ):
 
     ####  define parameters  ########################################################
@@ -315,7 +317,8 @@ def superpixel_with_pix_data(
             'input_scaling': input_scaling,
             'output_scaling': output_scaling,
             'silent_mode': silent_mode,
-            'dataset_dir': dataset_dir
+            'dataset_dir': dataset_dir,
+            'eval_5fold': eval_5fold
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -377,12 +380,20 @@ def superpixel_with_pix_data(
         datalocations[ds] = {"features": h5_filename, "train_vars_f": train_var_filename_f, "train_vars_c": train_var_filename_c,
             "eval_vars": eval_var_filename, "disag": eval_disag_filename}
 
-    res, log_dict = PixAdminTransform(
-        datalocations=datalocations,
-        train_dataset_name=train_dataset_name,
-        test_dataset_names=test_dataset_name,
-        params=params, 
-    )
+    if eval_5fold is None:
+        res, log_dict = PixAdminTransform(
+            datalocations=datalocations,
+            train_dataset_name=train_dataset_name,
+            test_dataset_names=test_dataset_name,
+            params=params, 
+        )
+    else:
+        res, log_dict = Eval5Fold_PixAdminTransform(
+            datalocations=datalocations,
+            train_dataset_name=train_dataset_name,
+            test_dataset_names=test_dataset_name,
+            params=params, 
+        )
 
     # save as geoTIFF files
     save_files = True
@@ -456,6 +467,8 @@ def main():
     parser.add_argument("--train_dataset_name", "-train", type=str, help="Train Dataset name (separated by commas)", required=True)
     parser.add_argument("--train_level", "-train_lvl", type=str,  default='c', help="ordered by --train_dataset_name [f:finest, c: coarser level] (separated by commas) ")
     parser.add_argument("--test_dataset_name", "-test", type=str, help="Test Dataset name (separated by commas)", required=True)
+    parser.add_argument("--eval_5fold", "-e5f", type=str, default=None, help="Evaluates 5 fold cross with the 5 pretrained models specified in a comma sparated list. \
+                            Example: '-e5f fine-shape-1418,morning-blaze-1415,volcanic-shadow-1416,devoted-snowball-1417,eternal-donkey-1419', for the folds 0,1,2,3,4 respectively")
 
     parser.add_argument("--sampler", "-sap", type=str, default=None, help="Options: natural (not recommended yet), custom (see --custom_sampler_weights), <blank> (no sampler)")
     parser.add_argument("--custom_sampler_weights", "-csw", type=str,  default='1', help="ordered by --train_dataset_name weight for the sampler (separated by commas) ")
@@ -466,7 +479,7 @@ def main():
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
-    parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="propout probability ")
+    parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="dropout probability ")
 
     parser.add_argument("--memory_mode", "-mm", type=str, default='m', help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory! m:load into memory; d: load from a hdf5 file on disk. (separated by commas)")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
@@ -493,7 +506,12 @@ def main():
     args.train_level = unroll_arglist(args.train_level, 'c', len(args.train_dataset_name))
     args.test_dataset_name = unroll_arglist(args.test_dataset_name)
     args.memory_mode = unroll_arglist(args.memory_mode, 'm', len(args.train_dataset_name))
+    if args.eval_5fold is not None: 
+        args.eval_5fold = unroll_arglist(args.eval_5fold)
+        if args.eval_5fold.__len__()!=5:
+            raise Exception("Argument eval_5fold must have comma separated 5 elements!")
     
+
     args.train_weight = unroll_arglist(args.train_weight, '1', len(args.train_dataset_name))
     args.train_weight = [ float(el) for el in args.train_weight ]
     args.train_weight =  [ el/sum(args.train_weight) for el in args.train_weight ]
@@ -535,7 +553,8 @@ def main():
         args.output_scaling,
         args.silent_mode,
         args.dataset_dir,
-        args.max_step
+        args.max_step,
+        args.eval_5fold
     )
 
 

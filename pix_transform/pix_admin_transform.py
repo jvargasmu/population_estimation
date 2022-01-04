@@ -25,6 +25,7 @@ from pix_transform.pix_transform_net import PixTransformNet, PixScaleNet
 
 from bayesian_dl.loss import GaussianNLLLoss, LaplacianNLLLoss
 
+from pix_transform.evaluation import disag_map, disag_wo_map, disag_and_eval_map, eval_my_model, checkpoint_model
 
 if 'ipykernel' in sys.modules:
     from tqdm import tqdm_notebook as tqdm
@@ -32,6 +33,7 @@ else:
     from tqdm import tqdm as tqdm
 
 
+"""
 def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
 
     # Get device
@@ -326,14 +328,13 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
     best_scores = best_r2, best_mae, best_mape, best_r2_adj, best_mae_adj, best_mape_adj
 
     return best_scores
-
+"""
 
 def PixAdminTransform(
     datalocations,
     train_dataset_name,
     test_dataset_names,
-    params,  
-    save_ds=True):
+    params):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -412,6 +413,7 @@ def PixAdminTransform(
 
         #TODO: CV with 5 models here
         #TODO: evaluate 1 model here
+        #TODO: move 5fold feature
         log_dict = {}
         res_dict = {}
         for name in test_dataset_names:
