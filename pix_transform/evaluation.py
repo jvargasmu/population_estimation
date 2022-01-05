@@ -277,6 +277,8 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
     
     best_r2, best_mae, best_mape, best_r2_adj, best_mae_adj, best_mape_adj = best_scores
 
+    #TODO: need to save the input and output scales as well!
+
     if log_dict["r2"]>best_r2:
         best_r2 = log_dict["r2"]
         log_dict["best_r2"] = best_r2
@@ -328,18 +330,19 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
     
     for name in test_dataset_names: 
 
+        agg_preds = []
+        val_census = []
+        #agg_preds_arr = torch.zeros((dataset.max_tregid_val[name]+1,))
+        pop_ests = []
+        BBoxes = []
+        census_ids = []
+        logging.info(f'Validating dataset of {name}')
+
         for k in range(5):
 
             dataset = Datasets[k]
             mynet = Mynets[k]
 
-            agg_preds = []
-            val_census = []
-            #agg_preds_arr = torch.zeros((dataset.max_tregid_val[name]+1,))
-            pop_ests = []
-            BBoxes = []
-            census_ids = []
-            logging.info(f'Validating dataset of {name}')
 
             for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
                 X, Y, Mask, name, census_id, BB = dataset.get_single_validation_item(idx, name, return_BB=True) 
