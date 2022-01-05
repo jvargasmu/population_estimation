@@ -638,7 +638,13 @@ def PixAdminTransform(
         
         Path('checkpoints/{}'.format('Final')).mkdir(parents=True, exist_ok=True) 
 
-        torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizer.state_dict(), 'epoch':epoch, 'log_dict':log_dict},
+        saved_dict = {'model_state_dict': mynet.state_dict(), 'optimizer_state_dict': optimizer.state_dict(), 'epoch': epoch, 'log_dict': log_dict}
+        if mynet.input_scaling:
+            saved_dict["input_scales_bias"] = [mynet.in_scale, mynet.in_bias]
+        if mynet.output_scaling:
+            saved_dict["output_scales_bias"] = [mynet.out_scale, mynet.out_bias] 
+
+        torch.save(saved_dict,
             'checkpoints/{}{}.pth'.format('Final/Maxstepstate_', wandb.run.name) )
         torch.cuda.empty_cache()
 
