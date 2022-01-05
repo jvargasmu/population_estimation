@@ -277,6 +277,11 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
     
     best_r2, best_mae, best_mape, best_r2_adj, best_mae_adj, best_mape_adj = best_scores
 
+    saved_dict = {'model_state_dict': mynet.state_dict(), 'optimizer_state_dict': optimizerstate, 'epoch': epoch, 'log_dict': log_dict}
+    if mynet.input_scaling:
+        saved_dict["input_scales_bias"] = [mynet.in_scale, mynet.in_bias]
+    if mynet.output_scaling:
+        saved_dict["output_scales_bias"] = [mynet.out_scale, mynet.out_bias]
     #TODO: need to save the input and output scales as well!
 
     if log_dict["r2"]>best_r2:
