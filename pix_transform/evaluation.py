@@ -468,6 +468,10 @@ def Eval5Fold_PixAdminTransform(
 
         checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"][k]))
         mynet.load_state_dict(checkpoint['model_state_dict'])
+        if "input_scales_bias" in checkpoint.keys():
+            mynet.in_scale, mynet.in_bias = checkpoint["input_scale_bias"][0], checkpoint["input_scale_bias"][1]
+        if "output_scales_bias" in checkpoint.keys():
+            mynet.out_scale, mynet.out_bias = checkpoint["output_scale_bias"][0], checkpoint["output_scale_bias"][1]
         Mynets.append(mynet)
 
     return eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, params, Mynets, Datasets, memory_vars)
