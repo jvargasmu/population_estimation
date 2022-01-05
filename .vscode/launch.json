@@ -858,7 +858,7 @@
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
-                "-e5f", "fine-shape-1418,morning-blaze-1415,volcanic-shadow-1416,devoted-snowball-1417,eternal-donkey-1419",
+                "-e5f", "visionary-cherry-1449,woven-dawn-1453,warm-firefly-1452,happy-snowflake-1451,neat-lion-1449",
             ]
         },
     ]
