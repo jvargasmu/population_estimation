@@ -281,44 +281,43 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
     if mynet.input_scaling:
         saved_dict["input_scales_bias"] = [mynet.in_scale, mynet.in_bias]
     if mynet.output_scaling:
-        saved_dict["output_scales_bias"] = [mynet.out_scale, mynet.out_bias]
-    #TODO: need to save the input and output scales as well!
+        saved_dict["output_scales_bias"] = [mynet.out_scale, mynet.out_bias] 
 
     if log_dict["r2"]>best_r2:
         best_r2 = log_dict["r2"]
         log_dict["best_r2"] = best_r2
-        torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
+        torch.save(saved_dict,
             'checkpoints/best_r2{}{}.pth'.format(dataset_name, wandb.run.name) )
     
     if log_dict["mae"]<best_mae:
         best_mae =log_dict["mae"]
         log_dict["best_mae"] = best_mae
-        torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
+        torch.save(saved_dict,
             'checkpoints/best_mae{}{}.pth'.format(dataset_name, wandb.run.name) )
 
     if log_dict["mape"]<best_mape:
         best_mape =log_dict["mape"]
         log_dict["best_mape"] = best_mape
-        torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
+        torch.save(saved_dict,
             'checkpoints/best_mape{}{}.pth'.format(dataset_name, wandb.run.name) )
     
     if "adjusted/r2" in log_dict.keys() and log_dict["adjusted/r2"]>best_r2_adj:
         best_r2_adj = log_dict["adjusted/r2"]
         log_dict["adjusted/best_r2"] = best_r2_adj
-        torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
+        torch.save(saved_dict,
             'checkpoints/best_r2_adj{}{}.pth'.format(dataset_name, wandb.run.name) )
 
     if "adjusted/mae" in log_dict.keys() and log_dict["adjusted/mae"]<best_mae_adj:
         best_mae_adj = log_dict["adjusted/mae"]
         log_dict["adjusted/best_mae"] = best_mae_adj
-        torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
+        torch.save(saved_dict,
             'checkpoints/best_mae_adj{}{}.pth'.format(dataset_name, wandb.run.name) )
 
 
     if "adjusted/mape" in log_dict.keys() and log_dict["adjusted/mape"]<best_mape_adj:
         best_mape_adj = log_dict["adjusted/mape"]
         log_dict["adjusted/best_mape"] = best_mape_adj
-        torch.save({'model_state_dict':mynet.state_dict(), 'optimizer_state_dict':optimizerstate, 'epoch':epoch, 'log_dict':log_dict},
+        torch.save(saved_dict,
             'checkpoints/best_mape_adj{}{}.pth'.format(dataset_name, wandb.run.name) )
 
     best_scores = best_r2, best_mae, best_mape, best_r2_adj, best_mae_adj, best_mape_adj
