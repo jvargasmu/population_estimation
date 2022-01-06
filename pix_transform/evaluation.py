@@ -347,16 +347,19 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
             dataset = Datasets[k]
             mynet = Mynets[k]
 
-
-            for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
-                X, Y, Mask, name, census_id, BB = dataset.get_single_validation_item(idx, name, return_BB=True) 
-                pop_est, scale = mynet.forward(X, mask=None, name=name, predict_map=True, forward_only=True)
-                pop_ests.append(pop_est.detach().cpu().numpy())
-                agg_preds.append(pop_est.sum((0,2,3)).detach().cpu().numpy())
-                #agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
-                val_census.append(Y.cpu().numpy())
-                census_ids.append(census_id)
-                BBoxes.append(BB)
+            with torch.no_grad():
+                mynet.eval()
+                
+                for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
+                    X, Y, Mask, name, census_id, BB = dataset.get_single_validation_item(idx, name, return_BB=True) 
+                    pop_est, scale = mynet.forward(X, mask=None, name=name, predict_map=True, forward_only=True)
+                    pop_ests.append(pop_est.detach().cpu().numpy())
+                    agg_preds.append(pop_est.sum((0,2,3)).detach().cpu().numpy())
+                    #agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
+                    val_census.append(Y.cpu().numpy())
+                    census_ids.append(census_id)
+                    BBoxes.append(BB)
+                    torch.cuda.empty_cache()
 
         # calculate this for all folds
         metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
@@ -368,7 +371,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         """
         Pseudocode:
         1. Initialize Tensor
-        2. Bring to GPU
+        2. Bring to GPU?
         3. Iterate through list
             3.1 Insert at each position
         """
@@ -447,15 +450,7 @@ def Eval5Fold_PixAdminTransform(
     random.seed(params["random_seed"])
     np.random.seed(params["random_seed"])
 
-    # mynet = PixScaleNet(channels_in=Datasets[0].num_feats(),
-    #                 weights_regularizer=params['weights_regularizer'],
-    #                 device=device, loss=params['loss'], kernel_size=params['kernel_size'],
-    #                 dropout=params["dropout"],
-    #                 input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
-    #                 datanames=train_dataset_name
-    #                 ).train().to(device)
-
-    # TODO: load 5 models
+    # load 5 models
     Mynets = []
     for k in range(5):
         mynet = PixScaleNet(channels_in=Datasets[0].num_feats(),
@@ -466,12 +461,15 @@ def Eval5Fold_PixAdminTransform(
                     datanames=train_dataset_name
                     ).train().to(device)
 
+        # Loading from checkpoint
         checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"][k]))
         mynet.load_state_dict(checkpoint['model_state_dict'])
         if "input_scales_bias" in checkpoint.keys():
-            mynet.in_scale, mynet.in_bias = checkpoint["input_scale_bias"][0], checkpoint["input_scale_bias"][1]
+            mynet.in_scale, mynet.in_bias = checkpoint["input_scales_bias"][0], checkpoint["input_scales_bias"][1]
         if "output_scales_bias" in checkpoint.keys():
-            mynet.out_scale, mynet.out_bias = checkpoint["output_scale_bias"][0], checkpoint["output_scale_bias"][1]
+            mynet.out_scale, mynet.out_bias = checkpoint["output_scales_bias"][0], checkpoint["output_scales_bias"][1]
+
+        mynet.eval()
         Mynets.append(mynet)
 
     return eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, params, Mynets, Datasets, memory_vars)

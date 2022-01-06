@@ -628,7 +628,7 @@ def PixAdminTransform(
                         maxstep_reached = True
                         break
             else:
-                # Continue if the inner loop wasn't broken.
+                # Continue if the inner loop was not broken.
                 continue
             break
 

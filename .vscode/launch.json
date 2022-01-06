@@ -844,9 +844,9 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,rwa,tza,nga,moz,cod",
+                "-train", "cod",
                 "-train_lvl", "f,f,f,f,f,f",
-                "-test", "uga,rwa,tza,nga,moz,cod",
+                "-test", "tza,cod",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
@@ -858,7 +858,7 @@
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
-                "-e5f", "visionary-cherry-1449,woven-dawn-1453,warm-firefly-1452,happy-snowflake-1451,neat-lion-1449",
+                "-e5f", "twilight-lion-1457,clean-voice-1458,sunny-salad-1459,fragrant-puddle-1460,dainty-elevator-1460",
             ]
         },
     ]
