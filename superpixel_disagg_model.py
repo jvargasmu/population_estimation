@@ -156,7 +156,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     cr_regions = torch.from_numpy(cr_regions.astype(np.int32)) 
 
     # replacements of invalid values
-    features[:,~valid_data_mask] = replacement
+    # features[:,~valid_data_mask] = replacement
     fine_map[~valid_data_mask] = replacement
     cr_map[~valid_data_mask] = replacement
     cr_map[~valid_data_mask] = 1e-10 # TODO: verify this operation!
@@ -445,6 +445,16 @@ def superpixel_with_pix_data(
                     geo_metadata["geo_transform"], geo_metadata["projection"] )
             if scale_vars_available:
                 write_geolocated_image( scale_vars.numpy(), dest_folder+'/{}_scale_variances.tiff'.format(name),
+                    geo_metadata["geo_transform"], geo_metadata["projection"] )
+            if name+'/id_map' in list(res.keys()):
+                id_map = res[name+'/id_map']
+                id_map[~valid_data_mask]= np.nan
+                write_geolocated_image( id_map.numpy(), dest_folder+'/{}_id_map.tiff'.format(name),
+                    geo_metadata["geo_transform"], geo_metadata["projection"] )
+            if name+'/fold_map' in list(res.keys()):
+                fold_map = res[name+'/fold_map']
+                fold_map[~valid_data_mask]= np.nan
+                write_geolocated_image( fold_map.numpy(), dest_folder+'/{}_fold_map.tiff'.format(name),
                     geo_metadata["geo_transform"], geo_metadata["projection"] )
 
     return

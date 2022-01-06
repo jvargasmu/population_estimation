@@ -831,7 +831,8 @@
                 "-mm", "m,m,m",
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
-                "--output_scaling", "True"
+                "--output_scaling", "True",
+                //"--max_step", "800"
             ]
         },
         {
@@ -846,7 +847,7 @@
             "args": [ 
                 "-train", "rwa",
                 "-train_lvl", "f,f,f,f,f,f",
-                "-test", "tza,rwa,uga",
+                "-test", "rwa,uga",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",

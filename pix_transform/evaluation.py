@@ -336,14 +336,22 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
 
         agg_preds = []
         val_census = []
-        #agg_preds_arr = torch.zeros((dataset.max_tregid_val[name]+1,))
         pop_ests = []
+        agg_preds_arr = torch.zeros((Datasets[0].max_tregid[name]+1,))
         BBoxes = []
         census_ids = []
-        Scales = []
-        guide_res = np.asarray(memory_vars["tza"][5])
-        guide_res = memory_vars["tza"][5]
-        Popest = torch.zeros(guide_res)
+        Scales = [] 
+
+        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = memory_vars[name]
+        res = {}
+
+        guide_res = memory_vars[name][5] 
+        res["predicted_target_img"] = torch.zeros(guide_res, dtype=torch.float16)
+        res["variances"] = torch.zeros(guide_res, dtype=torch.float16) 
+        res["scales"] = torch.zeros((2,)+guide_res, dtype=torch.float16)
+        res["fold_map"] = torch.zeros(guide_res, dtype=torch.float16)
+        res["id_map"] = torch.zeros(guide_res, dtype=torch.float16)
+
         logging.info(f'Cross Validating dataset of {name}')
 
         for k in range(5):
@@ -357,77 +365,45 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                 for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
                     X, Y, Mask, name, census_id, BB = dataset.get_single_validation_item(idx, name, return_BB=True) 
                     pop_est, scale = mynet.forward(X, mask=None, name=name, predict_map=True, forward_only=True)
-                    pop_ests.append(pop_est.detach().cpu().numpy())
-                    # pop_ests_var.append(pop_est.detach().cpu().numpy())
-                    Scales.append(scale[0,0].detach().cpu().numpy())
-                    # Scales_var.append(scale[0,1].detach().cpu().numpy())
-                    agg_preds.append(pop_est[0,0,Mask].sum().detach().cpu().numpy())
+
+                    rmin, rmax, cmin, cmax = BB
+                    res["predicted_target_img"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,0,Mask].to(torch.float16)
+                    res["variances"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,1,Mask].to(torch.float16)  
+                    res["scales"][:,rmin:rmax, cmin:cmax] = scale[0,:].to(torch.float16) 
+                    res["fold_map"][rmin:rmax, cmin:cmax][Mask] = k  
+                    res["id_map"][rmin:rmax, cmin:cmax][Mask] = census_id
+                    
+                    pred = pop_est[0,0,Mask].sum().detach().cpu().numpy()
+                    agg_preds.append(pred)
+                    agg_preds_arr[census_id.item()] = pop_est[0,0,Mask].sum().detach().cpu().item()
                     
                     #agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
-                    val_census.append(Y.cpu().numpy())
+                    # val_census.append(Y.cpu().numpy())
                     census_ids.append(census_id)
-                    BBoxes.append(BB)
-                    torch.cuda.empty_cache()
-
+            torch.cuda.empty_cache()
+        
         # calculate this for all folds
-        metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
+        agg_preds3 = {id: agg_preds_arr[id].item() for id in val_valid_ids}
+        metrics = compute_performance_metrics(agg_preds3, val_census)
+        # metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
         for key in metrics.keys():
-            log_dict[name + '/validation/' + key ] = metrics[key]
-        torch.cuda.empty_cache()
+            log_dict[name + '/' + key ] = metrics[key]
 
-        #TODO here: Build together the whole amp from the list
-        """
-        Pseudocode:
-        1. Initialize Tensor
-        2. Bring to GPU?
-        3. Iterate through list
-            3.1 Insert at each position
-        """
+        logging.info(f'Classic disag started') 
 
+        predicted_target_img_adjusted, adj_logs = disag_and_eval_map(res["predicted_target_img"], agg_preds_arr, val_regions, val_map_valid_ids,
+            np.unique(val_regions).__len__(), val_valid_ids, val_census, dataset.memory_disag[name])
+        log_dict.update(adj_logs)
+        logging.info(f'Classic disag finsihed')
 
-    # Evaluation Model
-    for name in test_dataset_names: 
+        res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
+        predicted_target_img_adjusted = predicted_target_img_adjusted.cpu()
+        # predicted_target_img = predicted_target_img.cpu()
 
-        logging.info(f'Testing dataset of {name}')
-        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = memory_vars[name]
-        val_features = dataset.features[name]
-        
-        res, this_log_dict = eval_my_model(
-            mynet, val_features, val_valid_data_mask, val_regions,
-            val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
-            dataset=dataset,
-            disaggregation_data=dataset.memory_disag[name],
-            dataset_name=name, return_scale=True, full_eval=True
-        )
-
-        log_images = False
-        if log_images:
-            if len(res['scales'].shape)==3:
-                this_log_dict["viz/scales"] = wandb.Image(res['scales'][0])
-                this_log_dict["viz/scales_var"] = wandb.Image(res['scales'][1])
-                this_log_dict["viz/predicted_target_img"] = wandb.Image(res['predicted_target_img'])
-                this_log_dict["viz/predicted_target_img_var"] = wandb.Image(res['variances'])
-                this_log_dict["viz/predicted_target_img_adjusted"] = wandb.Image(res['predicted_target_img_adjusted'])
-
-        # Model log collection
         for key in res.keys():
-            res_dict[name+'/'+key] = res[key]
-
-        for key in this_log_dict.keys():
-            log_dict[name+'/'+key] = this_log_dict[key]
-
-        torch.cuda.empty_cache()
-
-    # log_dict['train/loss'] = loss 
-    log_dict['batchiter'] = 0
-    log_dict['epoch'] = 0
-    wandb.log(log_dict)
+            res_dict[name + '/' + key ] = res[key]
         
-    mynet.train() 
-    torch.cuda.empty_cache()
-
-    return res, log_dir
-
+    return res_dict, log_dict
 
 
 

@@ -581,7 +581,7 @@ def PixAdminTransform(
                             
                             torch.cuda.empty_cache()
 
-                    # Evaluation Model
+                    # Evaluation Model: Evaluates the training and validation regions at the same time.
                     # for test_dataset_name, values in validation_data.items():
                     for name in test_dataset_names: 
 
