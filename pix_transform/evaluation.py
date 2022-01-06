@@ -340,7 +340,11 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         pop_ests = []
         BBoxes = []
         census_ids = []
-        logging.info(f'Validating dataset of {name}')
+        Scales = []
+        guide_res = np.asarray(memory_vars["tza"][5])
+        guide_res = memory_vars["tza"][5]
+        Popest = torch.zeros(guide_res)
+        logging.info(f'Cross Validating dataset of {name}')
 
         for k in range(5):
 
@@ -349,12 +353,16 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
 
             with torch.no_grad():
                 mynet.eval()
-                
+
                 for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
                     X, Y, Mask, name, census_id, BB = dataset.get_single_validation_item(idx, name, return_BB=True) 
                     pop_est, scale = mynet.forward(X, mask=None, name=name, predict_map=True, forward_only=True)
                     pop_ests.append(pop_est.detach().cpu().numpy())
-                    agg_preds.append(pop_est.sum((0,2,3)).detach().cpu().numpy())
+                    # pop_ests_var.append(pop_est.detach().cpu().numpy())
+                    Scales.append(scale[0,0].detach().cpu().numpy())
+                    # Scales_var.append(scale[0,1].detach().cpu().numpy())
+                    agg_preds.append(pop_est[0,0,Mask].sum().detach().cpu().numpy())
+                    
                     #agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
                     val_census.append(Y.cpu().numpy())
                     census_ids.append(census_id)

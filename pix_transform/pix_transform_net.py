@@ -221,6 +221,7 @@ class PixScaleNet(nn.Module):
 
         if self.output_scaling:
             pop_est = self.perform_scale_output(pop_est, name)
+            pop_est[:,:,buildings[0,0]==0] = 0.
         
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
