@@ -419,9 +419,9 @@ def superpixel_with_pix_data(
                 
 
             cr_map[~valid_data_mask]= np.nan
-            predicted_target_img[~valid_data_mask]= np.nan
-            predicted_target_img_adjusted[~valid_data_mask]= np.nan
-            scales[~valid_data_mask]= np.nan
+            # predicted_target_img[~valid_data_mask]= np.nan
+            # predicted_target_img_adjusted[~valid_data_mask]= np.nan
+            # scales[~valid_data_mask]= np.nan
             fine_map[~valid_data_mask]= np.nan
 
             #Prepate the output folder

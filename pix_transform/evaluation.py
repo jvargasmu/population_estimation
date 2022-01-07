@@ -349,6 +349,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         res["predicted_target_img"] = torch.zeros(guide_res, dtype=torch.float16)
         res["variances"] = torch.zeros(guide_res, dtype=torch.float16) 
         res["scales"] = torch.zeros((2,)+guide_res, dtype=torch.float16)
+        res["scales"][:] = float('nan')
         res["fold_map"] = torch.zeros(guide_res, dtype=torch.float16)
         res["id_map"] = torch.zeros(guide_res, dtype=torch.float16)
 
@@ -381,6 +382,8 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     # val_census.append(Y.cpu().numpy())
                     census_ids.append(census_id)
             torch.cuda.empty_cache()
+        
+        res["scales"][res["scales"]==torch.inf] = np.nan
         
         # calculate this for all folds
         agg_preds3 = {id: agg_preds_arr[id].item() for id in val_valid_ids}
