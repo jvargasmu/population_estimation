@@ -819,7 +819,7 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,rwa,tza",
+                "-train", "uga,rwa,cod",
                 "-train_lvl", "f,f",
                 "-test", "uga,rwa,tza",
                 "-lr", "0.0001",
