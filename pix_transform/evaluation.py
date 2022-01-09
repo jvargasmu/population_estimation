@@ -326,9 +326,7 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
 
 
 def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, params, Mynets, Datasets, memory_vars):
-
-    #TODO: CV with 5 models here 
-    #TODO: move 5fold feature
+    
     log_dict = {}
     res_dict = {}
     
@@ -378,17 +376,14 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     agg_preds.append(pred)
                     agg_preds_arr[census_id.item()] = pop_est[0,0,Mask].sum().detach().cpu().item()
                     
-                    #agg_preds.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
-                    # val_census.append(Y.cpu().numpy())
                     census_ids.append(census_id)
             torch.cuda.empty_cache()
         
         res["scales"][res["scales"]==torch.inf] = np.nan
-        
+
         # calculate this for all folds
         agg_preds3 = {id: agg_preds_arr[id].item() for id in val_valid_ids}
-        metrics = compute_performance_metrics(agg_preds3, val_census)
-        # metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census))
+        metrics = compute_performance_metrics(agg_preds3, val_census) 
         for key in metrics.keys():
             log_dict[name + '/' + key ] = metrics[key]
 
@@ -400,15 +395,13 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         logging.info(f'Classic disag finsihed')
 
         res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
-        predicted_target_img_adjusted = predicted_target_img_adjusted.cpu()
-        # predicted_target_img = predicted_target_img.cpu()
+        predicted_target_img_adjusted = predicted_target_img_adjusted.cpu() 
 
         for key in res.keys():
             res_dict[name + '/' + key ] = res[key]
-        
+    
+    wandb.log(log_dict) 
     return res_dict, log_dict
-
-
 
 def Eval5Fold_PixAdminTransform(
     datalocations,
@@ -424,7 +417,7 @@ def Eval5Fold_PixAdminTransform(
             memory_vars[name] = pickle.load(f)
             val_valid_ids[name] = memory_vars[name][3]
 
-    #TODO: make 5 datasets for each fold
+    # make 5 datasets for each fold
     Datasets = []
     for k in range(5): 
         Datasets.append(

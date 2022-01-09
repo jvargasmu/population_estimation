@@ -399,6 +399,8 @@ def superpixel_with_pix_data(
     save_files = True
     if save_files:
         for name in test_dataset_name:
+            print("started saving files for", name)
+
             with open(datalocations[name]['eval_vars'], "rb") as f:
                 _, _, fine_map, _, _, _, valid_data_mask, geo_metadata, cr_map = pickle.load(f) 
 
@@ -413,14 +415,14 @@ def superpixel_with_pix_data(
             scale_vars_available = False
             if scales.shape.__len__()==3:
                 scale_vars = scales[1]
-                scale_vars[~valid_data_mask]= np.nan
+                #scale_vars[~valid_data_mask]= np.nan
                 scales = scales[0]
                 scale_vars_available = True
                 
 
             cr_map[~valid_data_mask]= np.nan
-            # predicted_target_img[~valid_data_mask]= np.nan
-            # predicted_target_img_adjusted[~valid_data_mask]= np.nan
+            predicted_target_img[~valid_data_mask]= np.nan
+            predicted_target_img_adjusted[~valid_data_mask]= np.nan
             # scales[~valid_data_mask]= np.nan
             fine_map[~valid_data_mask]= np.nan
 
