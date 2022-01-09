@@ -269,7 +269,6 @@ class PixScaleNet(nn.Module):
         Output:
             - Scaled and clamped predictions
         """
-
         if self.bayesian:
             if name not in self.datanames:
                 self.calculate_mean_output_scale()  
@@ -286,10 +285,17 @@ class PixScaleNet(nn.Module):
                 preds = preds*self.mean_out_scale + self.mean_out_bias
             else:
                 preds = preds*self.out_scale[name] + self.out_bias[name]
-        
+                        
         # Ensure that there are no negative occ-rates and variances
         return preds.clamp(min=0)
 
+    def normalize_out_scales(self):
+        with torch.no_grad():
+            average_scale = torch.sum(torch.cat(list(self.out_scale.values()))) / list(self.out_scale.keys()).__len__()
+            
+            for key in list(self.out_scale.keys()):
+                self.out_scale[key] /= average_scale
+            
     def calculate_mean_output_scale(self):
         self.mean_out_scale = 0
         self.mean_out_bias = 0
@@ -322,18 +328,6 @@ class PixScaleNet(nn.Module):
                     outvar += out.sum().cpu()
                 else:
                     outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], name=name, predict_map=True, forward_only=forward_only)
-                    #torch.cuda.memory_summary()
-                    #torch.cuda.empty_cache()
-                    #torch.cuda.memory_summary()
-
-        # if predict_map:    
-        #     out = outvar.squeeze()
-        #     scale = scale.squeeze()
-        # else:
-        #     out = outvar
-
-        # if return_scale:
-        #     out = [out,scale]
 
         if not predict_map:
             return outvar
