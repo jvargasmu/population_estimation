@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#BSUB -W 24:00
+#BSUB -W 6:00
 #BSUB -n 1
 #BSUB -o euleroutputs/outfile_%J.%I.txt
 #BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
