@@ -205,33 +205,28 @@ class PixScaleNet(nn.Module):
 
         data = self.occratenet(data)
         occrate = self.occrate_layer(data)
-        # pop_est = torch.mul(buildings, occrate)
         if self.bayesian:
             if self.pred_var:
                 var = self.occrate_var_layer(data)
             else:
-                var = torch.exp(self.occrate_var_layer(data))
-            #TODO: scale the occrates here
+                var = torch.exp(self.occrate_var_layer(data)) 
 
             occrate = torch.cat([occrate, var], 1)
             if self.output_scaling:
                 occrate = self.perform_scale_output(occrate, name)
                 occrate[:,:,buildings[0,0]==0] = 0.
-                
-            
-            pop_est = torch.mul(buildings, occrate)
+                 
+            pop_est = torch.mul(buildings, occrate[:,0])
 
             # Variance Propagation
-            pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), var)], 1)
+            pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), occrate[:,1])], 1)
         else:
             if self.output_scaling:
                 occrate = self.perform_scale_output(occrate, name)
                 occrate[:,:,buildings[0,0]==0] = 0.
+            pop_est = torch.mul(buildings, occrate)
 
-        # if self.output_scaling:
-        #     pop_est = self.perform_scale_output(pop_est, name)
-        #     pop_est[:,:,buildings[0,0]==0] = 0.
-        
+
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
             #TODO: change this part when using a new loss function
