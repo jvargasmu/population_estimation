@@ -1,18 +1,18 @@
 #!/bin/bash
 
-#BSUB -W 24:00
+#BSUB -W 6:00
 #BSUB -n 1
 #BSUB -o euleroutputs/outfile_%J.%I.txt
 #BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
-#BSUB -R "select[gpu_mtotal0>=6000]"
+#BSUB -R "select[gpu_mtotal0>=5500]"
 #BSUB -R "rusage[scratch=120000]"
-#BSUB -J "do0_6[1-5]"
+#BSUB -J "rs[1]"
 
 # job index (set this to your system job variable e.g. for parallel job arrays)
 # used to set model_idx and test_fold_idx below.
 #index=0   # index=0 --> model_idx=0, test_fold_idx=0
 index=$((LSB_JOBINDEX))
-rseed=$(( $index % 5 ))
+rs=$(( $index % 5 - 1 ))
 
 leave=Clipart
 
@@ -22,7 +22,7 @@ cp -r -v /cluster/work/igp_psr/metzgern/HAC/code/repocode/population_estimation/
 
 echo job index: $index
 echo leave: $leave
-echo val_fold: $rseed
+echo val_fold: $rs
 echo TEMPDIR: $TMPDIR
 
 source HACenv/bin/activate
@@ -30,26 +30,36 @@ source HACenv/bin/activate
 # load modules
 module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
+#python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold ${rs} -rs 1611 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets -sampler custom --custom_sampler_weights 1,1,1,1,1,1000
 
-python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz \
-                                    -train_lvl f,f,f,f,f \
-                                    -test uga,rwa,tza,nga,moz,cod \
-                                    -lr 0.0001 \
-                                    -optim adam \
-                                    -wr 0.01 \
-				    --dropout 0.6 \
-                                    -adamwr 0. \
-                                    -lstep 8000 \
-                                    --validation_fold 0 \
-                                    -rs ${rseed} \
-                                    -mm m,m,m,m,m \
-                                    --loss laplaceNLL \
-                                    --input_scaling True \
-                                    --output_scaling True \
-				    --silent_mode True \
-                                    --dataset_dir $TMPDIR/datasets
+#python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold 0 -rs ${rs} -mm m,m,m,m,m,m --input_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets # --sampler custom  --custom_sampler_weights 1,1,1,1,1,50
+
+#python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold 0 -rs ${rs} -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets --sampler custom --max_step 200000
+
+python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold ${rs} -rs 0 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets --sampler custom --max_step 200000
 
 
+python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold ${rs} -rs 0 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 200000
+
+
+#python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz,cod \
+#                                    -train_lvl f,f,f,f,f,f \
+#                                    -test uga,rwa,tza,nga,moz,cod \
+#                                    -lr 0.0001 \
+#                                    -optim adam \
+#                                    -wr 0.01 \
+#				    --dropout 0.4 \
+#                                    -adamwr 0. \
+#					-lstep 8000 \
+#                                    --validation_fold ${rs} \
+#                                    -rs 1610 \
+#                                    -mm m,m,m,m,m,m \
+#                                    --loss laplaceNLL \
+#				    --input_scaling True \
+#				    --silent_mode True \
+#                                    --dataset_dir $TMPDIR/datasets \
+#                                    --sampler custom \
+#                                    --custom_sampler_weights 1,1,1,1,1,1000
 
 # python3 train.py --optimizer ADAM \
 #                  --scheduler MultiStepLR \
