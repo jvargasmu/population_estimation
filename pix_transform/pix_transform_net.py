@@ -152,29 +152,25 @@ class PixScaleNet(nn.Module):
                 self.params_with_regularizer += [{'params':self.out_bias[name]}]
             
         if dropout>0.0:
-            self.scalenet = nn.Sequential(
+            self.occratenet = nn.Sequential(
                             nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True),# nn.Conv2d(n3, self.out_dim, (k4, k4),padding=(k4-1)//2),
-                                                                #  nn.ReLU(inplace=True)
+                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
                             )
         else:
-            self.scalenet = nn.Sequential(        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+            self.occratenet = nn.Sequential(
+                                                  nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
                             nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2),
-                        #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
-                        #   nn.ReLU(inplace=True),nn.Conv2d(n3, n3, (k3, k3),padding=(k3-1)//2),
-                            nn.ReLU(inplace=True),#nn.Conv2d(n3, self.out_dim, (k4, k4),padding=(k4-1)//2),
-                            # nn.ReLU(inplace=True)
+                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2),   
                             )
 
-        self.scale_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
-        self.var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
+        self.occrate_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
+        self.occrate_var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
  
-        self.params_with_regularizer += [{'params':self.scalenet.parameters(),'weight_decay':weights_regularizer}]
-        self.params_with_regularizer += [{'params':self.scale_layer.parameters(),'weight_decay':weights_regularizer}]
-        self.params_with_regularizer += [{'params':self.var_layer.parameters(),'weight_decay':weights_regularizer}]
+        self.params_with_regularizer += [{'params':self.occratenet.parameters(),'weight_decay':weights_regularizer}]
+        self.params_with_regularizer += [{'params':self.occrate_layer.parameters(),'weight_decay':weights_regularizer}]
+        self.params_with_regularizer += [{'params':self.occrate_var_layer.parameters(),'weight_decay':weights_regularizer}]
 
 
     def forward(self, inputs, mask=None, name=None, predict_map=False, forward_only=False):
@@ -207,22 +203,30 @@ class PixScaleNet(nn.Module):
         if self.input_scaling:
             data = self.perform_scale_inputs(data, name)
 
-        data = self.scalenet(data)
-        scale = self.scale_layer(data)
-        pop_est = torch.mul(buildings, scale)
+        data = self.occratenet(data)
+        occrate = self.occrate_layer(data)
         if self.bayesian:
             if self.pred_var:
-                var = self.var_layer(data)
+                var = self.occrate_var_layer(data)
             else:
-                var = torch.exp(self.var_layer(data))
-            # Variance Propagation
-            scale = torch.cat([scale, var], 1)
-            pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), var)], 1)
+                var = torch.exp(self.occrate_var_layer(data)) 
 
-        if self.output_scaling:
-            pop_est = self.perform_scale_output(pop_est, name)
-            pop_est[:,:,buildings[0,0]==0] = 0.
-        
+            occrate = torch.cat([occrate, var], 1)
+            if self.output_scaling:
+                occrate = self.perform_scale_output(occrate, name)
+                occrate[:,:,buildings[0,0]==0] = 0.
+                 
+            pop_est = torch.mul(buildings, occrate[:,0])
+
+            # Variance Propagation
+            pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), occrate[:,1])], 1)
+        else:
+            if self.output_scaling:
+                occrate = self.perform_scale_output(occrate, name)
+                occrate[:,:,buildings[0,0]==0] = 0.
+            pop_est = torch.mul(buildings, occrate)
+
+
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
             #TODO: change this part when using a new loss function
@@ -236,7 +240,7 @@ class PixScaleNet(nn.Module):
             if not predict_map:
                 return pop_est.sum((0,2,3)).cpu()
             else:
-                return pop_est.cpu(), scale.cpu()
+                return pop_est.cpu(), occrate.cpu()
 
 
     def perform_scale_inputs(self, data, name):
@@ -245,6 +249,7 @@ class PixScaleNet(nn.Module):
             return data*self.mean_in_scale + self.mean_in_bias
         else:
             return data*self.in_scale[name] + self.in_bias[name]
+
 
     def calculate_mean_input_scale(self):
         self.mean_in_scale = 0
@@ -257,15 +262,28 @@ class PixScaleNet(nn.Module):
 
 
     def perform_scale_output(self, preds, name):
-        if name not in self.datanames:
-            self.calculate_mean_output_scale()
-            preds = preds*self.mean_out_scale + self.mean_out_bias
-        else:
-            if self.bayesian:
-                # Variance propagation for the predicted varianced in dim 2
+        """
+        Inputs:
+            - preds : tensor of shape (1,d,h,w). Where d is 1 for the non bayesian case and 2 (pred & var) for the bayesian case.
+            - name: the name of the country the patch is located.
+        Output:
+            - Scaled and clamped predictions
+        """
+
+        if self.bayesian:
+            if name not in self.datanames:
+                self.calculate_mean_output_scale()  
+                preds_0 = preds[:,0:1]*self.mean_out_scale + self.mean_out_bias
+                preds_1 = preds[:,1:2]*torch.square(self.mean_out_scale)
+                preds = torch.cat([preds_0,preds_1], 1)  
+            else:
                 preds_0 = preds[:,0:1]*self.out_scale[name] + self.out_bias[name]
                 preds_1 = preds[:,1:2]*torch.square(self.out_scale[name])
                 preds = torch.cat([preds_0,preds_1], 1) 
+        else: 
+            if name not in self.datanames:
+                self.calculate_mean_output_scale()
+                preds = preds*self.mean_out_scale + self.mean_out_bias
             else:
                 preds = preds*self.out_scale[name] + self.out_bias[name]
         

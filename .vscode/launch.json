@@ -819,9 +819,9 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,rwa,cod",
+                "-train", "uga,rwa",
                 "-train_lvl", "f,f",
-                "-test", "uga,rwa,tza",
+                "-test", "uga,rwa",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.001",
