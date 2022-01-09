@@ -272,19 +272,19 @@ class PixScaleNet(nn.Module):
         if self.bayesian:
             if name not in self.datanames:
                 self.calculate_mean_output_scale()  
-                preds_0 = preds[:,0:1]*self.mean_out_scale + self.mean_out_bias
+                preds_0 = preds[:,0:1]*self.mean_out_scale #+ self.mean_out_bias
                 preds_1 = preds[:,1:2]*torch.square(self.mean_out_scale)
                 preds = torch.cat([preds_0,preds_1], 1)  
             else:
-                preds_0 = preds[:,0:1]*self.out_scale[name] + self.out_bias[name]
+                preds_0 = preds[:,0:1]*self.out_scale[name] #+ self.out_bias[name]
                 preds_1 = preds[:,1:2]*torch.square(self.out_scale[name])
                 preds = torch.cat([preds_0,preds_1], 1) 
         else: 
             if name not in self.datanames:
                 self.calculate_mean_output_scale()
-                preds = preds*self.mean_out_scale + self.mean_out_bias
+                preds = preds*self.mean_out_scale #+ self.mean_out_bias
             else:
-                preds = preds*self.out_scale[name] + self.out_bias[name]
+                preds = preds*self.out_scale[name] #+ self.out_bias[name]
                         
         # Ensure that there are no negative occ-rates and variances
         return preds.clamp(min=0)
