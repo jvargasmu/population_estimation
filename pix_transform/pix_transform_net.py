@@ -179,20 +179,21 @@ class PixScaleNet(nn.Module):
 
     def forward(self, inputs, mask=None, name=None, predict_map=False, forward_only=False):
 
-        # Check if the image is too large for singe forward pass
-        PS = 1500 if forward_only else 1500
-        if torch.tensor(inputs.shape[2:4]).prod()>PS**2:
-            return self.forward_batchwise(inputs, mask, name)
-
-        if mask is not None and len(mask.shape)==2:
-            mask = mask.unsqueeze(0)
-        
         if len(inputs.shape)==3:
             inputs = inputs.unsqueeze(0)
 
+        if mask is not None and len(mask.shape)==2:
+            mask = mask.unsqueeze(0)
+
+        # Check if the image is too large for singe forward pass
+        PS = 2500 if forward_only else 1500 
+        if torch.tensor(inputs.shape[-2:]).prod()>PS**2:
+            return self.forward_batchwise(inputs, mask, name, predict_map=predict_map, forward_only=forward_only)
+        
         if (mask is not None) and (not predict_map):
             mask = mask.to(self.device)
             inputs = inputs[:,:,mask[0]].unsqueeze(3)
+            mask = mask.cpu()
 
         # Apply network
         if isinstance(inputs, np.ndarray):
@@ -220,6 +221,7 @@ class PixScaleNet(nn.Module):
 
         if self.output_scaling:
             pop_est = self.perform_scale_output(pop_est, name)
+            pop_est[:,:,buildings[0,0]==0] = 0.
         
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
@@ -227,8 +229,7 @@ class PixScaleNet(nn.Module):
             pop_est = pop_est.exp() 
         
         # Check if masking should be applied
-        if mask is not None:
-            mask = mask.to(self.device)
+        if mask is not None: 
             return pop_est.sum((0,2,3)).cpu()
         else:
             # check if the output should be the map or the sum
@@ -284,7 +285,7 @@ class PixScaleNet(nn.Module):
     def forward_batchwise(self, inputs, mask=None, name=None, predict_map=False, return_scale=False, forward_only=False): 
 
         #choose a responsible patch that does not exceed the GPU memory
-        PS = 1300 if forward_only else 1300
+        PS = 1800 if forward_only else 1000
         oh, ow = inputs.shape[-2:]
         if predict_map:
             outvar = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
@@ -296,23 +297,31 @@ class PixScaleNet(nn.Module):
         for hi in range(0,oh,PS):
             for oi in range(0,ow,PS):
                 if (not predict_map) and (not self.convnet):
-                    if mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
+                    if mask is not None and mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
                         outvar += self( inputs[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3), name=name, forward_only=forward_only)
                 elif (not predict_map) and self.convnet:
                     out, _ = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True)
                     outvar += out.sum().cpu()
                 else:
                     outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], name=name, predict_map=True, forward_only=forward_only)
+                    #torch.cuda.memory_summary()
+                    #torch.cuda.empty_cache()
+                    #torch.cuda.memory_summary()
 
-        if predict_map:    
-            out = outvar.squeeze()
+        # if predict_map:    
+        #     out = outvar.squeeze()
+        #     scale = scale.squeeze()
+        # else:
+        #     out = outvar
+
+        # if return_scale:
+        #     out = [out,scale]
+
+        if not predict_map:
+            return outvar
         else:
-            out = outvar
-
-        if return_scale:
-            out = [out,scale]
+            return outvar, scale
         
-        return out
 
     def forward_one_or_more(self, sample, mask=None):
 
