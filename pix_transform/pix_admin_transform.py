@@ -527,6 +527,9 @@ def PixAdminTransform(
 
                 itercounter += 1
                 batchiter += 1
+                if mynet.output_scaling:
+                    mynet.normalize_out_scales()
+
                 torch.cuda.empty_cache()
 
                 if itercounter>=( params['logstep'] ):
