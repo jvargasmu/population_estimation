@@ -1,0 +1,36 @@
+Sender: LSF System <lsfadmin@eu-g1-054-1>
+Subject: Job 199798662: <submit_job.sh> in cluster <euler> Exited
+
+Job <submit_job.sh> was submitted from host <eu-login-05> by user <metzgern> in cluster <euler> at Sun Jan  9 11:46:39 2022
+Job was executed on host(s) <eu-g1-054-1>, in queue <normal.4h>, as user <metzgern> in cluster <euler> at Sun Jan  9 11:47:09 2022
+</cluster/home/metzgern> was used as the home directory.
+</cluster/work/igp_psr/metzgern/HAC/code/repocode/population_estimation> was used as the working directory.
+Started at Sun Jan  9 11:47:09 2022
+Terminated at Sun Jan  9 11:47:10 2022
+Results reported at Sun Jan  9 11:47:10 2022
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+submit_job.sh
+------------------------------------------------------------
+
+Exited with exit code 127.
+
+Resource usage summary:
+
+    CPU time :                                   0.16 sec.
+    Max Memory :                                 6 MB
+    Average Memory :                             -
+    Total Requested Memory :                     1024.00 MB
+    Delta Memory :                               1018.00 MB
+    Max Swap :                                   -
+    Max Processes :                              -
+    Max Threads :                                -
+    Run time :                                   26 sec.
+    Turnaround time :                            31 sec.
+
+The output (if any) follows:
+
+/cluster/shadow/.lsbatch/1641725199.199798662: line 8: submit_job.sh: command not found
