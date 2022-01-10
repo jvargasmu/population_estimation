@@ -1,18 +1,18 @@
 #!/bin/bash
 
-#BSUB -W 6:00
+#BSUB -W 24:00
 #BSUB -n 1
 #BSUB -o euleroutputs/outfile_%J.%I.txt
 #BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
 #BSUB -R "select[gpu_mtotal0>=5500]"
 #BSUB -R "rusage[scratch=120000]"
-#BSUB -J "rs[1]"
+#BSUB -J "rs[1-5]"
 
 # job index (set this to your system job variable e.g. for parallel job arrays)
 # used to set model_idx and test_fold_idx below.
 #index=0   # index=0 --> model_idx=0, test_fold_idx=0
 index=$((LSB_JOBINDEX))
-rs=$(( $index % 5 - 1 ))
+rs=$(( $index % 5 ))
 
 leave=Clipart
 
@@ -36,11 +36,9 @@ module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
 #python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold 0 -rs ${rs} -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets --sampler custom --max_step 200000
 
-python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold ${rs} -rs 0 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets --sampler custom --max_step 200000
+python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold ${rs} -rs 0 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets --sampler custom --max_step 1400000
 
-
-python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold ${rs} -rs 0 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 200000
-
+#python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold ${rs} -rs 0 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 200000
 
 #python superpixel_disagg_model.py   -train uga,rwa,tza,nga,moz,cod \
 #                                    -train_lvl f,f,f,f,f,f \
