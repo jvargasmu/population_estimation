@@ -371,8 +371,8 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     res["predicted_target_img"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,0,Mask].to(torch.float16)
                     res["variances"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,1,Mask].to(torch.float16)  
                     res["scales"][:,rmin:rmax, cmin:cmax] = scale[0,:].to(torch.float16) 
-                    res["fold_map"][rmin:rmax, cmin:cmax][Mask] = k  
-                    res["id_map"][rmin:rmax, cmin:cmax][Mask] = census_id
+                    res["fold_map"][rmin:rmax, cmin:cmax] = k  
+                    res["id_map"][rmin:rmax, cmin:cmax] = census_id
                     
                     pred = pop_est[0,0,Mask].sum().detach().cpu().numpy()
                     agg_preds.append(pred)
@@ -427,7 +427,7 @@ def Eval5Fold_PixAdminTransform(
                 params["validation_split"], k, params["weights"], params["custom_sampler_weights"], val_valid_ids, build_pairs=False)
         )
 
-        calculate_mean_std = True
+        calculate_mean_std = False
         if calculate_mean_std and k==0:
 
             def update(existingAggregate, newValue):
