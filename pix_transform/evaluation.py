@@ -448,8 +448,6 @@ def Eval5Fold_PixAdminTransform(
                     (mean, variance, sampleVariance) = (mean, M2 / count, M2 / (count - 1))
                     return (mean, variance, sampleVariance)
 
-
-                    
             for name in test_dataset_names:
 
                 print("****************************************************************")
