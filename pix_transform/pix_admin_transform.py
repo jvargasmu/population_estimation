@@ -211,7 +211,7 @@ def PixAdminTransform(
                 # Backwards
                 loss = myloss(y_pred, y_gt)
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(mynet.parameters(), 10.)
+                torch.nn.utils.clip_grad_norm_(mynet.parameters(), params["grad_clip"])
                 optimizer.step()
 
                 # logging
@@ -230,6 +230,7 @@ def PixAdminTransform(
 
                 itercounter += 1
                 batchiter += 1
+
                 if mynet.output_scaling:
                     mynet.normalize_out_scales()
 

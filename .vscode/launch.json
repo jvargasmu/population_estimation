@@ -819,9 +819,9 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,rwa,tza,moz",
+                "-train", "uga,rwa",
                 "-train_lvl", "f,f",
-                "-test", "uga,rwa,tza,moz",
+                "-test", "uga,rwa",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.001",
@@ -833,7 +833,8 @@
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
-                //"--max_step", "800"
+                //"--max_step", "800",
+                "--grad_clip", "10"
             ]
         },
         {
