@@ -335,7 +335,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.source_census_val = {}
         process = psutil.Process(os.getpid())
         for i, (name, rs) in tqdm(enumerate(datalocations.items())):
-            print("Preparing", name)
+            print("Preparing dataloader: ", name)
             print("Initial:",process.memory_info().rss/1000/1000,"mb used")
 
             with open(rs['train_vars_f'], "rb") as f:
@@ -344,17 +344,17 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 _, _, _, tY_c, tregid_c, tMasks_c, tBBox_c, feature_names = pickle.load(f)
 
             self.feature_names[name] = feature_names
-            print("After loading trainvars",process.memory_info().rss/1000/1000,"mb used")
+            # print("After loading trainvars",process.memory_info().rss/1000/1000,"mb used")
 
             if name not in self.val_valid_ids.keys():          
                 with open(rs['eval_vars'], "rb") as f:
                     self.memory_vars[name] = pickle.load(f)
                     self.val_valid_ids[name] = self.memory_vars[name][3]
-            print("After loading of eval memory vars",process.memory_info().rss/1000/1000,"mb used")
+            # print("After loading of eval memory vars",process.memory_info().rss/1000/1000,"mb used")
             with open(rs['disag'], "rb") as f:
                 self.memory_disag[name] = pickle.load(f) 
 
-            print("After loading of disag memory",process.memory_info().rss/1000/1000,"mb used")
+            # print("After loading of disag memory",process.memory_info().rss/1000/1000,"mb used")
 
             if memory_mode[i]=='m':
                 #self.features[name] = h5py.File(rs["features"], 'r', driver='core')["features"]
@@ -364,7 +364,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
             else:
                 raise Exception(f"Wrong memory mode for {name}. It should be 'd' or 'm' in a comma separated list. No spaces!")
-            print("After loading of features",process.memory_info().rss/1000/1000,"mb used")
+            # print("After loading of features",process.memory_info().rss/1000/1000,"mb used")
             
             # Validation split strategy:
             # We always split the coarse patches into 5 folds, then we look up fine patches that belong to those coarse validation patches
@@ -484,7 +484,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         return self.all_sample_ids.__len__()
     
     def len_val(self):
-        # this will return the length of the training dataset
+        # this will return the length of the validation dataset
         return len(self.loc_list_val)
     
     def len_all_samples(self, name=None):
@@ -518,14 +518,12 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         return X, Y, Mask, name, census_id
 
 
-    def get_single_training_item(self, idx): 
-        name, k = self.idx_to_loc_train(idx)
+    def get_single_training_item(self, idx, name=None): 
+        if name is None:
+            name, k = self.idx_to_loc_train(idx)
+        else:
+            k = idx
         rmin, rmax, cmin, cmax = self.BBox_train[name][k]
-        #print("name", name)
-        #print("self.features", self.features)
-        #print("self.features[name]", self.features[name])
-        #print("self.features[name][0]", self.features[name][0])
-        #pdb.set_trace()
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_train[name][k])
         Mask = torch.tensor(self.Masks_train[name][k])

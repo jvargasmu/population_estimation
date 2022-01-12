@@ -1,6 +1,8 @@
 
 
 import logging
+
+from torch._C import AliasDb
 logging.basicConfig( format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 
 import numpy as np
@@ -425,6 +427,58 @@ def Eval5Fold_PixAdminTransform(
                 params["validation_split"], k, params["weights"], params["custom_sampler_weights"], val_valid_ids, build_pairs=False)
         )
 
+        calculate_mean_std = True
+        if calculate_mean_std and k==0:
+
+            def update(existingAggregate, newValue):
+                (count, mean, M2) = existingAggregate
+                count += 1
+                delta = newValue - mean
+                mean += delta / count
+                delta2 = newValue - mean
+                M2 += delta * delta2
+                return (count, mean, M2)
+
+            # Retrieve the mean, variance and sample variance from an aggregate
+            def finalize(existingAggregate):
+                (count, mean, M2) = existingAggregate
+                if count < 2:
+                    return float("nan")
+                else:
+                    (mean, variance, sampleVariance) = (mean, M2 / count, M2 / (count - 1))
+                    return (mean, variance, sampleVariance)
+
+
+                    
+            for name in test_dataset_names:
+
+                print("****************************************************************")
+                print("Calculating Mean and Std for fold", k, "and dataset", name)
+                print("****************************************************************")
+                summation = 0
+                sumsqrt = 0
+                n = Datasets[k].BBox_train[name].__len__()
+                npix = 0
+                initial = torch.zeros((Datasets[k].feature_names[name].__len__()))
+                existingAggregate = [0,initial.clone(),initial.clone()]
+
+                for i in tqdm(range(n)):
+                    X, _, Mask, _, _ = Datasets[k].get_single_training_item(i, name)
+                    X_masked = X[:,Mask]
+                    this_npix = X_masked.shape[1]
+                    npix += this_npix
+
+                    for ii in range(this_npix):
+                        existingAggregate = update(existingAggregate,X_masked[:,ii])
+
+                mean_w, var_w, sampleVariance_w = finalize(existingAggregate)
+                stddev_w = torch.sqrt(var_w)
+                sample_stddev_w = torch.sqrt(sampleVariance_w)
+
+                for j,fname in enumerate(Datasets[k].feature_names[name]):
+                    print("Train Fold", k, "; Dataset", name, "Featurename:", fname ,"; Mean=, Stdv= (", mean_w[j].item(), ",", sample_stddev_w[j].item(), ")")
+
+
     # Fix all random seeds
     torch.manual_seed(params["random_seed"])
     random.seed(params["random_seed"])
@@ -440,6 +494,7 @@ def Eval5Fold_PixAdminTransform(
                     input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
                     datanames=train_dataset_name
                     ).train().to(device)
+
 
         # Loading from checkpoint
         checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"][k]))
