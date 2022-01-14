@@ -351,7 +351,9 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         res["scales"] = torch.zeros((2,)+guide_res, dtype=torch.float16)
         res["scales"][:] = float('nan')
         res["fold_map"] = torch.zeros(guide_res, dtype=torch.float16)
+        res["fold_map"][:] = float('nan')
         res["id_map"] = torch.zeros(guide_res, dtype=torch.float16)
+        res["fold_map"][:] = float('nan')
 
         logging.info(f'Cross Validating dataset of {name}')
 
@@ -379,6 +381,11 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     agg_preds_arr[census_id.item()] = pop_est[0,0,Mask].sum().detach().cpu().item()
                     
                     census_ids.append(census_id)
+                    torch.cuda.empty_cache()
+
+                    if name=="nga" and rmin<10709 and rmax>10709 and cmin<5163 and cmax>5163:
+                        print("Sus")
+
             torch.cuda.empty_cache()
         
         res["scales"][res["scales"]==torch.inf] = np.nan
@@ -393,14 +400,18 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
 
         predicted_target_img_adjusted, adj_logs = disag_and_eval_map(res["predicted_target_img"], agg_preds_arr, val_regions, val_map_valid_ids,
             np.unique(val_regions).__len__(), val_valid_ids, val_census, dataset.memory_disag[name])
-        log_dict.update(adj_logs)
+        for key in adj_logs.keys():
+            res_dict[name + '/' + key] = res[key]
         logging.info(f'Classic disag finsihed')
 
         res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
         predicted_target_img_adjusted = predicted_target_img_adjusted.cpu() 
 
         for key in res.keys():
-            res_dict[name + '/' + key ] = res[key]
+            res_dict[name + '/' + key] = res[key]
+
+    log_dict["batchiter"] = 0 
+    log_dict["epoch"] = 0 
     
     wandb.log(log_dict) 
     return res_dict, log_dict
