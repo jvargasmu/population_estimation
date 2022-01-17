@@ -204,7 +204,7 @@
                 "-adamwr", "0.",
                 "-lstep", "200",
                 "-mm", "m",
-                "-vs", "0.2"
+                "-vs", "0.0"
             ]
         },
         {
@@ -241,13 +241,15 @@
             "args": [ 
                 "-train", "cod",
                 "-train_lvl", "c",
-                "-test", "cod,tza",
+                "-test", "cod",
                 "-lr", "0.00003",
                 "-optim", "adam",
-                "-wr", "0.01",
+                "-wr", "0.1",
+                "--dropout", "0.4",
                 "-adamwr", "0.",
+                "--loss", "laplaceNLL",
                 "--log_step", "50",
-                "-vs", "0.2",
+                "-vs", "0.",
                 "-mm", "m",
             ]
         },
@@ -847,9 +849,9 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "rwa,uga",
+                "-train", "rwa",
                 "-train_lvl", "f,f,f,f,f,f",
-                "-test", "rwa,uga",
+                "-test", "rwa",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
@@ -857,11 +859,11 @@
                 "-adamwr", "0.",
                 "-lstep", "8000",
                 "-rs", "3",
-                "-mm", "m,m,m",
+                "-mm", "m,d,d,d,d,d",
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
-                "-e5f", "twilight-lion-1457,clean-voice-1458,sunny-salad-1459,fragrant-puddle-1460,dainty-elevator-1460",
+                "-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
             ]
         },
     ]

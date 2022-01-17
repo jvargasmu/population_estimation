@@ -452,12 +452,12 @@ def superpixel_with_pix_data(
                     geo_metadata["geo_transform"], geo_metadata["projection"] )
             if name+'/id_map' in list(res.keys()):
                 id_map = res[name+'/id_map']
-                id_map[~valid_data_mask]= np.nan
+                #id_map[~valid_data_mask]= np.nan
                 write_geolocated_image( id_map.numpy(), dest_folder+'/{}_id_map.tiff'.format(name),
                     geo_metadata["geo_transform"], geo_metadata["projection"] )
             if name+'/fold_map' in list(res.keys()):
                 fold_map = res[name+'/fold_map']
-                fold_map[~valid_data_mask]= np.nan
+                #fold_map[~valid_data_mask]= np.nan
                 write_geolocated_image( fold_map.numpy(), dest_folder+'/{}_fold_map.tiff'.format(name),
                     geo_metadata["geo_transform"], geo_metadata["projection"] )
 

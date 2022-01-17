@@ -243,7 +243,7 @@ def PixAdminTransform(
                     log_dict = {}
                     
                     # Validation
-                    if params["validation_split"]>0. or (params["validation"] is not None):
+                    if params["validation_split"]>0. or (params["validation_fold"] is not None):
                         for name in test_dataset_names:
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
