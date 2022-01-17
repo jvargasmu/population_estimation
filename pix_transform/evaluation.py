@@ -242,18 +242,15 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
         if dataset_name in mynet.in_scale.keys():
             in_scales = mynet.in_scale[dataset_name][0,:,0,0].detach().cpu().numpy()
             in_biases = mynet.in_bias[dataset_name][0,:,0,0].detach().cpu().numpy() 
-            for i,(sc,bi) in enumerate(zip(in_scales[::-1], in_biases[::-1])):
-                fname = dataset.feature_names[dataset_name][-i]
-                metrics["input_scaling/"+fname] = sc
-                metrics["input_bias/"+fname] = bi
 
         elif "mean_in_scale" in dir(mynet): 
             in_scales = mynet.mean_in_scale[0,:,0,0].detach().cpu().numpy()
-            in_biases = mynet.mean_in_bias[0,:,0,0].detach().cpu().numpy() 
-            for i,(sc,bi) in enumerate(zip(in_scales[::-1], in_biases[::-1])):
-                fname = dataset.feature_names[dataset_name][-i]
-                metrics["input_scaling/"+fname] = sc
-                metrics["input_bias/"+fname] = bi
+            in_biases = mynet.mean_in_bias[0,:,0,0].detach().cpu().numpy()
+
+        for i,(sc,bi) in enumerate(zip(in_scales, in_biases)):
+            fname = dataset.feature_names[dataset_name][i+1]
+            metrics["input_scaling/"+fname] = sc
+            metrics["input_bias/"+fname] = bi
 
     if "out_scale" in dir(mynet): 
         if dataset_name in mynet.out_scale.keys():
