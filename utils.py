@@ -419,7 +419,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             # coarse_regid_val = self.memory_disag[name][0][self.tregid_val[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_val_c"
             self.source_census_val[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_val_c}
             self.memory_disag_val[name] = target_to_source_val, self.source_census_val[name], self.memory_disag[name][2]
-            self.max_tregid_val[name] = np.max(self.tregid_val[name])
+            if self.tregid_val[name].__len__()>0:
+                self.max_tregid_val[name] = np.max(self.tregid_val[name])
             self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
             self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
 

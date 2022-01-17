@@ -383,8 +383,8 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     census_ids.append(census_id)
                     torch.cuda.empty_cache()
 
-                    if name=="nga" and rmin<10709 and rmax>10709 and cmin<5163 and cmax>5163:
-                        print("Sus")
+                    # if name=="nga" and rmin<10709 and rmax>10709 and cmin<5163 and cmax>5163:
+                    #     print("Sus")
 
             torch.cuda.empty_cache()
         
@@ -401,7 +401,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         predicted_target_img_adjusted, adj_logs = disag_and_eval_map(res["predicted_target_img"], agg_preds_arr, val_regions, val_map_valid_ids,
             np.unique(val_regions).__len__(), val_valid_ids, val_census, dataset.memory_disag[name])
         for key in adj_logs.keys():
-            res_dict[name + '/' + key] = res[key]
+            res_dict[name + '/' + key] = adj_logs[key]
         logging.info(f'Classic disag finsihed')
 
         res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
@@ -438,10 +438,11 @@ def Eval5Fold_PixAdminTransform(
                 params["validation_split"], k, params["weights"], params["custom_sampler_weights"], val_valid_ids, build_pairs=False)
         )
 
-        calculate_mean_std = False
+        calculate_mean_std = True
         if calculate_mean_std and k==0:
 
             def update(existingAggregate, newValue):
+                # Welford's online algorithm: Update
                 (count, mean, M2) = existingAggregate
                 count += 1
                 delta = newValue - mean
@@ -452,6 +453,7 @@ def Eval5Fold_PixAdminTransform(
 
             # Retrieve the mean, variance and sample variance from an aggregate
             def finalize(existingAggregate):
+                # Welford's online algorithm: Output
                 (count, mean, M2) = existingAggregate
                 if count < 2:
                     return float("nan")

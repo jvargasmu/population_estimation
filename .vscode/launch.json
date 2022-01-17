@@ -204,7 +204,7 @@
                 "-adamwr", "0.",
                 "-lstep", "200",
                 "-mm", "m",
-                "-vs", "0.2"
+                "-vs", "0.0"
             ]
         },
         {
@@ -244,8 +244,10 @@
                 "-test", "cod",
                 "-lr", "0.00003",
                 "-optim", "adam",
-                "-wr", "0.01",
+                "-wr", "0.1",
+                "--dropout", "0.4",
                 "-adamwr", "0.",
+                "--loss", "laplaceNLL",
                 "--log_step", "50",
                 "-vs", "0.",
                 "-mm", "m",
@@ -847,9 +849,9 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "nga",
+                "-train", "rwa",
                 "-train_lvl", "f,f,f,f,f,f",
-                "-test", "nga",
+                "-test", "rwa",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
