@@ -677,7 +677,7 @@
                 "-test", "uga,tza,rwa,nga,moz,cod",
                 "-lr", "0.0001",
                 "-optim", "adam",
-                "-wr", "0.001",
+                "-wr", "0.1",
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",

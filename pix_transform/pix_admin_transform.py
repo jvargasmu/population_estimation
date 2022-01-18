@@ -105,7 +105,7 @@ def PixAdminTransform(
         optimizer = optim.Adam(mynet.params_with_regularizer, lr=params['lr'])
     elif params["optim"]=="adamw":
         optimizer = optim.AdamW(mynet.params_with_regularizer, lr=params['lr'], weight_decay=params["weights_regularizer_adamw"])
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=params["lr_scheduler_step"], gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=params["lr_scheduler_step"], gamma=0.5)
 
     # Load from state
     if params["load_state"] is not None:
