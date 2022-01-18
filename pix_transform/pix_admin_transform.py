@@ -229,6 +229,7 @@ def PixAdminTransform(
                     train_log_dict['train/loss'] = loss 
                     train_log_dict['epoch'] = epoch 
                     train_log_dict['batchiter'] = batchiter
+                    train_log_dict['current_lr'] = optimizer.param_groups[0]["lr"]
                     wandb.log(train_log_dict)
 
                 itercounter += 1

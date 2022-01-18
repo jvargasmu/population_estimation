@@ -836,7 +836,8 @@
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 //"--max_step", "800",
-                "--grad_clip", "10"
+                "--grad_clip", "10",
+                "-lrs", "5000"
             ]
         },
         {
