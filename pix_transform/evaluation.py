@@ -470,7 +470,7 @@ def Eval5Fold_PixAdminTransform(
                 initial = torch.zeros((Datasets[k].feature_names[name].__len__()))
                 existingAggregate = [0,initial.clone(),initial.clone()]
 
-                for i in tqdm(range(n)):
+                for i in (range(n)):
                     X, _, Mask, _, _ = Datasets[k].get_single_training_item(i, name)
                     X_masked = X[:,Mask]
                     this_npix = X_masked.shape[1]
@@ -484,7 +484,8 @@ def Eval5Fold_PixAdminTransform(
                 sample_stddev_w = torch.sqrt(sampleVariance_w)
 
                 for j,fname in enumerate(Datasets[k].feature_names[name]):
-                    print("Train Fold", k, "; Dataset", name, "Featurename:", fname ,"; Mean=, Stdv= (", mean_w[j].item(), ",", sample_stddev_w[j].item(), ")")
+                    # print("Train Fold", k, "; Dataset", name, "Featurename:", fname ,"; Mean=, Stdv= (", mean_w[j].item(), ",", sample_stddev_w[j].item(), ")")
+                    print(mean_w[j].item(), ",", sample_stddev_w[j].item(), "," , fname, ", Train Fold", k, "; Dataset", name, "Featurename:", fname ,"; Mean=, Stdv= (", mean_w[j].item(), ",", sample_stddev_w[j].item(), ")")
 
 
     # Fix all random seeds
