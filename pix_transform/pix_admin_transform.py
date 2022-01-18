@@ -105,6 +105,7 @@ def PixAdminTransform(
         optimizer = optim.Adam(mynet.params_with_regularizer, lr=params['lr'])
     elif params["optim"]=="adamw":
         optimizer = optim.AdamW(mynet.params_with_regularizer, lr=params['lr'], weight_decay=params["weights_regularizer_adamw"])
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=params["lr_scheduler_step"], gamma=0.1)
 
     # Load from state
     if params["load_state"] is not None:
@@ -214,6 +215,7 @@ def PixAdminTransform(
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(mynet.parameters(), params["grad_clip"])
                 optimizer.step()
+                scheduler.step()
 
                 # logging
                 train_log_dict = {}
@@ -227,6 +229,7 @@ def PixAdminTransform(
                     train_log_dict['train/loss'] = loss 
                     train_log_dict['epoch'] = epoch 
                     train_log_dict['batchiter'] = batchiter
+                    train_log_dict['current_lr'] = optimizer.param_groups[0]["lr"]
                     wandb.log(train_log_dict)
 
                 itercounter += 1
