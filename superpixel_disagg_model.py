@@ -282,7 +282,8 @@ def superpixel_with_pix_data(
     dataset_dir,
     max_step,
     eval_5fold,
-    grad_clip
+    grad_clip,
+    lr_scheduler_step
     ):
 
     ####  define parameters  ########################################################
@@ -320,7 +321,8 @@ def superpixel_with_pix_data(
             'silent_mode': silent_mode,
             'dataset_dir': dataset_dir,
             'eval_5fold': eval_5fold,
-            "grad_clip": grad_clip
+            'grad_clip': grad_clip,
+            'lr_scheduler_step': lr_scheduler_step
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -492,6 +494,7 @@ def main():
     parser.add_argument("--train_weight", "-train_w", type=str,  default='1', help="ordered by --train_dataset_name weighting of the samples in the datasets (separated by commas) ")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--grad_clip", "-gc", type=float, default=10., help="Gradient norm clipping value")
+    parser.add_argument("--lr_scheduler_step", "-lrs", type=float, default=np.inf, help="How many interations until LR is reduced to 10%.")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
     parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="dropout probability ")
@@ -570,7 +573,8 @@ def main():
         args.dataset_dir,
         args.max_step,
         args.eval_5fold,
-        args.grad_clip
+        args.grad_clip,
+        args.lr_scheduler_step
     )
 
 
