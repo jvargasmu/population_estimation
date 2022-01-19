@@ -495,6 +495,7 @@ def main():
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--grad_clip", "-gc", type=float, default=10., help="Gradient norm clipping value")
     parser.add_argument("--lr_scheduler_step", "-lrs", type=float, default=np.inf, help="How many interations until LR is reduced to 10%.")
+    parser.add_argument("--lr_scheduler_gamma", "-lrg", type=float, default=0.5, help="How many interations until LR is reduced to 10%.")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
     parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="dropout probability ")
@@ -503,7 +504,7 @@ def main():
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
     parser.add_argument("--max_step", "-mstep", type=float, default=np.inf, help="Evealuate the model after 'logstep' batchiterations.")
 
-    parser.add_argument("--validation_split", "-vs", type=float, default=0.2, help="Evealuate the model after 'logstep' batchiterations.")
+    parser.add_argument("--validation_split", "-vs", type=float, default=0.2, help="Evaluate the model after 'logstep' batchiterations.")
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
     parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run.")
     
