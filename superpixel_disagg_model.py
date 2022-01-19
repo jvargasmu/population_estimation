@@ -283,7 +283,8 @@ def superpixel_with_pix_data(
     max_step,
     eval_5fold,
     grad_clip,
-    lr_scheduler_step
+    lr_scheduler_step,
+    lr_scheduler_gamma
     ):
 
     ####  define parameters  ########################################################
@@ -322,7 +323,8 @@ def superpixel_with_pix_data(
             'dataset_dir': dataset_dir,
             'eval_5fold': eval_5fold,
             'grad_clip': grad_clip,
-            'lr_scheduler_step': lr_scheduler_step
+            'lr_scheduler_step': lr_scheduler_step,
+            'lr_scheduler_gamma': lr_scheduler_gamma
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -575,7 +577,8 @@ def main():
         args.max_step,
         args.eval_5fold,
         args.grad_clip,
-        args.lr_scheduler_step
+        args.lr_scheduler_step,
+        args.lr_scheduler_gamma
     )
 
 
