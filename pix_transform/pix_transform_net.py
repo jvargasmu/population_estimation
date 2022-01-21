@@ -102,7 +102,7 @@ class PixScaleNet(nn.Module):
 
     def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
-        exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None):
+        exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None, small_net=False):
         super(PixScaleNet, self).__init__()
 
         self.channels_in = channels_in
@@ -152,14 +152,27 @@ class PixScaleNet(nn.Module):
                 self.params_with_regularizer += [{'params':self.out_bias[name]}]
             
         if dropout>0.0:
-            self.occratenet = nn.Sequential(
+            if small_net:
+                self.occratenet = nn.Sequential(
+                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
+                            )
+            else:
+                self.occratenet = nn.Sequential(
                             nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
                             )
         else:
-            self.occratenet = nn.Sequential(
+            if small_net:
+                self.occratenet = nn.Sequential(
+                                                  nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                            )
+            else:
+                self.occratenet = nn.Sequential(
                                                   nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
                             nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                             nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2),   

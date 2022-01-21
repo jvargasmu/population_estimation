@@ -97,7 +97,7 @@ def PixAdminTransform(
                         device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                         dropout=params["dropout"],
                         input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
-                        datanames=train_dataset_name
+                        datanames=train_dataset_name, small_net=params["small_net"]
                         ).train().to(device)
 
     #Optimizer

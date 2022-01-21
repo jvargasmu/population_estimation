@@ -465,7 +465,8 @@
                 "-adamwr", "0.",
                 "-lstep", "50",
                 "-mm", "m",
-                "--validation_fold", "0"
+                "--validation_fold", "0",
+                "--small_net", "True"
             ]
         },
         {

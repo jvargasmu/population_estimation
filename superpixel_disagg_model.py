@@ -284,7 +284,8 @@ def superpixel_with_pix_data(
     eval_5fold,
     grad_clip,
     lr_scheduler_step,
-    lr_scheduler_gamma
+    lr_scheduler_gamma,
+    small_net
     ):
 
     ####  define parameters  ########################################################
@@ -324,7 +325,8 @@ def superpixel_with_pix_data(
             'eval_5fold': eval_5fold,
             'grad_clip': grad_clip,
             'lr_scheduler_step': lr_scheduler_step,
-            'lr_scheduler_gamma': lr_scheduler_gamma
+            'lr_scheduler_gamma': lr_scheduler_gamma,
+            'small_net': small_net
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -501,6 +503,7 @@ def main():
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
     parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="dropout probability ")
+    parser.add_argument("--small_net", "-sn", type=bool, default=False, help="Using small variant.")
 
     parser.add_argument("--memory_mode", "-mm", type=str, default='m', help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory! m:load into memory; d: load from a hdf5 file on disk. (separated by commas)")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
@@ -578,7 +581,8 @@ def main():
         args.eval_5fold,
         args.grad_clip,
         args.lr_scheduler_step,
-        args.lr_scheduler_gamma
+        args.lr_scheduler_gamma,
+        args.small_net
     )
 
 
