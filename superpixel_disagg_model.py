@@ -498,8 +498,8 @@ def main():
     parser.add_argument("--train_weight", "-train_w", type=str,  default='1', help="ordered by --train_dataset_name weighting of the samples in the datasets (separated by commas) ")
     parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
     parser.add_argument("--grad_clip", "-gc", type=float, default=10., help="Gradient norm clipping value")
-    parser.add_argument("--lr_scheduler_step", "-lrs", type=float, default=np.inf, help="How many interations until LR is reduced to 10%.")
-    parser.add_argument("--lr_scheduler_gamma", "-lrg", type=float, default=0.5, help="How many interations until LR is reduced to 10%.")
+    parser.add_argument("--lr_scheduler_step", "-lrs", type=float, default=np.inf, help="How many 'steps' until LR is reduced to 'gamma' of original value.")
+    parser.add_argument("--lr_scheduler_gamma", "-lrg", type=float, default=0.5, help="How many 'steps' until LR is reduced to 'gamma' of original value.")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
     parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="dropout probability ")
@@ -523,7 +523,6 @@ def main():
     parser.add_argument("--dataset_dir", "-dd", type=str, default='datasets', help="Directory of the hdf5 files")
 
     args = parser.parse_args()
-
 
     # check arguments and fill with default values
     args.train_dataset_name = unroll_arglist(args.train_dataset_name)
