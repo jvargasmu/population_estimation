@@ -484,7 +484,6 @@ def main():
 
     args = parser.parse_args()
 
-
     # check arguments and fill with default values
     args.train_dataset_name = unroll_arglist(args.train_dataset_name)
     args.train_level = unroll_arglist(args.train_level, 'c', len(args.train_dataset_name))
