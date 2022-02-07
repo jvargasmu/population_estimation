@@ -387,7 +387,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
             # Prepare validation variables
             # If we took the coarse level as training, we need to translate the ind_val to the fine level and get the fine level patches for validation!
-            choice_val_f = np.where(np.in1d(self.memory_disag[name][0],tregid_val_c)[self.memory_vars[name][3]])[0] 
+            #choice_val_f = np.where(np.in1d(self.memory_disag[name][0],tregid_val_c)[self.memory_vars[name][3]])[0] 
+            choice_val_f = np.where(np.in1d(self.memory_disag[name][0],choice_val_c)[self.memory_vars[name][3]])[0] 
             ind_val_f = np.zeros(len(tY_f), dtype=bool)
             ind_val_f[choice_val_f] = True 
             ind_train_f = ~ind_val_f
