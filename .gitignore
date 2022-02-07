@@ -8,6 +8,7 @@ checkpoints/
 outputs/
 datasets/
 datasets2/
+
 __pycache__/
 euler_job_submission/
 euleroutputs/
