@@ -531,9 +531,25 @@ def PixAdminTransform(
                     if params["validation_split"]>0. or (params["validation"] is not None):
                         for name in test_dataset_names:
                             logging.info(f'Validating dataset of {name}')
+
+                            agg_preds_old,val_census_old = [],[]
+                            for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
+                                X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name) 
+                                agg_preds_old.append(mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy())
+                                val_census_old.append(Y.cpu().numpy())
+
+                            metrics_old = compute_performance_metrics_arrays(np.asarray(agg_preds_old), np.asarray(val_census_old)) 
+                            #best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, name+'_VAL', best_val_scores[name])
+                            for key in metrics_old.keys():
+                                log_dict[name + '/validation_old/' + key ] = metrics_old[key]
+
+
+
+
                             agg_preds,val_census = [],[]
                             agg_preds_arr = torch.zeros((dataset.max_tregid[name]+1,))
 
+                            
                             for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
                                 X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name)
                                 pred = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
