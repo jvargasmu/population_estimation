@@ -435,7 +435,7 @@ def Eval5Fold_PixAdminTransform(
                 params["validation_split"], k, params["weights"], params["custom_sampler_weights"], val_valid_ids, build_pairs=False)
         )
 
-        calculate_mean_std = True
+        calculate_mean_std = False
         if calculate_mean_std and k==0:
 
             def update(existingAggregate, newValue):

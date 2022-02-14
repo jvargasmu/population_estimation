@@ -868,5 +868,35 @@
                 "-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
             ]
         },
+        {
+            "name": "Runcomparison:Bughunt",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [ 
+                "-train", "uga,rwa",
+                "-train_lvl", "f,f,f,f,f",
+                "-test", "uga,rwa,tza",
+                "-lr", "0.0001",
+                "-optim", "adam",
+                "-wr", "0.01",
+                "-adamwr", "0.",
+                "-lstep", "200",
+                "--validation_fold", "0",
+                "-rs", "2",
+                "-mm", "m,m,d,d,d",
+                "--loss", "laplaceNLL",
+                "--input_scaling", "True",
+                "--output_scaling", "True",
+                //"--silent_mode", "True",
+                "--dataset_dir", "datasets",
+                "--grad_clip", "9999999",
+                
+            ]
+        },
     ]
 }
