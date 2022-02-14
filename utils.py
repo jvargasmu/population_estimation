@@ -267,7 +267,7 @@ def bbox2(img):
     rmin, rmax = torch.where(rows)[0][[0, -1]]
     cmin, cmax = torch.where(cols)[0][[0, -1]]
 
-    return rmin, rmax, cmin, cmax
+    return rmin, rmax+1, cmin, cmax+1
 
 
 class PatchDataset(torch.utils.data.Dataset):

@@ -219,7 +219,6 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
             for i,feat in tqdm(enumerate(tr_features)):
                 h5_features[:,i] = feat
     
-    # TODO: Add feature_names here!!! and unpack it in the datasetloader
     with open(var_filename, 'wb') as handle:
         pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tregid, tMasks, tBBox, feature_names], handle, protocol=pickle.HIGHEST_PROTOCOL)
 

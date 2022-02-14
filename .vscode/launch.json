@@ -853,7 +853,7 @@
             "args": [ 
                 "-train", "rwa",
                 "-train_lvl", "f,f,f,f,f,f",
-                "-test", "tza",
+                "-test", "cod,moz,nga,uga,rwa,tza",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
@@ -861,7 +861,7 @@
                 "-adamwr", "0.",
                 "-lstep", "8000",
                 "-rs", "3",
-                "-mm", "m,d,d,d,d,d",
+                "-mm", "d,d,d,d,d,d",
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
