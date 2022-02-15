@@ -368,11 +368,11 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
 
                     rmin, rmax, cmin, cmax = BB
 
-                    if rmin>6850 and rmax<7150 and cmin>11700:
-                        print("sus.")
+                    # if rmin>6850 and rmax<7150 and cmin>11700:
+                    #     print("sus.")
 
-                    if census_id==614 or census_id==628:
-                        print("sus.")
+                    # if census_id==614 or census_id==628:
+                    #     print("sus.")
 
                     res["predicted_target_img"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,0,Mask].to(torch.float16)
                     res["variances"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,1,Mask].to(torch.float16)  
@@ -387,14 +387,14 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     census_ids.append(census_id)
                     torch.cuda.empty_cache()
 
-                    if rmin>6850 and rmax<7150 and cmin>11700:
-                        print("sus.")
+                    # if rmin>6850 and rmax<7150 and cmin>11700:
+                    #     print("sus.")
 
-                    if census_id==614 or census_id==628:
-                        print("sus.")
+                    # if census_id==614 or census_id==628:
+                    #     print("sus.")
 
-                    if rmin>6850 and rmax<7150 and cmin>11700:
-                        print("sus.")
+                    # if rmin>6850 and rmax<7150 and cmin>11700:
+                    #     print("sus.")
 
                     # if name=="nga" and rmin<10709 and rmax>10709 and cmin<5163 and cmax>5163:
                     #     print("Sus")

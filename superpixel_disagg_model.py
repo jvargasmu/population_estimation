@@ -136,9 +136,17 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     # Create dataformat with densities for administrative boundaries of level -1 and -2
     # Fills in the densities per pixel
     # TODO: distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
-    fine_density, fine_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
-    cr_density, cr_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
+    fine_built_area = {}
+    cr_built_area = {}
+    for key in tqdm(fine_census.keys()):
+        fine_built_area[key] = valid_data_mask[fine_regions==key].sum()
+    for key in tqdm(cr_census.keys()):
+        cr_built_area[key] = valid_data_mask[cr_regions==key].sum()
 
+    # fine_density, fine_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
+    # cr_density, cr_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
+    fine_density, fine_map = calculate_densities(census=fine_census, area=fine_built_area, map=fine_regions)
+    cr_density, cr_map = calculate_densities(census=cr_census, area=cr_built_area, map=cr_regions)
     # fine_map = fine_density_map
     # cr_map = cr_density_map
     replacement = 0
@@ -510,7 +518,7 @@ def main():
 
     parser.add_argument("--validation_split", "-vs", type=float, default=0.2, help="Evaluate the model after 'logstep' batchiterations.")
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
-    parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run.")
+    parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run. This does not (!) affect the random split of the validation/test-fold.")
     
     parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
     parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
