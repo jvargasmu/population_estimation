@@ -135,7 +135,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
 
     # Create dataformat with densities for administrative boundaries of level -1 and -2
     # Fills in the densities per pixel
-    # TODO: distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
+    # distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
     fine_built_area = {}
     cr_built_area = {}
     for key in tqdm(fine_census.keys()):
@@ -146,9 +146,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     # fine_density, fine_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
     # cr_density, cr_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
     fine_density, fine_map = calculate_densities(census=fine_census, area=fine_built_area, map=fine_regions)
-    cr_density, cr_map = calculate_densities(census=cr_census, area=cr_built_area, map=cr_regions)
-    # fine_map = fine_density_map
-    # cr_map = cr_density_map
+    cr_density, cr_map = calculate_densities(census=cr_census, area=cr_built_area, map=cr_regions) 
     replacement = 0
 
     # replace -inf with 1e-16 ("-16" on log scale) is close enough to zero for the log scale, otherwise take 0
