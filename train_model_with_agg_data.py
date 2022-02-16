@@ -121,12 +121,13 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path,
 
     # Save predictions
     preds_and_gt_path = "{}preds_and_gt.pkl".format(output_dir)
-    with open(preds_and_gt_path, 'wb') as handle:
-        pickle.dump(preds_and_gt_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # with open(preds_and_gt_path, 'wb') as handle:
+    #     pickle.dump(preds_and_gt_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     # Compute metrics
-    r2, mae, mse = compute_performance_metrics(agg_preds, valid_census)
-    print("r2 {} mae {} mse {}".format(r2, mae, mse))
+    # r2, mae, mse = compute_performance_metrics(agg_preds, valid_census)
+    metrics = compute_performance_metrics(agg_preds, valid_census)
+    print("r2 {} mae {} mape {} mse {}".format(metrics["r2"], metrics["mae"], metrics["mape"], metrics["mse"]))
 
 
 def main():

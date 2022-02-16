@@ -32,11 +32,11 @@ def disaggregate_weighted_by_preds(cr_census_arr, pred_map, map_valid_ids,
         src_geo_transform = geo_metadata["geo_transform"]
         src_projection = geo_metadata["projection"]
         pred_map_path = "{}pred_map_{}.tif".format(output_dir, suffix)
-        write_geolocated_image(pred_map_masked.astype(np.float32), pred_map_path, src_geo_transform, src_projection)
+        # write_geolocated_image(pred_map_masked.astype(np.float32), pred_map_path, src_geo_transform, src_projection)
         weights_path = "{}weights_map_{}.tif".format(output_dir, suffix)
-        write_geolocated_image(weights.astype(np.float32), weights_path, src_geo_transform, src_projection)
+        # write_geolocated_image(weights.astype(np.float32), weights_path, src_geo_transform, src_projection)
         disagg_pop_path = "{}disagg_pop_map{}.tif".format(output_dir, suffix)
-        write_geolocated_image(disagg_population.astype(np.float32), disagg_pop_path, src_geo_transform, src_projection)
+        # write_geolocated_image(disagg_population.astype(np.float32), disagg_pop_path, src_geo_transform, src_projection)
 
     return disagg_population
 
