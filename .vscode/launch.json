@@ -865,7 +865,8 @@
                 "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
-                "-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
+                //"-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
+                "-e5f", "enticing-candles-1944,evanescent-quiver-1940,deeply-candles-1941,exciting-ring-1942,enchanting-heartthrob-1943",
             ]
         },
         {
