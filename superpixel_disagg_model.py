@@ -291,7 +291,8 @@ def superpixel_with_pix_data(
     lr_scheduler_step,
     lr_scheduler_gamma,
     small_net,
-    e5f_metric
+    e5f_metric,
+    wandb_user
     ):
 
     ####  define parameters  ########################################################
@@ -345,7 +346,7 @@ def superpixel_with_pix_data(
                             "valid_data_mask", "geo_metadata", "cr_map"]
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
-    wandb.init(project="HAC", entity="jvargas", config=params)
+    wandb.init(project="HAC", entity=wandb_user, config=params)
 
     # Fix all random seeds
     torch.manual_seed(random_seed)
@@ -530,6 +531,8 @@ def main():
     parser.add_argument("--dataset_dir", "-dd", type=str, default='datasets', help="Directory of the hdf5 files")
     
     parser.add_argument("--e5f_metric", "-e5fmt", type=str, default="final", help="metric final, best_r2, best_mae, best_mape")
+    
+    parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
 
     args = parser.parse_args()
 
@@ -592,7 +595,8 @@ def main():
         args.lr_scheduler_step,
         args.lr_scheduler_gamma,
         args.small_net,
-        args.e5f_metric
+        args.e5f_metric,
+        args.wandb_user
     )
 
 
