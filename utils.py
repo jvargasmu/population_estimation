@@ -322,17 +322,21 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         print("Preparing dataloader for: ", list(datalocations.keys()))
         self.features = {}
         self.loc_list, self.loc_list_train, self.loc_list_val = [],[],[]
+        self.loc_list_hout = []
         self.all_weights, self.all_sampler_weights,  self.all_natural_weights = [],[],[]
-        self.BBox, self.BBox_train, self.BBox_val = {},{},{}
-        self.Ys, self.Ys_train, self.Ys_val = {},{},{} 
+        self.BBox, self.BBox_train, self.BBox_val, self.BBox_hout = {},{},{},{}
+        self.Ys, self.Ys_train, self.Ys_val, self.Ys_hout = {},{},{},{} 
         self.tregid, self.max_tregid = {},{}
         self.tregid_val, self.max_tregid_val = {},{}
-        self.Masks, self.Masks_train, self.Masks_val = {},{},{}
+        self.tregid_hout, self.max_tregid_hout = {},{}
+        self.Masks, self.Masks_train, self.Masks_val, self.Masks_hout = {},{},{},{}
         self.weight_list = {}
         self.memory_disag, self.memory_disag_val, self.feature_names = {},{},{}
+        self.memory_disag_hout = {}
         self.val_valid_ids = val_valid_ids
         self.memory_vars = {}
         self.source_census_val = {}
+        self.source_census_hout = {}
         process = psutil.Process(os.getpid())
         for i, (name, rs) in tqdm(enumerate(datalocations.items())):
             print("Preparing dataloader: ", name)
@@ -370,18 +374,45 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             # We always split the coarse patches into 5 folds, then we look up fine patches that belong to those coarse validation patches
             np.random.seed(1610)
             if validation_fold is not None:
-                kf = KFold(n_splits=5, shuffle=True, random_state=1610)
-                trainidxs, validxs = [],[]
-                for train_index, val_index in kf.split(tY_c):
-                    trainidxs.append(train_index)
-                    validxs.append(val_index)
+                trainidxs, validxs, houtidxs = [],[],[]
+                n_samples = len(tY_c)
+                n_splits = 5
+                for spl in range(n_splits):
+                    orig_indices = np.arange(n_samples)
+                    np.random.shuffle(orig_indices)
+                    idx_offset = n_samples
+                    indices = np.concatenate((orig_indices, orig_indices, orig_indices))
+
+                    fold_sizes = np.full(n_splits, n_samples // n_splits, dtype=int)
+                    fold_sizes[: n_samples % n_splits] += 1
+                    current = 0
+                    for fold_size in fold_sizes:
+                        val_start, val_stop = current, current + fold_size
+                        hout_start, hout_stop = current - fold_size, current
+                        train_start, train_stop = current + fold_size, current + fold_size * (n_splits - 2)
+                        
+                        trainidxs.append(indices[idx_offset+train_start:idx_offset+train_stop])
+                        validxs.append(indices[idx_offset+val_start:idx_offset+val_stop])
+                        houtidxs.append(indices[idx_offset+hout_start:idx_offset+hout_stop])
+                        
+                        current = val_stop
+                
                 choice_val_c = validxs[validation_fold]
+                choice_hout_c = houtidxs[validation_fold]
             else:
+                n_samples = len(tY_c)
                 split_int =int(len(tY_c)*validation_split)
-                choice_val_c = np.random.choice(range(len(tY_c)), size=(split_int,), replace=False)   
-            ind_val_c = np.zeros(len(tY_c), dtype=bool)
-            ind_val_c[choice_val_c] = True 
-            ind_train_c = ~ind_val_c
+                orig_indices = np.arange(n_samples)
+                np.random.shuffle(orig_indices)
+                choice_val_c = orig_indices[:split_int]
+                choice_hout_c = np.array([], dtype=np.int64)
+                if validation_split > 0.0:
+                    choice_hout_c = orig_indices[-split_int:]
+            
+            ind_val_hout_c = np.zeros(len(tY_c), dtype=bool)
+            ind_val_hout_c[choice_val_c] = True 
+            ind_val_hout_c[choice_hout_c] = True 
+            ind_train_c = ~ind_val_hout_c 
 
             tY_f = np.asarray(tY_f)
             tMasks_f = np.asarray(tMasks_f, dtype=object)
@@ -390,13 +421,22 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             tregid_c = np.asarray(tregid_c).astype(np.int16)
 
             tregid_val_c = tregid_c[choice_val_c]
+            tregid_hout_c = tregid_c[choice_hout_c]
 
             # Prepare validation variables
             # If we took the coarse level as training, we need to translate the ind_val to the fine level and get the fine level patches for validation!
             choice_val_f = np.where(np.in1d(self.memory_disag[name][0],tregid_val_c)[self.val_valid_ids[name]])[0] 
             ind_val_f = np.zeros(len(tY_f), dtype=bool)
             ind_val_f[choice_val_f] = True 
-            ind_train_f = ~ind_val_f
+            
+            choice_hout_f = np.where(np.in1d(self.memory_disag[name][0],tregid_hout_c)[self.val_valid_ids[name]])[0] 
+            ind_hout_f = np.zeros(len(tY_f), dtype=bool)
+            ind_hout_f[choice_hout_f] = True 
+            
+            ind_val_hout_f = np.zeros(len(tY_f), dtype=bool)
+            ind_val_hout_f[choice_val_f] = True
+            ind_val_hout_f[choice_hout_f] = True
+            ind_train_f = ~ind_val_hout_f
 
             if train_level[i]=='f':
                 tY, tregid, tMasks, tBBox = tY_f, tregid_f, tMasks_f, tBBox_f
@@ -409,6 +449,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             tMasks = np.asarray(tMasks, dtype=object)
             tBBox = np.asarray(tBBox)
 
+            # Prepare validation variables
             self.BBox_val[name] = tBBox_f[ind_val_f]
             valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
             self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
@@ -423,6 +464,22 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 self.max_tregid_val[name] = np.max(self.tregid_val[name])
             self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
             self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
+            
+            # Prepare the holdout (test) variables #TODO: refactor val and hout variables computation
+            self.BBox_hout[name] = tBBox_f[ind_hout_f]
+            valid_hout_boxes = (self.BBox_hout[name][:,1]-self.BBox_hout[name][:,0]) * (self.BBox_hout[name][:,3]-self.BBox_hout[name][:,2])>0
+            self.BBox_hout[name] = self.BBox_hout[name][valid_hout_boxes]
+            self.Ys_hout[name] =  tY_f[ind_hout_f][valid_hout_boxes] 
+            self.tregid_hout[name] = tregid_f[ind_hout_f][valid_hout_boxes]
+            target_to_source_hout = self.memory_disag[name][0].clone()
+            target_to_source_hout[~np.in1d(self.memory_disag[name][0], tregid_hout_c)] = 0
+            # coarse_regid_hout = self.memory_disag[name][0][self.tregid_hout[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_hout_c"
+            self.source_census_hout[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_hout_c}
+            self.memory_disag_hout[name] = target_to_source_hout, self.source_census_hout[name], self.memory_disag[name][2]
+            if self.tregid_hout[name].__len__()>0:
+                self.max_tregid_hout[name] = np.max(self.tregid_hout[name])
+            self.Masks_hout[name] = tMasks_f[ind_hout_f][valid_hout_boxes]
+            self.loc_list_hout.extend( [(name, k) for k,_ in enumerate(self.BBox_hout[name])])
 
             # Prepare the training variables
             self.BBox_train[name] = tBBox[ind_train]
@@ -502,6 +559,9 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
     def idx_to_loc_val(self, idx):
         return self.loc_list_val[idx]
+
+    def idx_to_loc_hout(self, idx):
+        return self.loc_list_hout[idx]
     
     def num_feats(self):
         return self.dims
@@ -545,6 +605,23 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             raise Exception("no values")
         if return_BB:
             return X, Y, Mask, name, census_id, self.BBox_val[name][k]
+        else:
+            return X, Y, Mask, name, census_id
+    
+    def get_single_holdout_item(self, idx, name=None, return_BB=False): 
+        if name is None:
+            name, k = self.idx_to_loc_hout(idx)
+        else:
+            k = idx
+        rmin, rmax, cmin, cmax = self.BBox_hout[name][k]
+        X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
+        Y = torch.tensor(self.Ys_hout[name][k])
+        Mask = torch.tensor(self.Masks_hout[name][k])
+        census_id = torch.tensor(self.tregid_hout[name][k])
+        if np.prod(X.shape[1:])==0:
+            raise Exception("no values")
+        if return_BB:
+            return X, Y, Mask, name, census_id, self.BBox_hout[name][k]
         else:
             return X, Y, Mask, name, census_id
 

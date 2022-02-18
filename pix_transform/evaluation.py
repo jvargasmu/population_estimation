@@ -150,6 +150,10 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 res["variances"] = predicted_target_img[1]
                 predicted_target_img = predicted_target_img[0]
             
+            if len(predicted_target_img.shape)==4: #TODO: verify in which case len(predicted_target_img.shape) == 3
+                res["variances"] = predicted_target_img[0, 1]
+                predicted_target_img = predicted_target_img[0, 0]
+            
             # replace masked values with the mean value, this way the artefacts when upsampling are mitigated
             predicted_target_img[~valid_mask] = 1e-16
 
@@ -362,8 +366,8 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
             with torch.no_grad():
                 mynet.eval()
 
-                for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
-                    X, Y, Mask, name, census_id, BB = dataset.get_single_validation_item(idx, name, return_BB=True) 
+                for idx in tqdm(range(len(dataset.Ys_hout[name])), disable=params["silent_mode"]):
+                    X, Y, Mask, name, census_id, BB = dataset.get_single_holdout_item(idx, name, return_BB=True) 
                     pop_est, scale = mynet.forward(X, mask=None, name=name, predict_map=True, forward_only=True)
 
                     rmin, rmax, cmin, cmax = BB
@@ -401,7 +405,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
 
             torch.cuda.empty_cache()
         
-        res["scales"][res["scales"]==torch.inf] = np.nan
+        res["scales"][torch.isinf(res["scales"])] = np.nan
 
         # calculate this for all folds
         agg_preds3 = {id: agg_preds_arr[id].item() for id in val_valid_ids}
@@ -414,7 +418,8 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         predicted_target_img_adjusted, adj_logs = disag_and_eval_map(res["predicted_target_img"], agg_preds_arr, val_regions, val_map_valid_ids,
             np.unique(val_regions).__len__(), val_valid_ids, val_census, dataset.memory_disag[name])
         for key in adj_logs.keys():
-            res_dict[name + '/' + key] = adj_logs[key]
+            res_dict[name + '/' + key] = adj_logs[key] #TODO: should we include this log entry in res_dict
+            log_dict[name + '/' + key] = adj_logs[key]
         logging.info(f'Classic disag finsihed')
 
         res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
@@ -522,7 +527,12 @@ def Eval5Fold_PixAdminTransform(
 
 
         # Loading from checkpoint
-        checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"][k]))
+        if params["e5f_metric"] == "final":
+            checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"][k]))
+        else:
+            #TODO: This works for one country in the test set. We need to verify if this would work for several countries in test_dataset_names
+            checkpoint = torch.load('checkpoints/{}/{}/VAL/{}.pth'.format(params["e5f_metric"], test_dataset_names[0], params["eval_5fold"][k])) 
+        
         mynet.load_state_dict(checkpoint['model_state_dict'])
         if "input_scales_bias" in checkpoint.keys():
             mynet.in_scale, mynet.in_bias = checkpoint["input_scales_bias"][0], checkpoint["input_scales_bias"][1]
