@@ -25,7 +25,7 @@ def disaggregate_weighted_by_preds(cr_census_arr, pred_map, map_valid_ids,
     weights = compute_disagg_weights(cr_regions, pred_map_masked, pred_map_per_cr_region, map_valid_ids)
 
     # Initialize output matrix
-    disagg_population = set_value_for_each_region(cr_regions, cr_census_arr, map_valid_ids)
+    disagg_population = set_value_for_each_region(cr_regions, cr_census_arr.astype(np.float32), map_valid_ids)
     disagg_population = np.multiply(disagg_population, weights)
 
     if save_images and geo_metadata is not None:
@@ -61,7 +61,7 @@ def building_disagg_baseline(preproc_data_path, rst_wp_regions_path,
     num_wp_ids = len(wp_ids)
     print("num_wp_ids {}".format(num_wp_ids))
     inputs = read_input_raster_data(input_paths)
-    input_buildings = inputs["buildings"]
+    input_buildings = inputs["buildings_google"]
 
     # Binary map representing a pixel belong to a region with valid id
     map_valid_ids = create_map_of_valid_ids(wp_rst_regions, no_valid_ids)
@@ -74,6 +74,11 @@ def building_disagg_baseline(preproc_data_path, rst_wp_regions_path,
     mask = unnorm_weights > 0
 
     # Disaggregate population using building maps as weights
+    global_disag = True
+    if global_disag:
+        cr_census_arr = np.concatenate([[0], [cr_census_arr.sum()]])
+        cr_regions[cr_regions>=1] = 1
+        num_coarse_regions = 1
     disagg_population = disaggregate_weighted_by_preds(cr_census_arr, unnorm_weights,
                                                        map_valid_ids, cr_regions, num_coarse_regions, output_dir,
                                                        mask=mask, save_images=True, geo_metadata=geo_metadata)
@@ -92,8 +97,9 @@ def building_disagg_baseline(preproc_data_path, rst_wp_regions_path,
         pickle.dump(preds_and_gt_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     # Compute metrics
-    r2, mae, mse = compute_performance_metrics(agg_preds, valid_census)
-    print("r2 {} mae {} mse {}".format(r2, mae, mse))
+    metrics = compute_performance_metrics(agg_preds, valid_census)
+    # r2, mae, mse = compute_performance_metrics(agg_preds, valid_census)
+    print("r2 {} mae {} mse {} mape {}".format(metrics["r2"], metrics["mae"], metrics["mse"], metrics["mape"]))
 
 
 def main():
