@@ -119,7 +119,7 @@
             ]
         }, 
         {
-            "name": "Py: building_disagg_baseline.py",
+            "name": "Py: building_disagg_baseline.py Global Disag",
             "type": "python",
             "request": "launch",
             "program": "building_disagg_baseline.py",
@@ -128,11 +128,53 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [
-                "preprocessed_data_3.pkl",
-                "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
-                "output_dir/",
+                // "preprocessed_data_3.pkl",
+                // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "--output_dir", "output_dir/",
                 //"P_2020",
-                "tza"
+                "--train_dataset_name", "tza,uga",
+                "--global_disag"
+            ]
+        }, 
+        {
+            "name": "Py: building_disagg_baseline.py Global Disag Transfer",
+            "type": "python",
+            "request": "launch",
+            "program": "building_disagg_baseline.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                // "preprocessed_data_3.pkl",
+                // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "--output_dir", "output_dir/",
+                //"P_2020",
+                // "--train_dataset_name", "cod,uga,nga,moz,rwa",
+                "--train_dataset_name", "uga,moz,rwa",
+                // "--train_dataset_name", "tza",
+                "--test_dataset_name", "tza",
+                "--global_disag"
+                //"--global_disag", "True"
+            ]
+        },
+        {
+            "name": "Py: building_disagg_baseline.py Coarse Disag",
+            "type": "python",
+            "request": "launch",
+            "program": "building_disagg_baseline.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                // "preprocessed_data_3.pkl",
+                // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "--output_dir", "output_dir/",
+                //"P_2020",
+                "--train_dataset_name", "tza",
+                "--test_dataset_name", "tza",
+                //"--global_disag", "True"
             ]
         },
         {
