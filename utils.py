@@ -635,7 +635,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
 
 def NormL1(outputs, targets, eps=1e-8):
-    loss = torch.abs(outputs - targets) / torch.clip(outputs + targets, min=eps)
+    loss = torch.abs(outputs - targets) / torch.clamp(outputs + targets, min=eps)
     return loss.mean()
 
 def LogL1(outputs, targets, eps=1e-8):
