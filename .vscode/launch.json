@@ -238,7 +238,7 @@
                 "-wr", "0.01",
                 "--dropout", "0.4",
                 "-optim", "adam",
-                "--loss", "LogL2",
+                "--loss", "LogL1",
                 "-wr", "0.00001",
                 "-adamwr", "0.",
                 "-lstep", "200",
