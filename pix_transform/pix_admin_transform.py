@@ -16,7 +16,7 @@ from pathlib import Path
 import random
 
 from utils import plot_2dmatrix, accumulate_values_by_region, compute_performance_metrics, bbox2, \
-     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2, compute_performance_metrics_arrays, myMSEloss
+     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogL2, LogoutputL1, LogoutputL2, compute_performance_metrics_arrays, myMSEloss
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 from pix_transform_utils.utils import upsample
@@ -82,6 +82,8 @@ def PixAdminTransform(
         myloss = NormL1
     elif params['loss'] == 'LogL1':
         myloss = LogL1
+    elif params['loss'] == 'LogL2':
+        myloss = LogL2
     elif params['loss'] == 'LogoutputL1':
         myloss = LogoutputL1
     elif params['loss'] == 'LogoutputL2':

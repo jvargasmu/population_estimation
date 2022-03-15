@@ -643,7 +643,7 @@ def LogL1(outputs, targets, eps=1e-8):
     return torch.abs(torch.log(outputs+1) - torch.log(targets+1)).mean()
 
 def LogL2(outputs, targets, eps=1e-8):
-    return (torch.log(outputs+1) - torch.log(targets+1)**2).mean()
+    return ((torch.log(outputs+1) - torch.log(targets+1))**2).mean()
 
 def LogoutputL1(outputs, targets, eps=1e-8):
     return torch.abs(outputs - torch.log(targets)).mean() 
