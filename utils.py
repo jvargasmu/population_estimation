@@ -445,7 +445,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 tY, tregid, tMasks, tBBox = tY_c, tregid_c, tMasks_c, tBBox_c
                 ind_train = ind_train_c
 
-            tY = np.asarray(tY)
+            tY = np.asarray(tY).astype(np.float32)
             tMasks = np.asarray(tMasks, dtype=object)
             tBBox = np.asarray(tBBox)
 
@@ -568,7 +568,9 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
     def get_single_item(self, idx, name=None): 
         if name is None:
+            # should not be idx_to_loc_val?
             name, k = self.idx_to_loc_val(idx)
+            # name, k = self.idx_to_loc(idx)
         else:
             k = idx 
         rmin, rmax, cmin, cmax = self.BBox[name][k]
@@ -577,7 +579,6 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         Mask = torch.tensor(self.Masks[name][k]) 
         census_id = torch.tensor(self.tregid[name][k])
         return X, Y, Mask, name, census_id
-
 
     def get_single_training_item(self, idx, name=None): 
         if name is None:

@@ -55,6 +55,11 @@ def PixAdminTransform(
     torch.manual_seed(params["random_seed"])
     random.seed(params["random_seed"])
     np.random.seed(params["random_seed"])
+    torch.cuda.manual_seed(params["random_seed"])
+    torch.cuda.manual_seed_all(params["random_seed"])
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    os.environ['PYTHONHASHSEED'] = str(params["random_seed"])
 
     if params["sampler"] in ['custom', 'natural']:
         weights = dataset.all_natural_weights if params["sampler"]=="natural" else dataset.custom_sampler_weights
