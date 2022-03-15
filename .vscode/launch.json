@@ -222,7 +222,7 @@
             ]
         },
         {
-            "name": "TZA_CV Bayes superpixel_disagg_model.py",
+            "name": "TZA_CV MSE superpixel_disagg_model.py",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
@@ -232,16 +232,26 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [
                 "-train", "tza",
-                "-train_lvl", "c",
-                "-test", "tza,uga",
+                "-train_lvl", "f",
+                "-test", "tza",
                 "-lr", "0.0001",
+                "-wr", "0.01",
+                "--dropout", "0.4",
                 "-optim", "adam",
-                "--loss", "gaussNLL",
-                "-wr", "0.0001",
+                "--loss", "mse",
+                "-wr", "0.00001",
                 "-adamwr", "0.",
                 "-lstep", "200",
                 "-mm", "m", 
-                "--validation_fold", "0"
+                "-rs", "0",
+                "--validation_fold", "0",
+                //"--input_scaling", "True",
+                //"--output_scaling", "True",
+                //"-adamwr", "0.",
+                //-lstep","800"
+
+                //-adamwr 0. -lstep 800 --validation_fold 0  --loss mse  --dataset_dir datasets --sampler custom --max_step 100000
+
             ]
         },
         {

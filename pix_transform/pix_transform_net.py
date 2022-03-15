@@ -160,10 +160,10 @@ class PixScaleNet(nn.Module):
                             )
             else:
                 self.occratenet = nn.Sequential(
-                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
+                            nn.Dropout(p=dropout, inplace=True),                        
+                            nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+                            nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+                            nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
                             )
         else:
             if small_net:
