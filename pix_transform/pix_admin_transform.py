@@ -213,7 +213,7 @@ def PixAdminTransform(
                 
                 # Sum over the census data per patch 
                 y_pred = torch.stack([pred*samp[4] for pred,samp in zip(y_pred_list, sample)]).sum(0)
-                y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum()
+                y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum().unsqueeze(0)
 
                 # Backwards
                 loss = myloss(y_pred, y_gt)
