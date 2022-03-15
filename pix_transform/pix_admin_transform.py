@@ -16,7 +16,7 @@ from pathlib import Path
 import random
 
 from utils import plot_2dmatrix, accumulate_values_by_region, compute_performance_metrics, bbox2, \
-     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2, compute_performance_metrics_arrays
+     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2, compute_performance_metrics_arrays, myMSEloss
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 from pix_transform_utils.utils import upsample
@@ -75,6 +75,7 @@ def PixAdminTransform(
 
     if params['loss'] == 'mse':
         myloss = torch.nn.MSELoss()
+        myloss = myMSEloss
     elif params['loss'] == 'l1':
         myloss = torch.nn.L1Loss()
     elif params['loss'] == 'NormL1':

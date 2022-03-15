@@ -640,16 +640,20 @@ def NormL1(outputs, targets, eps=1e-8):
     return loss.mean()
 
 def LogL1(outputs, targets, eps=1e-8):
-    loss = torch.abs(torch.log(outputs+1) - torch.log(targets+1))
-    return loss.mean()
+    return torch.abs(torch.log(outputs+1) - torch.log(targets+1)).mean()
+
+def LogL2(outputs, targets, eps=1e-8):
+    return (torch.log(outputs+1) - torch.log(targets+1)**2).mean()
 
 def LogoutputL1(outputs, targets, eps=1e-8):
-    loss = torch.abs(outputs - torch.log(targets))
-    return loss.mean()
+    return torch.abs(outputs - torch.log(targets)).mean() 
 
 def LogoutputL2(outputs, targets, eps=1e-8):
-    loss = (outputs - torch.log(targets+1))**2
+    loss = (outputs - torch.log(targets))**2
     return loss.mean()
+
+def myMSEloss(y, target):
+    return ((y-target)**2).mean()
 
 def save_as_geoTIFF(src_filename,  dst_filename, raster): 
  
@@ -687,6 +691,7 @@ def save_as_geoTIFF(src_filename,  dst_filename, raster):
     # Close files
     dst_ds = None
     src_ds = None
+
 
 
 
