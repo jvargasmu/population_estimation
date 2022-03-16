@@ -222,7 +222,7 @@
             ]
         },
         {
-            "name": "TZA_CV MSE superpixel_disagg_model.py",
+            "name": "TZA_CV MSE superpixel_disagg_model.py fold x",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
@@ -239,7 +239,7 @@
                 "--dropout", "0.4",
                 "-optim", "adam",
                 "-adamwr", "0",
-                "-lstep", "800",
+                "-lstep", "200",
                 "--validation_fold", "3",
                 "-rs", "0",
                 "-mm", "m", 
@@ -247,6 +247,45 @@
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 "--sampler", "custom","--max_step", "100000",
+                "--name", "this-is-a-test-run-for-naming"
+
+                //"-adamwr", "0.",
+                //-lstep","800"
+
+                //-adamwr 0. -lstep 800 --validation_fold 0  --loss mse  --dataset_dir datasets --sampler custom --max_step 100000
+                // -adamwr 0. -lstep 800 --validation_fold 3 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000
+
+            ]
+        },
+        {
+            "name": "MSE CV EVAL CV",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-train", "tza",
+                "-train_lvl", "f",
+                "-test", "tza",
+                "-lr", "0.0001",
+                "-wr", "0.01",
+                "--dropout", "0.4",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "200",
+                "--validation_fold", "1",
+                "-rs", "0",
+                "-mm", "m", 
+                "--loss", "mse", 
+                "--input_scaling", "True",
+                "--output_scaling", "True",
+                "--sampler", "custom","--max_step", "100000",
+                "--name", "this-is-a-test-run-for-naming",
+                "-e5f", "this-is-a-test-run-for-naming-0", "this-is-a-test-run-for-naming-1", "this-is-a-test-run-for-naming-2", "this-is-a-test-run-for-naming-3", "this-is-a-test-run-for-naming-4",
+                "-e5fmt", "best_r2",
 
                 //"-adamwr", "0.",
                 //-lstep","800"
