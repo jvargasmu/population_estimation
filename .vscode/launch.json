@@ -240,7 +240,7 @@
                 "-optim", "adam",
                 "-adamwr", "0",
                 "-lstep", "200",
-                "--validation_fold", "3",
+                "--validation_fold", "4",
                 "-rs", "0",
                 "-mm", "m", 
                 "--loss", "mse", 
@@ -248,13 +248,6 @@
                 "--output_scaling", "True",
                 "--sampler", "custom","--max_step", "100000",
                 "--name", "this-is-a-test-run-for-naming"
-
-                //"-adamwr", "0.",
-                //-lstep","800"
-
-                //-adamwr 0. -lstep 800 --validation_fold 0  --loss mse  --dataset_dir datasets --sampler custom --max_step 100000
-                // -adamwr 0. -lstep 800 --validation_fold 3 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000
-
             ]
         },
         {
@@ -284,7 +277,7 @@
                 "--output_scaling", "True",
                 "--sampler", "custom","--max_step", "100000",
                 "--name", "this-is-a-test-run-for-naming",
-                "-e5f", "this-is-a-test-run-for-naming-0", "this-is-a-test-run-for-naming-1", "this-is-a-test-run-for-naming-2", "this-is-a-test-run-for-naming-3", "this-is-a-test-run-for-naming-4",
+                "-e5f", "this-is-a-test-run-for-naming_0,this-is-a-test-run-for-naming_1,this-is-a-test-run-for-naming_2,this-is-a-test-run-for-naming_3,this-is-a-test-run-for-naming_4",
                 "-e5fmt", "best_r2",
 
                 //"-adamwr", "0.",
