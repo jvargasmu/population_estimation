@@ -16,7 +16,7 @@ from pathlib import Path
 import random
 
 from utils import plot_2dmatrix, accumulate_values_by_region, compute_performance_metrics, bbox2, \
-     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogoutputL1, LogoutputL2, compute_performance_metrics_arrays
+     PatchDataset, MultiPatchDataset, NormL1, LogL1, LogL2, LogoutputL1, LogoutputL2, compute_performance_metrics_arrays, myMSEloss
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 from pix_transform_utils.utils import upsample
@@ -75,12 +75,15 @@ def PixAdminTransform(
 
     if params['loss'] == 'mse':
         myloss = torch.nn.MSELoss()
+        myloss = myMSEloss
     elif params['loss'] == 'l1':
         myloss = torch.nn.L1Loss()
     elif params['loss'] == 'NormL1':
         myloss = NormL1
     elif params['loss'] == 'LogL1':
         myloss = LogL1
+    elif params['loss'] == 'LogL2':
+        myloss = LogL2
     elif params['loss'] == 'LogoutputL1':
         myloss = LogoutputL1
     elif params['loss'] == 'LogoutputL2':
@@ -117,7 +120,7 @@ def PixAdminTransform(
         checkpoint = torch.load('checkpoints/best_mape_{}_VAL_{}.pth'.format(test_dataset_names[0], params["load_state"]))
         mynet.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    wandb.watch(mynet)
+    # wandb.watch(mynet)
 
     if params['eval_only']:
 
@@ -204,6 +207,11 @@ def PixAdminTransform(
             for sample in tqdm(train_loader, disable=params["silent_mode"]):
                 optimizer.zero_grad()
                 
+                if batchiter==1998:
+                    print("Sus")
+                if batchiter==1999:
+                    print("Sus")
+
                 # Feed forward the network
                 y_pred_list = mynet.forward_one_or_more(sample)
                 
@@ -211,6 +219,7 @@ def PixAdminTransform(
                 if y_pred_list is None:
                     continue
                 
+
                 # Sum over the census data per patch 
                 y_pred = torch.stack([pred*samp[4] for pred,samp in zip(y_pred_list, sample)]).sum(0)
                 y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum().unsqueeze(0)

@@ -238,19 +238,21 @@
                 "-wr", "0.01",
                 "--dropout", "0.4",
                 "-optim", "adam",
-                "--loss", "l1",
-                "-wr", "0.00001",
-                "-adamwr", "0.",
-                "-lstep", "200",
-                "-mm", "m", 
+                "-adamwr", "0",
+                "-lstep", "800",
+                "--validation_fold", "3",
                 "-rs", "0",
-                "--validation_fold", "0",
-                //"--input_scaling", "True",
-                //"--output_scaling", "True",
+                "-mm", "m", 
+                "--loss", "mse", 
+                "--input_scaling", "True",
+                "--output_scaling", "True",
+                "--sampler", "custom","--max_step", "100000",
+
                 //"-adamwr", "0.",
                 //-lstep","800"
 
                 //-adamwr 0. -lstep 800 --validation_fold 0  --loss mse  --dataset_dir datasets --sampler custom --max_step 100000
+                // -adamwr 0. -lstep 800 --validation_fold 3 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000
 
             ]
         },
