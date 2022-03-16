@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#BSUB -W 24:00
+#BSUB -n 1
+#BSUB -o euleroutputs/outfile_%J.%I.txt
+#BSUB -R "rusage[mem=120000,ngpus_excl_p=1]"
+#BSUB -R "select[gpu_mtotal0>=5500]"
+#BSUB -R "rusage[scratch=120000]"
+#BSUB -J "eval"
+
+# job index (set this to your system job variable e.g. for parallel job arrays)
+# used to set model_idx and test_fold_idx below.
+#index=0   # index=0 --> model_idx=0, test_fold_idx=0
+index=$((LSB_JOBINDEX))
+rs=$(( $index % 5 ))
+
+leave=Clipart
+
+# cp -r /scratch2/Code/stylebias/data/OfficeHome $TMPDIR/
+# cp -r /cluster/work/igp_psr/nkalischek/stylebias/data/OfficeHome $TMPDIR/
+# cp -r -v /cluster/work/igp_psr/metzgern/HAC/code/repocode/population_estimation/datasets $TMPDIR/
+
+echo job index: $index
+echo leave: $leave
+echo val_fold: $rs
+echo TEMPDIR: $TMPDIR
+
+source HACenv/bin/activate
+
+# load modules
+module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
+
+python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm m --loss LogL2 --input_scaling True --output_scaling True --dataset_dir datasets --sampler custom --max_step 100000 --e5f_metric best_mape -e5f pretty-dragon-2288,electric-firebrand-2282,gentle-eon-2281,fresh-sound-2283,ethereal-disco-2284
+python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm m --loss LogL2 --input_scaling True --output_scaling True --dataset_dir datasets --sampler custom --max_step 100000 --e5f_metric best_mape -e5f feasible-plant-2279,glorious-cosmos-2286,glamorous-sun-2285,breezy-water-2285,dauntless-forest-2279
+python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.000001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm m --loss LogL2 --input_scaling True --output_scaling True --dataset_dir datasets --sampler custom --max_step 100000 --e5f_metric best_mape -e5f eager-brook-2289,sandy-shape-2292,breezy-energy-2293,warm-feather-2291,fluent-dust-2290
+
+#python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.000001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm d --loss LogL2 --input_scaling True --output_scaling True --dataset_dir datasets --sampler custom --max_step 100000 --e5f_metric best_mape -e5f dazzling-yogurt-2273,comfy-dragon-2272,generous-glitter-2276,good-snow-2275,deep-sound-2277
+
+#python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm d --loss LogL2 --input_scaling True --output_scaling True --dataset_dir datasets --sampler custom --max_step 100000 --e5f_metric best_mape -e5f revived-paper-2271,noble-silence-2268,olive-surf-2267,fanciful-haze-2274,dandy-vortex-2269
+
+#python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.000001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm d --loss LogL2 --input_scaling True --output_scaling True --dataset_dir datasets --sampler custom --max_step 100000 --e5f_metric best_mape -e5f copper-pond-2269,zany-wind-2264,wobbly-disco-2264,eternal-dragon-2266,hearty-serenity-2263
+
+#python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm d --loss l1 --input_scaling True --output_scaling True --dataset_dir $TMPDIR/datasets --sampler custom --max_step 100000 --e5f_metric best_mape -e5f usual-silence-2195,fanciful-serenity-2193,youthful-brook-2191,frosty-sponge-2194,revived-thunder-2195
+
