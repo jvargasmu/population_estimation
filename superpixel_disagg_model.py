@@ -292,7 +292,8 @@ def superpixel_with_pix_data(
     lr_scheduler_gamma,
     small_net,
     e5f_metric,
-    wandb_user
+    wandb_user,
+    name
     ):
 
     ####  define parameters  ########################################################
@@ -304,9 +305,9 @@ def superpixel_with_pix_data(
             'loss': loss,
 
             "admin_augment": True,
-            "load_state": load_state, #, UGA:'fluent-star-258', TZA: 'vague-voice-185' ,'dainty-flower-151',#None, 'brisk-armadillo-86'
-            "eval_only": eval_only,
-            "Net": 'ScaleNet', # Choose between ScaleNet and PixNet
+            "load_state": load_state,
+            # "eval_only": eval_only,
+            "Net": 'ScaleNet', 
 
             'optim': optimizer,
             'lr': learning_rate,
@@ -334,7 +335,8 @@ def superpixel_with_pix_data(
             'lr_scheduler_step': lr_scheduler_step,
             'lr_scheduler_gamma': lr_scheduler_gamma,
             'small_net': small_net,
-            'e5f_metric': e5f_metric
+            'e5f_metric': e5f_metric,
+            'name': name
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -346,7 +348,7 @@ def superpixel_with_pix_data(
                             "valid_data_mask", "geo_metadata", "cr_map"]
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
-    wandb.init(project="HAC", entity=wandb_user, config=params)
+    wandb.init(project="HAC", entity=wandb_user, config=params, name=params["name"]+"_"+str(params["validation_fold"]))
 
     # Fix all random seeds
     torch.manual_seed(random_seed)
@@ -538,6 +540,7 @@ def main():
     parser.add_argument("--e5f_metric", "-e5fmt", type=str, default="final", help="metric final, best_r2, best_mae, best_mape")
     
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
+    parser.add_argument("--name", type=str, default="default-name", help="short name for the run to identify it")
 
     args = parser.parse_args()
 
@@ -600,8 +603,9 @@ def main():
         args.lr_scheduler_step,
         args.lr_scheduler_gamma,
         args.small_net,
-        args.e5f_metric,
-        args.wandb_user
+        args.e5f_metric, 
+        args.wandb_user,
+        args.name
     )
 
 
