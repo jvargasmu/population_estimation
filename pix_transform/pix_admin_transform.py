@@ -120,7 +120,7 @@ def PixAdminTransform(
         checkpoint = torch.load('checkpoints/best_mape_{}_VAL_{}.pth'.format(test_dataset_names[0], params["load_state"]))
         mynet.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    wandb.watch(mynet)
+    # wandb.watch(mynet)
 
     if params['eval_only']:
 
@@ -207,6 +207,11 @@ def PixAdminTransform(
             for sample in tqdm(train_loader, disable=params["silent_mode"]):
                 optimizer.zero_grad()
                 
+                if batchiter==1998:
+                    print("Sus")
+                if batchiter==1999:
+                    print("Sus")
+
                 # Feed forward the network
                 y_pred_list = mynet.forward_one_or_more(sample)
                 
@@ -214,6 +219,7 @@ def PixAdminTransform(
                 if y_pred_list is None:
                     continue
                 
+
                 # Sum over the census data per patch 
                 y_pred = torch.stack([pred*samp[4] for pred,samp in zip(y_pred_list, sample)]).sum(0)
                 y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum().unsqueeze(0)
