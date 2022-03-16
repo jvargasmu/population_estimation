@@ -32,7 +32,6 @@ module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
 python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.6 -adamwr 0. -lstep 8000 --validation_fold 0 -rs ${rs} -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets --sampler custom --max_step 210000
 
-
 #Laplace F multi
 #python superpixel_disagg_model.py -train tza -train_lvl f,f,f,f,f,f -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold 0 -rs 0 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets --sampler custom --max_step 210000 -e5f breezy-flower-2044,decent-darkness-2048,pious-breeze-2042,genial-sound-2045,clean-cosmos-2045 --e5f_metric best_mape
 
@@ -65,8 +64,7 @@ python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,
 #python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold 0 -rs 0 -mm d --loss NormL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets--sampler custom --max_step 100000 -e5f twilight-bee-2031,different-valley-2027,true-feather-2028,fiery-star-2029,legendary-rain-2030 --e5f_metric best_mape
 
 
-#python superpixel_disagg_model.py -train tza -train_lvl c -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold 0 -rs 0 -mm d --loss NormL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 50000 -e5f chocolate-hill-2019,decent-music-2016,hardy-moon-2024,comic-sky-2017,ancient-river-2019 --e5f_metric best_mape
-
+#python superpixel_disagg_model.py
 
 #python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 8000 --validation_fold ${rs} -rs 1611 -mm m,m,m,m,m,m --loss laplaceNLL --input_scaling True --silent_mode True --dataset_dir $TMPDIR/datasets -sampler custom --custom_sampler_weights 1,1,1,1,1,1000
 
