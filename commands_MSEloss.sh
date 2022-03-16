@@ -1,8 +1,8 @@
 #!/bin/bash
 
-superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -wr 0.01 --dropout 0.4 -optim adam -adamwr 0 -lstep 200 --validation_fold 0 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000 --name this-is-a-test-run-for-naming 
-superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -wr 0.01 --dropout 0.4 -optim adam -adamwr 0 -lstep 200 --validation_fold 1 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000 --name this-is-a-test-run-for-naming 
-superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -wr 0.01 --dropout 0.4 -optim adam -adamwr 0 -lstep 200 --validation_fold 2 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000 --name this-is-a-test-run-for-naming 
-superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -wr 0.01 --dropout 0.4 -optim adam -adamwr 0 -lstep 200 --validation_fold 3 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000 --name this-is-a-test-run-for-naming 
-superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -wr 0.01 --dropout 0.4 -optim adam -adamwr 0 -lstep 200 --validation_fold 4 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000 --name this-is-a-test-run-for-naming 
-superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -wr 0.01 --dropout 0.4 -optim adam -adamwr 0 -lstep 200 --validation_fold 4 -rs 0 -mm m --loss mse --input_scaling True --output_scaling True --sampler custom --max_step 100000 --name this-is-a-test-run-for-naming -e5f this-is-a-test-run-for-naming-0,this-is-a-test-run-for-naming-1,this-is-a-test-run-for-naming-2,this-is-a-test-run-for-naming-3,this-is-a-test-run-for-naming-4 -e5fmt best_r2
+superpixel_disagg_model.py -train tza --validation_fold 0 --name runame-0
+superpixel_disagg_model.py -train tza --validation_fold 1 --name runame-1
+superpixel_disagg_model.py -train tza --validation_fold 2 --name runame-2
+superpixel_disagg_model.py -train tza --validation_fold 3 --name runame-3
+superpixel_disagg_model.py -train tza --validation_fold 4 --name runame-4
+superpixel_disagg_model.py -train tza -e5f runame-1,runame-2,runame-3,runame-4 -e5fmt best_r2

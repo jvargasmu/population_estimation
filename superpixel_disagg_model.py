@@ -15,7 +15,7 @@ import random
 
 import config_pop as cfg
 from utils import read_input_raster_data, read_input_raster_data_to_np, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
-    compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, save_as_geoTIFF, \
+    compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, \
     bbox2
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
@@ -293,7 +293,8 @@ def superpixel_with_pix_data(
     small_net,
     e5f_metric,
     wandb_user,
-    name
+    name,
+    random_seed_folds
     ):
 
     ####  define parameters  ########################################################
@@ -336,7 +337,8 @@ def superpixel_with_pix_data(
             'lr_scheduler_gamma': lr_scheduler_gamma,
             'small_net': small_net,
             'e5f_metric': e5f_metric,
-            'name': name
+            'name': name,
+            'random_seed_folds': random_seed_folds
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -348,7 +350,7 @@ def superpixel_with_pix_data(
                             "valid_data_mask", "geo_metadata", "cr_map"]
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
-    wandb.init(project="HAC", entity=wandb_user, config=params, name=params["name"]+"_"+str(params["validation_fold"]))
+    wandb.init(project="HAC", entity=wandb_user, config=params, name=params["name"])
 
     # Fix all random seeds
     torch.manual_seed(random_seed)
@@ -526,7 +528,8 @@ def main():
 
     parser.add_argument("--validation_split", "-vs", type=float, default=0.2, help="Evaluate the model after 'logstep' batchiterations.")
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
-    parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run. This does not (!) affect the random split of the validation/test-fold.")
+    parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run. This does not (!) affect the random split of the validation/heldout/test-fold.")
+    parser.add_argument("--random_seed_folds", "-rs", type=int, default=1610, help=" This does only affect the random split of the validation/heldout/test-fold.")
     
     parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
     parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
@@ -605,7 +608,8 @@ def main():
         args.small_net,
         args.e5f_metric, 
         args.wandb_user,
-        args.name
+        args.name,
+        args.random_seed_folds
     )
 
 

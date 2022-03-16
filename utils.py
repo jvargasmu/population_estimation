@@ -315,7 +315,7 @@ class PatchDataset(torch.utils.data.Dataset):
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
     def __init__(self, datalocations, train_dataset_name, train_level, memory_mode, device,
-        validation_split, validation_fold, loss_weights, sampler_weights, val_valid_ids={}, build_pairs=True):
+        validation_split, validation_fold, loss_weights, sampler_weights, val_valid_ids={}, build_pairs=True, random_seed_folds=1610):
 
         self.device = device
         
@@ -372,7 +372,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             
             # Validation split strategy:
             # We always split the coarse patches into 5 folds, then we look up fine patches that belong to those coarse validation patches
-            np.random.seed(1610)
+            np.random.seed(random_seed_folds)
             if validation_fold is not None:
                 trainidxs, validxs, houtidxs = [],[],[]
                 n_samples = len(tY_c)
