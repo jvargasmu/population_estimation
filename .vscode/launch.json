@@ -246,7 +246,7 @@
                 "--loss", "mse", 
                 "--input_scaling", "True",
                 "--output_scaling", "True",
-                "random_seed_folds", "1611",
+                "--random_seed_folds", "1611",
                 "--sampler", "custom","--max_step", "100000",
                 "--name", "this-is-a-test-run-for-naming"
             ]

@@ -139,18 +139,12 @@ def PixAdminTransform(
             for sample in tqdm(train_loader, disable=params["silent_mode"]):
                 optimizer.zero_grad()
                 
-                if batchiter==1998:
-                    print("Sus")
-                if batchiter==1999:
-                    print("Sus")
-
                 # Feed forward the network
                 y_pred_list = mynet.forward_one_or_more(sample)
                 
                 #check if any valid values are there, else skip   
                 if y_pred_list is None:
                     continue
-                
 
                 # Sum over the census data per patch 
                 y_pred = torch.stack([pred*samp[4] for pred,samp in zip(y_pred_list, sample)]).sum(0)

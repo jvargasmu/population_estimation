@@ -529,7 +529,7 @@ def main():
     parser.add_argument("--validation_split", "-vs", type=float, default=0.2, help="Evaluate the model after 'logstep' batchiterations.")
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
     parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run. This does not (!) affect the random split of the validation/heldout/test-fold.")
-    parser.add_argument("--random_seed_folds", "-rs", type=int, default=1610, help=" This does only affect the random split of the validation/heldout/test-fold.")
+    parser.add_argument("--random_seed_folds", "-rsf", type=int, default=1610, help=" This does only affect the random split of the validation/heldout/test-fold.")
     
     parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
     parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
