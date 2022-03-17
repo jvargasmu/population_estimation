@@ -86,7 +86,7 @@ def match_raster_ids(raster1, raster2, raster1_no_data, raster2_no_data, offset_
     return id_best_match
 
 
-def compute_agg_features_from_raster(regions, inputs, no_data_vals=None):
+def compute_agg_features_from_raster(regions, inputs, no_data_vals=None, buildings_mask=None):
     feats_list = list(inputs.keys())
     ids = list(np.unique(regions))
     num_ids = len(ids)
@@ -94,27 +94,45 @@ def compute_agg_features_from_raster(regions, inputs, no_data_vals=None):
     map_valid_ids = np.ones(regions.shape).astype(np.uint32)
     for nd in no_data_vals:
         map_valid_ids[regions == nd] = 0
-
+    
     print("regions.shape {}".format(regions.shape))
 
     areas = compute_area_of_regions(regions, map_valid_ids, num_ids)
+    
+    built_up_areas = None
+    if buildings_mask is not None:
+       masked_map_valid_ids = np.multiply(map_valid_ids, buildings_mask).astype(np.uint32)
+       built_up_areas = compute_area_of_regions(regions, masked_map_valid_ids, num_ids)
+    
     features_arr = []
-
+    masked_features_arr = []
     # Compute features and areas
     for k, feat in enumerate(feats_list):
-        input = inputs[feat]
+        input = inputs[feat]     
         accumulated_features = compute_accumulated_values_by_region(regions, input, map_valid_ids, num_ids)
         features_arr.append(accumulated_features)
+        
+        if buildings_mask is not None:
+            masked_map_valid_ids = np.multiply(map_valid_ids, buildings_mask).astype(np.uint32)
+            accumulated_masked_features = compute_accumulated_values_by_region(regions, input, masked_map_valid_ids, num_ids)
+            masked_features_arr.append(accumulated_masked_features)    
 
     features_arr = np.array(features_arr).astype(np.float32)
     features_arr = features_arr.transpose()
+    
+    if buildings_mask is not None:
+        masked_features_arr = np.array(masked_features_arr).astype(np.float32)
+        masked_features_arr = masked_features_arr.transpose()
 
     features = {id: {} for id in range(num_ids)}
+    masked_features = {id: {} for id in range(num_ids)}
     for id in range(num_ids):
         for k, feat in enumerate(feats_list):
             features[id][feat] = features_arr[id, k]
+            masked_features[id][feat] = masked_features_arr[id, k]
 
     regions_with_no_buildings = []
+    
     for id in ids:
         if areas[id] > 0:
             for feat in feats_list:
@@ -122,11 +140,15 @@ def compute_agg_features_from_raster(regions, inputs, no_data_vals=None):
         else:
             print("no buildings found in {}".format(id))
             regions_with_no_buildings.append(id)
+        
+        if built_up_areas[id] > 0:
+            for feat in feats_list:
+                masked_features[id][feat] /= built_up_areas[id]
 
     print("number of regions with no buildings {}".format(len(regions_with_no_buildings)))
     print(regions_with_no_buildings)
 
-    return features, areas
+    return features, areas, masked_features, built_up_areas
 
 
 def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_path,
@@ -135,6 +157,8 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
     input_paths = cfg.input_paths[dataset_name]
     metadata = cfg.metadata[dataset_name]
     inputs = read_input_raster_data(input_paths)
+    buildings = inputs["buildings"]
+    buildings_mask = buildings > 0
     hd_regions = read_shape_layer_data(hd_regions_path)
     all_census = read_multiple_targets_from_csv(census_data_path)
     print("census_data size {}".format(len(all_census.keys())))
@@ -166,9 +190,22 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
             duplicated.append(val)
         else:
             acc_matched.append(val)
+    
+    # Get geo spatial references
+    if "buildings_maxar" in input_paths.keys():
+        buildings_path = input_paths["buildings_maxar"]
+    if "buildings_google" in input_paths.keys():
+        buildings_path = input_paths["buildings_google"]
+    if "buildings" in input_paths.keys():
+        buildings_path = input_paths["buildings"]
+    
+    source = gdal.Open(buildings_path)
+    geo_transform = source.GetGeoTransform()
+    projection = source.GetProjection()
+    geo_metadata = {"geo_transform": geo_transform, "projection": projection}
 
     # Accumulate features
-    features, areas = compute_agg_features_from_raster(wp_rst_regions, inputs, no_data_vals=metadata["wp_no_data"])
+    features, areas, masked_features, built_up_areas = compute_agg_features_from_raster(wp_rst_regions, inputs, no_data_vals=metadata["wp_no_data"], buildings_mask=buildings_mask)
 
     # Get census target
     census = all_census[target_col]
@@ -203,17 +240,12 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
     for gid in cr_census.keys():
         cr_census_arr[gid] = cr_census[gid]
 
-    # Get geo spatial references
-    buildings_path = input_paths["buildings_google"]
-    source = gdal.Open(buildings_path)
-    geo_transform = source.GetGeoTransform()
-    projection = source.GetProjection()
-    geo_metadata = {"geo_transform": geo_transform, "projection": projection}
-
     # Save metadata
     preproc_data = {
         "features": features,
+        "features_from_built_up_areas": masked_features,
         "areas": areas,
+        "built_up_areas": built_up_areas,
         "census": census,
         "valid_census": valid_census,
         "cr_census_arr": cr_census_arr,

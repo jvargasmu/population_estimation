@@ -39,6 +39,30 @@ def read_input_raster_data(input_paths):
     for kinp in input_paths.keys():
         print("read {}".format(input_paths[kinp]))
         inputs[kinp] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
+    
+    for suffix in ["", "_mean_area"]:
+        buildings_feat = "buildings{}".format(suffix)
+        buildings_google_feat = "buildings_google{}".format(suffix)
+        buildings_maxar_feat = "buildings_maxar{}".format(suffix)
+        if buildings_feat not in inputs.keys():
+            
+            if (buildings_google_feat in inputs.keys()) and (buildings_maxar_feat in inputs.keys()):
+                inputs[buildings_feat] = np.maximum(inputs[buildings_google_feat], inputs[buildings_maxar_feat])
+                del inputs[buildings_google_feat]
+                del inputs[buildings_maxar_feat]
+            
+            elif buildings_google_feat in inputs.keys():
+                inputs[buildings_feat] = inputs[buildings_google_feat]
+                del inputs[buildings_google_feat]
+            
+            elif buildings_maxar_feat in inputs.keys():
+                inputs[buildings_feat] = inputs[buildings_maxar_feat]
+                del inputs[buildings_maxar_feat]
+    
+    orig_input_keys = list(inputs.keys())
+    new_list_of_keys = ["buildings", "buildings_mean_area"] + orig_input_keys[:-2]
+    inputs = {k:inputs[k] for k in new_list_of_keys}
+    
     return inputs
 
 

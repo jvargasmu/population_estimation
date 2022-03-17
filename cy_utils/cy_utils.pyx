@@ -96,7 +96,7 @@ def compute_disagg_weights(np.ndarray[np.uint32_t, ndim=2] regions, np.ndarray[n
 
 	for i in range(h):
 		for j in range(w):
-			if valid_mask[i, j] == 1:
+			if valid_mask[i, j] == 1 and pred_map_per_region[regions[i, j]] > 0:
 				weights[i, j] = pred_map[i, j] / pred_map_per_region[regions[i, j]]
 
 	return weights
