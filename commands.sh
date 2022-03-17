@@ -2,20 +2,6 @@
 
 # List of Commands
 
-#### Preprocessing commands ####
-
-
-
-#### TZA ####
-### Building disaggregation
-
-
-### WorldPop - trained with coarse census data (adj.)
-
-
-### MRF (adj.)
-
-
 ### ScaleNet - one country - coarse (& adj.)
 # laplaceNLL, fold 0
 python superpixel_disagg_model.py -train tza -train_lvl c -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 50000
