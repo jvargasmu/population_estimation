@@ -91,7 +91,7 @@ def compute_and_save_graph(inputs, feats_list, map_valid_ids, input_buildings,
 
 def compute_graph(preproc_data_path, rst_wp_regions_path, dataset_name, k_neigh, perc_subsample, output_dir, n_jobs):
     
-     # Create output directory if it does not exist
+    # Create output directory if it does not exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
