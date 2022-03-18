@@ -18,10 +18,11 @@ def train_mrf_model(input_buildings, map_valid_ids, cr_regions,
     mask = np.multiply(input_buildings > 0, (input_buildings < 255))
     ini_pop_pred = disaggregate_weighted_by_preds(cr_census_arr, ini_pred_map,
                                                        map_valid_ids, cr_regions, num_coarse_regions, output_dir,
-                                                       mask=mask, save_images=False)
+                                                       mask=mask, save_images=False, return_global_scale=False)
     ini_target = ini_pop_pred.flatten()
     # Get valid targert
     valid_mask = map_valid_ids.flatten().astype(np.bool)
+    valid_mask = np.multiply(valid_mask, mask.flatten())  # For efficiency
     valid_target = ini_target[valid_mask]
     # Load neighbours metadata
     neigh_dist = np.load(graph_dist_path)
@@ -35,8 +36,14 @@ def train_mrf_model(input_buildings, map_valid_ids, cr_regions,
     valid_g_regions = cr_regions_flat[valid_mask].astype(np.uint32)
     cr_census_arr = cr_census_arr.astype(np.float32)
     # Perform MRF regularization
+    seq_all = np.arange(valid_mask.shape[0]).astype(np.uint32)
+    valid_ind = seq_all[valid_mask]
+    pix_ind_to_valid_ind = np.zeros(valid_mask.shape[0]).astype(np.int32) - 1
+    num_valid = np.sum(valid_mask)
+    pix_ind_to_valid_ind[valid_mask] = np.arange(num_valid)
     valid_output = cy_fast_ICM_with_pop_target(valid_target, neigh_ind, valid_g_regions, cr_census_arr,
                                                num_coarse_regions, perc_change, max_iter, lambda_val)
+
     output = np.zeros(map_valid_ids.shape[0] * map_valid_ids.shape[1]).astype(np.float32)
     output[valid_mask] = valid_output
     print("output.shape {}".format(output.shape))
@@ -77,10 +84,20 @@ def train_mrf(preproc_data_path, rst_wp_regions_path, output_dir, dataset_name,
                     perc_change, max_iter, lambda_val, output_dir)
 
     mask = pred_map > 0
+    
+    # Compute accuracy before disaggregation
+    final_mask = np.multiply((map_valid_ids == 1).astype(np.float32), mask.astype(np.float32))
+    pred_map_masked = np.multiply(pred_map, final_mask)
+    orig_agg_preds_arr = compute_accumulated_values_by_region(wp_rst_regions, pred_map_masked, map_valid_ids, num_wp_ids)
+    orig_agg_preds = {id: orig_agg_preds_arr[id] for id in valid_ids}
+    orig_metrics = compute_performance_metrics(orig_agg_preds, valid_census)
+    print("Metrics before disagg r2 {} mae {} mse {} mape {}".format(orig_metrics["r2"], orig_metrics["mae"], orig_metrics["mse"], orig_metrics["mape"]))
+    
     # Disaggregate population using building maps as weights
     disagg_population = disaggregate_weighted_by_preds(cr_census_arr, pred_map,
                                                        map_valid_ids, cr_regions, num_coarse_regions, output_dir,
-                                                       mask=mask, save_images=True, geo_metadata=geo_metadata)
+                                                       mask=mask, save_images=True, geo_metadata=geo_metadata,
+                                                       return_global_scale=False)
 
     # Aggregate pixel level predictions to the finest level region
     agg_preds_arr = compute_accumulated_values_by_region(wp_rst_regions, disagg_population, map_valid_ids, num_wp_ids)
@@ -96,8 +113,10 @@ def train_mrf(preproc_data_path, rst_wp_regions_path, output_dir, dataset_name,
         pickle.dump(preds_and_gt_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     # Compute metrics
-    r2, mae, mse = compute_performance_metrics(agg_preds, valid_census)
-    print("r2 {} mae {} mse {}".format(r2, mae, mse))
+    #r2, mae, mse = compute_performance_metrics(agg_preds, valid_census)
+    #print("r2 {} mae {} mse {}".format(r2, mae, mse))
+    metrics = compute_performance_metrics(agg_preds, valid_census)
+    print("Metrics after disagg r2 {} mae {} mse {} mape {}".format(metrics["r2"], metrics["mae"], metrics["mse"], metrics["mape"]))
 
 def main():
     parser = argparse.ArgumentParser()

@@ -642,7 +642,16 @@ input_paths["tza_f2"] = {
     "tza_viirs_100m_2016" : "{}Covariates/TZA/VIIRS/tza_viirs_100m_2016.tif".format(root_path)
 }
 
+input_paths["tza_f3"] = {
+    "buildings_google": input_paths["tza"]["buildings_google"],
+    "buildings_maxar": input_paths["tza"]["buildings_maxar"],
+    "buildings_google_mean_area": input_paths["tza"]["buildings_google_mean_area"],
+    "buildings_maxar_mean_area": input_paths["tza"]["buildings_maxar_mean_area"],
+    "tza_viirs_100m_2015" : input_paths["tza"]["tza_viirs_100m_2015"]
+}
+
 metadata["tza_f2"] = metadata["tza"]
+metadata["tza_f3"] = metadata["tza"]
 # metadata["uga"] = metadata["tza"]
 
 # Columns of shapefiles
