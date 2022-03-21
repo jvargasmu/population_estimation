@@ -1,3 +1,4 @@
+import os
 import argparse
 import pickle
 import numpy as np
@@ -18,6 +19,7 @@ def disaggregate_weighted_by_preds(cr_census_arr, pred_map, map_valid_ids,
         pred_map_masked = np.multiply(pred_map, final_mask)
 
     # Compute total predictions per region
+    pred_map_masked = np.squeeze(pred_map_masked)
     pred_map_per_cr_region = compute_accumulated_values_by_region(cr_regions.astype(np.uint32), pred_map_masked.astype(np.float32), map_valid_ids.astype(np.uint32),
                                                                   num_cr_regions)
 
@@ -35,9 +37,9 @@ def disaggregate_weighted_by_preds(cr_census_arr, pred_map, map_valid_ids,
     if save_images and geo_metadata is not None:
         src_geo_transform = geo_metadata["geo_transform"]
         src_projection = geo_metadata["projection"]
-        pred_map_path = "{}pred_map_{}.tif".format(output_dir, suffix)
+        pred_map_path = "{}pred_map{}.tif".format(output_dir, suffix)
         write_geolocated_image(pred_map_masked.astype(np.float32), pred_map_path, src_geo_transform, src_projection)
-        weights_path = "{}weights_map_{}.tif".format(output_dir, suffix)
+        weights_path = "{}weights_map{}.tif".format(output_dir, suffix)
         write_geolocated_image(weights.astype(np.float32), weights_path, src_geo_transform, src_projection)
         disagg_pop_path = "{}disagg_pop_map{}.tif".format(output_dir, suffix)
 
@@ -46,6 +48,11 @@ def disaggregate_weighted_by_preds(cr_census_arr, pred_map, map_valid_ids,
 
 
 def building_disagg_baseline(output_dir, dataset_name, test_dataset_name, global_disag):
+    
+    # Create output directory if it does not exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
     # Read input data
 
     all_unnorm_weights = np.zeros((0,1))
@@ -210,7 +217,8 @@ def building_disagg_baseline(output_dir, dataset_name, test_dataset_name, global
     else:
         disagg_population = disaggregate_weighted_by_preds(cr_census_arr, unnorm_weights,
                                                        map_valid_ids, cr_regions, num_coarse_regions, output_dir,
-                                                       mask=mask, save_images=True, geo_metadata=geo_metadata)
+                                                       mask=mask, save_images=True, geo_metadata=geo_metadata,
+                                                       return_global_scale=False)
 
     # Aggregate pixel level predictions to the finest level region
     agg_preds_arr = compute_accumulated_values_by_region(wp_rst_regions, disagg_population, map_valid_ids, num_wp_ids)
