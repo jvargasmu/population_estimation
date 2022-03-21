@@ -152,7 +152,8 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 predicted_target_img = predicted_target_img[0]
             
             if len(predicted_target_img.shape)==4: #TODO: verify in which case len(predicted_target_img.shape) == 3
-                res["variances"] = predicted_target_img[0, 1]
+                if predicted_target_img.shape[1] > 1:
+                    res["variances"] = predicted_target_img[0, 1]
                 predicted_target_img = predicted_target_img[0, 0]
             
             # replace masked values with the mean value, this way the artefacts when upsampling are mitigated

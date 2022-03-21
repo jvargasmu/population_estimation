@@ -1035,7 +1035,7 @@
                 "--output_scaling", "True",
                 "--silent_mode", "True",
                 "--sampler", "custom", 
-                "--max_step", "150000", 
+                "--max_step", "1000", 
                 "-wandbu", "jvargas",
                 "--name", "laplace_f_1_1a",
                 "--admin_augment", "False"
