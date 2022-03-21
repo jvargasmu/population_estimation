@@ -558,6 +558,15 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
             self.custom_sampler_weights = [ self.all_sampler_weights[idx1]+self.all_sampler_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
             self.natural_sampler_weights = [ self.all_natural_weights[idx1]+self.all_natural_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
+        
+        else:
+            num_single = len(self.loc_list_train)
+            self.small_pairs = np.expand_dims(np.arange(num_single, dtype=int), axis=1)
+            
+            self.all_sample_ids = list(self.small_pairs)
+            self.custom_sampler_weights = [ self.all_sampler_weights[idx1[0]] for idx1 in self.all_sample_ids ]
+            self.natural_sampler_weights = [ self.all_natural_weights[idx1[0]] for idx1 in self.all_sample_ids ]
+            
 
         print("Dataloader ready.")
 
