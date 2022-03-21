@@ -1006,5 +1006,38 @@
                 
             ]
         },
+        {
+            "name": "ScaleNet Standard Finescale",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [ 
+                "-train", "tza",
+                "-train_lvl", "f", 
+                "-test", "tza", 
+                "-lr", "0.0001", 
+                "-optim", "adam",
+                "-wr", "0.01",
+                "--dropout", "0.4",
+                "-adamwr", "0.", 
+                "-lstep", "800",
+                "--validation_fold", "0",
+                "-rs", "1",
+                "-mm", "m",
+                "--loss", "NormL1",
+                "--input_scaling", "True", 
+                "--output_scaling", "True",
+                "--silent_mode", "True",
+                "--sampler", "custom", 
+                "--max_step", "150000", 
+                "-wandbu", "jvargas",
+                "--name", "laplace_f_1_1a",
+                "--admin_augment", "False"
+            ]
+        },
     ]
 }

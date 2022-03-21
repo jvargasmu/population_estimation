@@ -44,12 +44,13 @@ def PixAdminTransform(
     #### prepare Dataset #########################################################################
     # unique_datasets = set(list(validation_data.keys()) + list(training_source.keys()))
 
-    if params["admin_augment"]:
-        dataset = MultiPatchDataset(datalocations, train_dataset_name, params["train_level"], params['memory_mode'], device, 
-            params["validation_split"], params["validation_fold"], params["weights"], params["custom_sampler_weights"], random_seed_folds=params["random_seed_folds"])
-    else:
-        raise Exception("option not available")
-        dataset = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
+    #if params["admin_augment"]:
+    dataset = MultiPatchDataset(datalocations, train_dataset_name, params["train_level"], params['memory_mode'], device, 
+        params["validation_split"], params["validation_fold"], params["weights"], params["custom_sampler_weights"], 
+        random_seed_folds=params["random_seed_folds"], build_pairs=params["admin_augment"])
+    #else:
+    #    raise Exception("option not available")
+    #    dataset = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
 
     # Fix all random seeds
     torch.manual_seed(params["random_seed"])

@@ -26,6 +26,7 @@ from pix_transform_utils.utils import downsample,align_images
 from pix_transform.evaluation import Eval5Fold_PixAdminTransform
 # from prox_tv import tvgen
 from pix_transform_utils.plots import plot_result
+from distutils.util import strtobool
 
 
 def get_dataset(dataset_name, params, building_features, related_building_features):
@@ -279,6 +280,7 @@ def superpixel_with_pix_data(
     custom_sampler_weights,
     dropout,
     loss,
+    admin_augment,
     load_state,
     eval_only,
     input_scaling,
@@ -305,7 +307,7 @@ def superpixel_with_pix_data(
             'kernel_size': [1,1,1,1],
             'loss': loss,
 
-            "admin_augment": True,
+            "admin_augment": admin_augment,
             "load_state": load_state,
             # "eval_only": eval_only,
             "Net": 'ScaleNet', 
@@ -542,6 +544,8 @@ def main():
     
     parser.add_argument("--e5f_metric", "-e5fmt", type=str, default="final", help="metric final, best_r2, best_mae, best_mape")
     
+    parser.add_argument("--admin_augment", "-adm_aug", type=lambda x: bool(strtobool(x)), default=False, help="Use data augmentation by merging administrative regions")
+    
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
     parser.add_argument("--name", type=str, default="default-name", help="short name for the run to identify it")
 
@@ -594,6 +598,7 @@ def main():
         args.custom_sampler_weights,
         args.dropout,
         args.loss,
+        args.admin_augment,
         args.load_state,
         args.eval_only,
         args.input_scaling,
