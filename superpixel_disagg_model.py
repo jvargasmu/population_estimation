@@ -543,7 +543,7 @@ def main():
     parser.add_argument("--e5f_metric", "-e5fmt", type=str, default="final", help="metric final, best_r2, best_mae, best_mape")
     
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
-    parser.add_argument("--name", type=str, default="default-name", help="short name for the run to identify it")
+    parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
 
     args = parser.parse_args()
 

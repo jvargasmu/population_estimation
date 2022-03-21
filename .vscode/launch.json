@@ -239,16 +239,17 @@
                 "--dropout", "0.4",
                 "-optim", "adam",
                 "-adamwr", "0",
-                "-lstep", "200",
+                "-lstep", "300",
                 "--validation_fold", "4",
                 "-rs", "0",
-                "-mm", "m", 
+                "-mm", "d", 
                 "--loss", "mse", 
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 "--random_seed_folds", "1611",
-                "--sampler", "custom","--max_step", "100000",
-                "--name", "this-is-a-test-run-for-naming"
+                "--sampler", "custom",
+                "--max_step", "800",
+                // "--name", "this-is-a-test-run-for-naming"
             ]
         },
         {
@@ -956,7 +957,7 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "rwa",
+                "-train", "tza",
                 "-train_lvl", "f,f,f,f,f,f",
                 // "-test", "cod,moz,nga,uga,rwa,tza",
                 "-test", "tza",
@@ -966,14 +967,15 @@
                 "--dropout", "0.4",
                 "-adamwr", "0.",
                 "-lstep", "8000",
-                "-rs", "3",
+                "-rs", "2",
                 "-mm", "d,d,d,d,d,d",
-                "--loss", "NormL1",
+                "--loss", "gaussNLL",
                 // "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 //"-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
-                "-e5f", "enticing-candles-1944,evanescent-quiver-1940,deeply-candles-1941,exciting-ring-1942,enchanting-heartthrob-1943",
+                "--e5f_metric", "best_mape",
+                "-e5f", "gaussNLL_f_2_1al,gaussNLL_f_2_2al,gaussNLL_f_2_3al,gaussNLL_f_2_4al,gaussNLL_f_2_5al",
             ]
         },
         {
