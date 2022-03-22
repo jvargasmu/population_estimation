@@ -254,7 +254,10 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             in_biases = mynet.mean_in_bias[0,:,0,0].detach().cpu().numpy()
 
         for i,(sc,bi) in enumerate(zip(in_scales, in_biases)):
-            fname = dataset.feature_names[dataset_name][i+1]
+            if mynet.pop_target:
+                fname = dataset.feature_names[dataset_name][i]
+            else:
+                fname = dataset.feature_names[dataset_name][i+1]
             metrics["input_scaling/"+fname] = sc
             metrics["input_bias/"+fname] = bi
 

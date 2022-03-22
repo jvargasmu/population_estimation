@@ -102,10 +102,13 @@ class PixScaleNet(nn.Module):
 
     def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
-        exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None, small_net=False):
+        exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None, small_net=False, pop_target=False):
         super(PixScaleNet, self).__init__()
 
-        self.channels_in = channels_in
+        self.pop_target = pop_target
+        self.channels_in = channels_in - 1
+        if pop_target:
+            self.channels_in = channels_in
         self.device = device
         self.exp_max_clamp = exp_max_clamp
         self.pred_var = pred_var
@@ -130,8 +133,8 @@ class PixScaleNet(nn.Module):
             self.in_scale = {}
             self.in_bias = {}
             for name in datanames:
-                self.in_scale[name] = torch.ones( (1,channels_in-1,1,1), requires_grad=True, device=device)
-                self.in_bias[name] = torch.zeros( (1,channels_in-1,1,1), requires_grad=True, device=device)
+                self.in_scale[name] = torch.ones( (1,self.channels_in,1,1), requires_grad=True, device=device)
+                self.in_bias[name] = torch.zeros( (1,self.channels_in,1,1), requires_grad=True, device=device)
                 # self.params_with_regularizer += [{'params':self.in_scale[name],'weight_decay':weights_regularizer}]
                 self.params_with_regularizer += [{'params':self.in_scale[name]}]
                 # self.params_with_regularizer += [{'params':self.in_bias[name],'weight_decay':weights_regularizer}]
@@ -154,26 +157,26 @@ class PixScaleNet(nn.Module):
         if dropout>0.0:
             if small_net:
                 self.occratenet = nn.Sequential(
-                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
                             )
             else:
                 self.occratenet = nn.Sequential(
                             nn.Dropout(p=dropout, inplace=True),                        
-                            nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+                            nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
                             nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
                             nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
                             )
         else:
             if small_net:
                 self.occratenet = nn.Sequential(
-                                                  nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
                             nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                             )
             else:
                 self.occratenet = nn.Sequential(
-                                                  nn.Conv2d(channels_in-1, n1, (k1,k1), padding=(k1-1)//2),
+                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
                             nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
                             nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2),   
                             )
@@ -211,34 +214,50 @@ class PixScaleNet(nn.Module):
             inputs = inputs.to(self.device)
 
         buildings = inputs[:,0:1,:,:]
-        data = inputs[:,1:,:,:]
+        
+        if self.pop_target:
+            data = inputs
+        else:
+            data = inputs[:,1:,:,:]
 
         if self.input_scaling:
             data = self.perform_scale_inputs(data, name)
 
         data = self.occratenet(data)
-        occrate = self.occrate_layer(data)
-        if self.bayesian:
-            if self.pred_var:
-                var = self.occrate_var_layer(data)
+        
+        if self.pop_target:
+            pop_est = self.occrate_layer(data)
+            if self.bayesian:
+                raise Exception("not implemented")
             else:
-                var = torch.exp(self.occrate_var_layer(data)) 
-
-            occrate = torch.cat([occrate, var], 1)
-            if self.output_scaling:
-                occrate = self.perform_scale_output(occrate, name)
+                if self.output_scaling:
+                    pop_est = self.perform_scale_output(pop_est, name)
+                    pop_est[:,:,buildings[0,0]==0] = 0.
+                
+                occrate = pop_est / buildings
                 occrate[:,:,buildings[0,0]==0] = 0.
-                 
-            pop_est = torch.mul(buildings, occrate[:,0])
-
-            # Variance Propagation
-            pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), occrate[:,1])], 1)
         else:
-            if self.output_scaling:
-                occrate = self.perform_scale_output(occrate, name)
-                occrate[:,:,buildings[0,0]==0] = 0.
-            pop_est = torch.mul(buildings, occrate)
+            occrate = self.occrate_layer(data)
+            if self.bayesian:
+                if self.pred_var:
+                    var = self.occrate_var_layer(data)
+                else:
+                    var = torch.exp(self.occrate_var_layer(data)) 
 
+                occrate = torch.cat([occrate, var], 1)
+                if self.output_scaling:
+                    occrate = self.perform_scale_output(occrate, name)
+                    occrate[:,:,buildings[0,0]==0] = 0.
+                    
+                pop_est = torch.mul(buildings, occrate[:,0])
+
+                # Variance Propagation
+                pop_est = torch.cat([pop_est,  torch.mul(torch.square(buildings), occrate[:,1])], 1)
+            else:
+                if self.output_scaling:
+                    occrate = self.perform_scale_output(occrate, name)
+                    occrate[:,:,buildings[0,0]==0] = 0.
+                pop_est = torch.mul(buildings, occrate)
 
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
