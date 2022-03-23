@@ -254,7 +254,10 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
             in_biases = mynet.mean_in_bias[0,:,0,0].detach().cpu().numpy()
 
         for i,(sc,bi) in enumerate(zip(in_scales, in_biases)):
-            fname = dataset.feature_names[dataset_name][i+1]
+            if mynet.pop_target:
+                fname = dataset.feature_names[dataset_name][i]
+            else:
+                fname = dataset.feature_names[dataset_name][i+1]
             metrics["input_scaling/"+fname] = sc
             metrics["input_bias/"+fname] = bi
 
@@ -507,7 +510,7 @@ def Eval5Fold_PixAdminTransform(
                     device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                     dropout=params["dropout"],
                     input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
-                    datanames=train_dataset_name, small_net=params["small_net"]
+                    datanames=train_dataset_name, small_net=params["small_net"], pop_target=params["population_target"]
                     ).train().to(device)
 
 

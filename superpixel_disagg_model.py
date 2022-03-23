@@ -281,6 +281,7 @@ def superpixel_with_pix_data(
     dropout,
     loss,
     admin_augment,
+    population_target,
     load_state,
     eval_only,
     input_scaling,
@@ -308,6 +309,7 @@ def superpixel_with_pix_data(
             'loss': loss,
 
             "admin_augment": admin_augment,
+            "population_target": population_target,
             "load_state": load_state,
             # "eval_only": eval_only,
             "Net": 'ScaleNet', 
@@ -546,6 +548,8 @@ def main():
     
     parser.add_argument("--admin_augment", "-adm_aug", type=lambda x: bool(strtobool(x)), default=True, help="Use data augmentation by merging administrative regions")
     
+    parser.add_argument("--population_target", "-pop_target", type=lambda x: bool(strtobool(x)), default=False, help="Use population as target")
+    
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
     parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
 
@@ -599,6 +603,7 @@ def main():
         args.dropout,
         args.loss,
         args.admin_augment,
+        args.population_target,
         args.load_state,
         args.eval_only,
         args.input_scaling,
