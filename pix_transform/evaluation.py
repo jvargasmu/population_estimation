@@ -441,7 +441,7 @@ def Eval5Fold_PixAdminTransform(
     for k in range(5): 
         Datasets.append(
             MultiPatchDataset(datalocations, train_dataset_name, params["train_level"], params['memory_mode'], device, 
-                params["validation_split"], k, params["weights"], params["custom_sampler_weights"], val_valid_ids, build_pairs=False)
+                params["validation_split"], k, params["weights"], params["custom_sampler_weights"], val_valid_ids, build_pairs=False,  random_seed_folds=params["random_seed_folds"] )
         )
 
         calculate_mean_std = False
