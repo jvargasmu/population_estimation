@@ -779,9 +779,9 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,tza,rwa,nga,moz",
+                "-train", "uga,rwa,nga",
                 "-train_lvl", "f,f,f,f,f",
-                "-test", "uga,tza,rwa,nga,moz,cod",
+                "-test", "uga,rwa,nga",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.1",
@@ -789,9 +789,9 @@
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 "-adamwr", "0.",
-                "-lstep", "200",
+                "-lstep", "800",
                 "--validation_fold", "0",
-                "-mm", "m,d,m,d,d,d"
+                "-mm", "d,d,d,d,d,d"
             ]
         },
         {

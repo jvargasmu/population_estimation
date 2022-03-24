@@ -134,6 +134,7 @@ def PixAdminTransform(
     for test_dataset_name in test_dataset_names:
         best_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
         best_val_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
+        best_val_scores_avg = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
 
     with tqdm(range(0, epochs), leave=True, disable=params["silent_mode"]) as tnr:
         for epoch in tnr:
@@ -158,7 +159,7 @@ def PixAdminTransform(
                 optimizer.step()
                 scheduler.step()
 
-                # logging
+                # train logging
                 train_log_dict = {}
                 if batchiter % 50 == 0: 
                     if len(y_pred)==2:
@@ -189,6 +190,7 @@ def PixAdminTransform(
                     
                     # Validation
                     if params["validation_split"]>0. or (params["validation_fold"] is not None):
+                        this_val_scores_avg = np.zeros((3,))
                         for name in test_dataset_names:
                             logging.info(f'Validating dataset of {name}')
                             agg_preds,val_census = [],[]
@@ -205,6 +207,8 @@ def PixAdminTransform(
 
                             metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
                             best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
+                            this_val_scores_avg += [metrics["r2"], metrics["mae"],  metrics["mape"]]
+
                             for key in metrics.keys():
                                 log_dict[name + '/validation/' + key ] = metrics[key]
                             
@@ -233,10 +237,12 @@ def PixAdminTransform(
                             
                             torch.cuda.empty_cache()
 
-                    # Evaluation Model: Evaluates the training and validation regions at the same time.
-                    # for test_dataset_name, values in validation_data.items():
-                    for name in test_dataset_names: 
+                        avg_metrics = {}
+                        avg_metrics["r2"], avg_metrics["mae"],  avg_metrics["mape"] = this_val_scores_avg/len(test_dataset_names)
+                        best_val_scores_avg = checkpoint_model(mynet, optimizer.state_dict(), epoch, avg_metrics, '/AVG/VAL/', best_val_scores_avg)
 
+                    # Evaluation Model: Evaluates the training and validation regions at the same time!
+                    for name in test_dataset_names: 
                         logging.info(f'Testing dataset of {name}')
                         val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
                         val_features = dataset.features[name]
@@ -248,17 +254,7 @@ def PixAdminTransform(
                             disaggregation_data=dataset.memory_disag[name],
                             dataset_name=name, return_scale=True, silent_mode=params["silent_mode"]
                         )
- 
-                        log_images = False
-                        if log_images:
-                            if len(res['scales'].shape)==3:
-                                this_log_dict["viz/scales"] = wandb.Image(res['scales'][0])
-                                this_log_dict["viz/scales_var"] = wandb.Image(res['scales'][1])
-                                this_log_dict["viz/predicted_target_img"] = wandb.Image(res['predicted_target_img'])
-                                this_log_dict["viz/predicted_target_img_var"] = wandb.Image(res['variances'])
-                                this_log_dict["viz/predicted_target_img_adjusted"] = wandb.Image(res['predicted_target_img_adjusted'])
-
-                        # Model checkpointing and update best scores
+                         # Model checkpointing and update best scores
                         best_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, this_log_dict,  '/'+name+'/ALL/', best_scores[test_dataset_name])
                         for key in this_log_dict.keys():
                             log_dict[name+'/'+key] = this_log_dict[key]

@@ -517,6 +517,9 @@ def Eval5Fold_PixAdminTransform(
         # Loading from checkpoint
         if params["e5f_metric"] == "final":
             checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"][k]))
+        elif params["e5f_metric"] in ["best_mape_avg","best_r2_avg","best_mae_avg","best_mape_adj_avg","best_r2_adj_avg","best_mae_adj_avg"]:
+            #TODO: Strip off the "_avg" ending and use the AVG/VAL conversion for the path
+            checkpoint = torch.load('checkpoints/{}/VAL/{}.pth'.format(params["e5f_metric"], params["eval_5fold"][k])) 
         else:
             #TODO: This works for one country in the test set. We need to verify if this would work for several countries in test_dataset_names
             checkpoint = torch.load('checkpoints/{}/{}/VAL/{}.pth'.format(params["e5f_metric"], test_dataset_names[0], params["eval_5fold"][k])) 
