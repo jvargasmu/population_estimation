@@ -240,6 +240,8 @@ def PixAdminTransform(
                         avg_metrics = {}
                         avg_metrics["r2"], avg_metrics["mae"],  avg_metrics["mape"] = this_val_scores_avg/len(test_dataset_names)
                         best_val_scores_avg = checkpoint_model(mynet, optimizer.state_dict(), epoch, avg_metrics, '/AVG/VAL/', best_val_scores_avg)
+                        for key,value in avg_metrics.items():
+                            log_dict["validation/average/"+key] = value  
 
                     # Evaluation Model: Evaluates the training and validation regions at the same time!
                     for name in test_dataset_names: 
