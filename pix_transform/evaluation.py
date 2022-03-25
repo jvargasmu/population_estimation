@@ -48,7 +48,12 @@ def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
 
     for idx in (scalings.keys()):
         mask = [source_regions==idx]
-        predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
+        if not scalings[idx].isnan() and (not scalings[idx].isinf()):
+            predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
+        else:
+            predicted_target_img[mask] = predicted_target_img[mask]*scalings[idx]
+            scalings[idx] = 99
+
 
     scalings_array = torch.tensor(list(scalings.values())).numpy()
     log_dict = {
