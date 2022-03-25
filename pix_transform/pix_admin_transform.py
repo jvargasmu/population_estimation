@@ -229,11 +229,11 @@ def PixAdminTransform(
                         
                             agg_preds_arr_country_adj, this_metrics_cl = disag_wo_map(agg_preds_arr, disaggregation_data_coarsest_val)
                             for key,value in this_metrics_cl.items():
-                                log_dict[name + "/validation/adjusted/country_like/"+key] = value  
-                            # agg_preds_arr_adj[dataset.tregid_val[name]]
+                                log_dict[name + "/validation/adjusted/country_like/"+key] = value
+                            
                             this_metrics_cl = compute_performance_metrics_arrays(agg_preds_arr_country_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
                             for key,value in this_metrics_cl.items():
-                                log_dict[name + "/validation/adjusted/country_like/"+key] = value  
+                                log_dict[name + "/validation/adjusted/country_like/"+key] = value
                             
                             torch.cuda.empty_cache()
 
