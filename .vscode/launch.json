@@ -975,7 +975,7 @@
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 //"-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
-                "--e5f_metric", "best_mape_avg",
+                "--e5f_metric", "best_mae_avg",
                 "--name", "transfer_LogL1_1613_Xallo",
                 "-e5f", "transfer_LogL1_1613_1allo,transfer_LogL1_1613_2allo,transfer_LogL1_1613_3allo,transfer_LogL1_1613_4allo,transfer_LogL1_1613_5allo",
             ]
