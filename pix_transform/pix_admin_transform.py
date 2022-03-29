@@ -152,6 +152,9 @@ def PixAdminTransform(
                 y_pred = torch.stack([pred*samp[4] for pred,samp in zip(y_pred_list, sample)]).sum(0)
                 y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum().unsqueeze(0)
 
+                #loss = myloss(y_pred_list[0],sample[0][1])
+                loss = myloss(y_pred_list[1],sample[1][1])
+
                 # Backwards
                 loss = myloss(y_pred, y_gt)
                 loss.backward()
@@ -185,38 +188,73 @@ def PixAdminTransform(
                 if itercounter>=( params['logstep'] ):
                     itercounter = 0
 
-                    # Validate and Test the model and save model
-                    log_dict = {}
-                    
-                    # Validation
-                    if params["validation_split"]>0. or (params["validation_fold"] is not None):
-                        this_val_scores_avg = np.zeros((3,))
-                        for name in test_dataset_names:
-                            logging.info(f'Validating dataset of {name}')
-                            agg_preds,val_census = [],[]
-                            agg_preds_arr = torch.zeros((dataset.max_tregid[name]+1,))
+                    with torch.no_grad():
+                        # Validate and Test the model and save model
+                        log_dict = {}
+                        
+                        # Validation
+                        if params["validation_split"]>0. or (params["validation_fold"] is not None):
+                            this_val_scores_avg = np.zeros((3,))
+                            for name in test_dataset_names:
+                                logging.info(f'Validating dataset of {name}')
+                                agg_preds,val_census = [],[]
+                                agg_preds_arr = torch.zeros((dataset.max_tregid[name]+1,))
 
-                            for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
-                                X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name)
-                                pred = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
-                                agg_preds.append(pred)
-                                val_census.append(Y.cpu().numpy())
-                                if isinstance(pred, np.ndarray):
-                                    pred = pred[0] 
-                                agg_preds_arr[census_id.item()] = pred.item()
+                                for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
+                                    X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name)
+                                    if idx in [754, 755]:
+                                        print("Sus.")
+                                    pred = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
+                                    agg_preds.append(pred)
+                                    val_census.append(Y.cpu().numpy())
+                                    if isinstance(pred, np.ndarray) and pred.shape.__len__()==1:
+                                        pred = pred[0] 
+                                    agg_preds_arr[census_id.item()] = pred.item()
+                                    torch.cuda.empty_cache()
 
-                            metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
-                            best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
-                            this_val_scores_avg += [metrics["r2"], metrics["mae"],  metrics["mape"]]
+                                metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
+                                best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
+                                this_val_scores_avg += [metrics["r2"], metrics["mae"],  metrics["mape"]]
 
-                            for key in metrics.keys():
-                                log_dict[name + '/validation/' + key ] = metrics[key]
-                            
-                            # Disaggregation per coarse val census
-                            agg_preds_arr_adj, this_metrics_dis = disag_wo_map(agg_preds_arr, dataset.memory_disag_val[name])
-                            for key,value in this_metrics_dis.items():
-                                log_dict[name + "/validation/adjusted/coarse/"+key] = value  
+                                for key in metrics.keys():
+                                    log_dict[name + '/validation/' + key ] = metrics[key]
                                 
+                                # Disaggregation per coarse val census
+                                agg_preds_arr_adj, this_metrics_dis = disag_wo_map(agg_preds_arr, dataset.memory_disag_val[name])
+                                for key,value in this_metrics_dis.items():
+                                    log_dict[name + "/validation/adjusted/coarse/"+key] = value  
+                                    
+                                this_metrics = compute_performance_metrics_arrays(agg_preds_arr_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
+                                for key,value in this_metrics.items():
+                                    log_dict[name + "/validation/adjusted/coarse/"+key] = value  
+
+                                # "fake" new dissagregation data and reuse the function
+                                # Do the disagregation on country level
+                                tts = torch.zeros(dataset.memory_disag_val[name][0].shape, dtype=int)
+                                tts[torch.where(dataset.memory_disag_val[name][0])] = 1
+                                disaggregation_data_coarsest_val = [tts, {1: sum(list(dataset.memory_disag_val[name][1].values()))}, dataset.memory_disag_val[name][2] ]
+                            
+                                agg_preds_arr_country_adj, this_metrics_cl = disag_wo_map(agg_preds_arr, disaggregation_data_coarsest_val)
+                                for key,value in this_metrics_cl.items():
+                                    log_dict[name + "/validation/adjusted/country_like/"+key] = value  
+                                # agg_preds_arr_adj[dataset.tregid_val[name]]
+                                this_metrics_cl = compute_performance_metrics_arrays(agg_preds_arr_country_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
+                                for key,value in this_metrics_cl.items():
+                                    log_dict[name + "/validation/adjusted/country_like/"+key] = value  
+                                
+                                torch.cuda.empty_cache()
+
+                            avg_metrics = {}
+                            avg_metrics["r2"], avg_metrics["mae"],  avg_metrics["mape"] = this_val_scores_avg/len(test_dataset_names)
+                            best_val_scores_avg = checkpoint_model(mynet, optimizer.state_dict(), epoch, avg_metrics, '/AVG/VAL/', best_val_scores_avg)
+                            for key,value in avg_metrics.items():
+                                log_dict["validation/average/"+key] = value  
+
+                        # Evaluation Model: Evaluates the training and validation regions at the same time!
+                        for name in test_dataset_names: 
+                            logging.info(f'Testing dataset of {name}')
+                            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
+                            val_features = dataset.features[name]
                             this_metrics = compute_performance_metrics_arrays(agg_preds_arr_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
                             for key,value in this_metrics.items():
                                 log_dict[name + "/validation/adjusted/coarse/"+key] = value  
@@ -235,32 +273,18 @@ def PixAdminTransform(
                             for key,value in this_metrics_cl.items():
                                 log_dict[name + "/validation/adjusted/country_like/"+key] = value
                             
+                            res, this_log_dict = eval_my_model(
+                                mynet, val_features, val_valid_data_mask, val_regions,
+                                val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
+                                dataset=dataset,
+                                disaggregation_data=dataset.memory_disag[name],
+                                dataset_name=name, return_scale=True, silent_mode=params["silent_mode"]
+                            )
+                            # Model checkpointing and update best scores
+                            best_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, this_log_dict,  '/'+name+'/ALL/', best_scores[test_dataset_name])
+                            for key in this_log_dict.keys():
+                                log_dict[name+'/'+key] = this_log_dict[key]
                             torch.cuda.empty_cache()
-
-                        avg_metrics = {}
-                        avg_metrics["r2"], avg_metrics["mae"],  avg_metrics["mape"] = this_val_scores_avg/len(test_dataset_names)
-                        best_val_scores_avg = checkpoint_model(mynet, optimizer.state_dict(), epoch, avg_metrics, '/AVG/VAL/', best_val_scores_avg)
-                        for key,value in avg_metrics.items():
-                            log_dict["validation/average/"+key] = value  
-
-                    # Evaluation Model: Evaluates the training and validation regions at the same time!
-                    for name in test_dataset_names: 
-                        logging.info(f'Testing dataset of {name}')
-                        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
-                        val_features = dataset.features[name]
-                        
-                        res, this_log_dict = eval_my_model(
-                            mynet, val_features, val_valid_data_mask, val_regions,
-                            val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
-                            dataset=dataset,
-                            disaggregation_data=dataset.memory_disag[name],
-                            dataset_name=name, return_scale=True, silent_mode=params["silent_mode"]
-                        )
-                         # Model checkpointing and update best scores
-                        best_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, this_log_dict,  '/'+name+'/ALL/', best_scores[test_dataset_name])
-                        for key in this_log_dict.keys():
-                            log_dict[name+'/'+key] = this_log_dict[key]
-                        torch.cuda.empty_cache()
 
                     # log_dict['train/loss'] = loss 
                     log_dict['batchiter'] = batchiter

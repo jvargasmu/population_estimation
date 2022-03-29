@@ -204,8 +204,15 @@ class PixScaleNet(nn.Module):
         
         if (mask is not None) and (not predict_map):
             mask = mask.to(self.device)
-            inputs = inputs[:,:,mask[0]].unsqueeze(3)
+            if not self.convnet:
+                inputs = inputs[:,:,mask[0]].unsqueeze(3)
+                mask = mask[mask].unsqueeze(0).unsqueeze(2)
+            # inputs = inputs[:,:,mask[0]].unsqueeze(3)
+            # mask = mask[mask].unsqueeze(0).unsqueeze(2)
             mask = mask.cpu()
+        
+        # check inputs
+        inputs[inputs>1e32] = 0
 
         # Apply network
         if isinstance(inputs, np.ndarray):
@@ -223,31 +230,31 @@ class PixScaleNet(nn.Module):
         if self.input_scaling:
             data = self.perform_scale_inputs(data, name)
 
-        data = self.occratenet(data)
+        feats = self.occratenet(data)
         
         if self.pop_target:
-            pop_est = self.occrate_layer(data)
+            pop_est = self.occrate_layer(feats)
             if self.bayesian:
                 raise Exception("not implemented")
             else:
                 if self.output_scaling:
                     pop_est = self.perform_scale_output(pop_est, name)
-                    pop_est[:,:,buildings[0,0]==0] = 0.
+                    pop_est[:,:,buildings[0,0]==0] *= 0.
                 
                 occrate = pop_est / buildings
-                occrate[:,:,buildings[0,0]==0] = 0.
+                occrate[:,:,buildings[0,0]==0] *= 0.
         else:
-            occrate = self.occrate_layer(data)
+            occrate = self.occrate_layer(feats)
             if self.bayesian:
                 if self.pred_var:
-                    var = self.occrate_var_layer(data)
+                    var = self.occrate_var_layer(feats)
                 else:
-                    var = torch.exp(self.occrate_var_layer(data)) 
+                    var = torch.exp(self.occrate_var_layer(feats)) 
 
                 occrate = torch.cat([occrate, var], 1)
                 if self.output_scaling:
                     occrate = self.perform_scale_output(occrate, name)
-                    occrate[:,:,buildings[0,0]==0] = 0.
+                    occrate[:,:,buildings[0,0]==0] *= 0.
                     
                 pop_est = torch.mul(buildings, occrate[:,0])
 
@@ -256,8 +263,9 @@ class PixScaleNet(nn.Module):
             else:
                 if self.output_scaling:
                     occrate = self.perform_scale_output(occrate, name)
-                    occrate[:,:,buildings[0,0]==0] = 0.
+                    #occrate[:,:,buildings[0,0]==0] *= 0.
                 pop_est = torch.mul(buildings, occrate)
+        data = data.cpu()
 
         # backtransform if necessary before(!) summation
         if self.exptransform_outputs:
@@ -266,7 +274,8 @@ class PixScaleNet(nn.Module):
         
         # Check if masking should be applied
         if mask is not None: 
-            return pop_est.sum((0,2,3)).cpu()
+            return pop_est[0,mask].sum().cpu()
+            #return pop_est.sum((0,2,3)).cpu()
         else:
             # check if the output should be the map or the sum
             if not predict_map:
@@ -342,6 +351,7 @@ class PixScaleNet(nn.Module):
 
         #choose a responsible patch that does not exceed the GPU memory
         PS = 1800 if forward_only else 1000
+        PS = 128 if self.convnet else PS
         oh, ow = inputs.shape[-2:]
         if predict_map:
             outvar = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
@@ -356,8 +366,11 @@ class PixScaleNet(nn.Module):
                     if mask is not None and mask[:,hi:hi+PS,oi:oi+PS].sum()>0:
                         outvar += self( inputs[:,:,hi:hi+PS,oi:oi+PS][:,:,mask[0,hi:hi+PS,oi:oi+PS]].unsqueeze(3), name=name, forward_only=forward_only)
                 elif (not predict_map) and self.convnet:
-                    out, _ = self( inputs[:,:,hi:hi+PS,oi:oi+PS], predict_map=True)
-                    outvar += out.sum().cpu()
+                    this_mask = mask[:,hi:hi+PS,oi:oi+PS]
+                    if this_mask.sum()>0:
+                        # out = self( inputs[:,:,hi:hi+PS,oi:oi+PS], mask=this_mask, predict_map=True, name=name)[0].cpu()
+                        out = self( inputs[:,:,hi:hi+PS,oi:oi+PS], mask=this_mask, predict_map=True, name=name)
+                        outvar += out.sum().cpu()
                 else:
                     outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], name=name, predict_map=True, forward_only=forward_only)
 

@@ -199,10 +199,11 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 X, Y, Mask, name, census_id = dataset.get_single_item(idx, dataset_name) 
                 prediction = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
 
-                if isinstance(prediction, np.ndarray):
+                if isinstance(prediction, np.ndarray) and prediction.shape.__len__()==1:
                     prediction = prediction[0]
                 # agg_preds2[census_id.item()] = prediction.item()
                 agg_preds_arr[census_id.item()] = prediction.item()
+                torch.cuda.empty_cache()
 
             agg_preds3 = {id: agg_preds_arr[id].item() for id in validation_ids}
 

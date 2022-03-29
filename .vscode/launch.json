@@ -222,7 +222,7 @@
             ]
         },
         {
-            "name": "TZA_CV MSE superpixel_disagg_model.py fold x",
+            "name": "TZA_CV LogL1 kernel superpixel_disagg_model.py fold x",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
@@ -239,16 +239,19 @@
                 "--dropout", "0.4",
                 "-optim", "adam",
                 "-adamwr", "0",
-                "-lstep", "300",
-                "--validation_fold", "4",
+                "-lstep", "400",
+                "--validation_fold", "0",
                 "-rs", "0",
-                "-mm", "d", 
-                "--loss", "mse", 
+                //"-rsf", "1610",
+                "-mm", "m", 
+                "--loss", "LogL1", 
+                "--kernel_size", "1,1,1,1",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
-                "--random_seed_folds", "1611",
+                "--random_seed_folds", "1610",
                 "--sampler", "custom",
-                "--max_step", "800",
+                "--max_step", "150000",
+                //"--population_target", "True"
                 // "--name", "this-is-a-test-run-for-naming"
             ]
         },
