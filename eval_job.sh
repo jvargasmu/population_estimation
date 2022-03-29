@@ -30,9 +30,13 @@ source HACenv/bin/activate
 # load modules
 module load gcc/8.2.0 gdal/3.2.0 zlib/1.2.9 eth_proxy hdf5/1.10.1
 
+python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test tza,uga,rwa,nga,moz -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 800 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 20000 --dropout 0.4 --name transfer_LogL1_${rs}_Xdo --e5f_metric best_mape_avg -e5f transfer_LogL1_${rs}_1do,transfer_LogL1_${rs}_2do,transfer_LogL1_${rs}_3do,transfer_LogL1_${rs}_4do,transfer_LogL1_${rs}_5do
+
+#python superpixel_disagg_model.py -train uga,rwa -train_lvl f,f,f,f,f -test tza,uga,rwa -lr 0.0001 -optim adam -wr 0.01 -adamwr 0. -lstep 80 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss LogL1 --input_scaling True --output_scaling True --e5f_metric best_mae_avg --name transfer_LogL1_${rs}_Xallo -e5f transfer_LogL1_${rs}_1allo,transfer_LogL1_${rs}_2allo,transfer_LogL1_${rs}_3allo,transfer_LogL1_${rs}_4allo,transfer_LogL1_${rs}_5allo
+
 #python superpixel_disagg_model.py -train tza -train_lvl c -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 4 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 50000 --name LogL1_c_${rs}_X --e5f_metric best_mape -e5f LogL1_c_${rs}_1,LogL1_c_${rs}_2,LogL1_c_${rs}_3,LogL1_c_${rs}_4,LogL1_c_${rs}_5
 
-python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 100000 --name LogL1_f_${rs}_Xal --e5f_metric best_mape -e5f LogL1_f_${rs}_1al,LogL1_f_${rs}_2al,LogL1_f_${rs}_3al,LogL1_f_${rs}_4al,LogL1_f_${rs}_5al
+#python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 100000 --name LogL1_f_${rs}_Xal --e5f_metric best_mape -e5f LogL1_f_${rs}_1al,LogL1_f_${rs}_2al,LogL1_f_${rs}_3al,LogL1_f_${rs}_4al,LogL1_f_${rs}_5al
 
 
 #python superpixel_disagg_model.py -train tza -train_lvl f -test tza -lr 0.0001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 800 --validation_fold 0 -rs 0 -mm m --loss LogL2 --input_scaling True --output_scaling True --dataset_dir datasets --sampler custom --max_step 100000 --e5f_metric best_mape -e5f pretty-dragon-2288,electric-firebrand-2282,gentle-eon-2281,fresh-sound-2283,ethereal-disco-2284
