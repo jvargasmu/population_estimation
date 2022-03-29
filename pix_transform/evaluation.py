@@ -17,6 +17,7 @@ import pickle
 from pathlib import Path
 import random
 from tqdm import tqdm
+import os
 import pdb
 
 from utils import plot_2dmatrix, accumulate_values_by_region, compute_performance_metrics, bbox2, \
@@ -48,7 +49,12 @@ def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
 
     for idx in (scalings.keys()):
         mask = [source_regions==idx]
-        predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
+        if not scalings[idx].isnan() and (not scalings[idx].isinf()):
+            predicted_target_img_adjusted[mask] = predicted_target_img[mask]*scalings[idx]
+        else:
+            predicted_target_img[mask] = predicted_target_img[mask]*scalings[idx]
+            scalings[idx] = 99
+
 
     scalings_array = torch.tensor(list(scalings.values())).numpy()
     log_dict = {
@@ -371,6 +377,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
 
             with torch.no_grad():
                 mynet.eval()
+                val_census_list = []
 
                 for idx in tqdm(range(len(dataset.Ys_hout[name])), disable=params["silent_mode"]):
                     X, Y, Mask, name, census_id, BB = dataset.get_single_holdout_item(idx, name, return_BB=True) 
@@ -387,6 +394,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     
                     pred = pop_est[0,0,Mask].sum().detach().cpu().numpy()
                     agg_preds.append(pred)
+                    val_census_list.append(Y.cpu().numpy())
                     agg_preds_arr[census_id.item()] = pop_est[0,0,Mask].sum().detach().cpu().item()
                     
                     census_ids.append(census_id)
@@ -410,6 +418,20 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
             res_dict[name + '/' + key] = adj_logs[key] #TODO: should we include this log entry in res_dict
             log_dict[name + '/' + key] = adj_logs[key]
         logging.info(f'Classic disag finsihed')
+
+        # "fake" new dissagregation data and reuse the function
+        # Do the disagregation on country level # TODO: change to holdout set
+        tts = torch.zeros(dataset.memory_disag[name][0].shape, dtype=int)
+        tts[torch.where(dataset.memory_disag[name][0])] = 1
+        disaggregation_data_coarsest_val = [tts, {1: sum(list(dataset.memory_disag[name][1].values()))}, dataset.memory_disag[name][2] ]
+    
+        agg_preds_arr_country_adj, this_metrics_cl = disag_wo_map(agg_preds_arr, disaggregation_data_coarsest_val)
+        for key,value in this_metrics_cl.items():
+            log_dict[name + "/adjusted/country_like/"+key] = value
+        
+        this_metrics_cl = compute_performance_metrics_arrays(agg_preds_arr_country_adj[dataset.tregid[name]].numpy(), np.asarray(list(val_census.values())))  
+        for key,value in this_metrics_cl.items():
+            log_dict[name + "/adjusted/country_like/"+key] = value
 
         res["predicted_target_img_adjusted"] = predicted_target_img_adjusted.cpu()  
         predicted_target_img_adjusted = predicted_target_img_adjusted.cpu() 
@@ -499,9 +521,18 @@ def Eval5Fold_PixAdminTransform(
 
 
     # Fix all random seeds
+    # torch.manual_seed(params["random_seed"])
+    # random.seed(params["random_seed"])
+    # np.random.seed(params["random_seed"])
+    # Fix all random seeds
     torch.manual_seed(params["random_seed"])
     random.seed(params["random_seed"])
     np.random.seed(params["random_seed"])
+    torch.cuda.manual_seed(params["random_seed"])
+    torch.cuda.manual_seed_all(params["random_seed"])
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    os.environ['PYTHONHASHSEED'] = str(params["random_seed"])
 
     # load 5 models
     Mynets = []

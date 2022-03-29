@@ -255,6 +255,23 @@ def PixAdminTransform(
                             logging.info(f'Testing dataset of {name}')
                             val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
                             val_features = dataset.features[name]
+                            this_metrics = compute_performance_metrics_arrays(agg_preds_arr_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
+                            for key,value in this_metrics.items():
+                                log_dict[name + "/validation/adjusted/coarse/"+key] = value  
+
+                            # "fake" new dissagregation data and reuse the function
+                            # Do the disagregation on country level
+                            tts = torch.zeros(dataset.memory_disag_val[name][0].shape, dtype=int)
+                            tts[torch.where(dataset.memory_disag_val[name][0])] = 1
+                            disaggregation_data_coarsest_val = [tts, {1: sum(list(dataset.memory_disag_val[name][1].values()))}, dataset.memory_disag_val[name][2] ]
+                        
+                            agg_preds_arr_country_adj, this_metrics_cl = disag_wo_map(agg_preds_arr, disaggregation_data_coarsest_val)
+                            for key,value in this_metrics_cl.items():
+                                log_dict[name + "/validation/adjusted/country_like/"+key] = value
+                            
+                            this_metrics_cl = compute_performance_metrics_arrays(agg_preds_arr_country_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
+                            for key,value in this_metrics_cl.items():
+                                log_dict[name + "/validation/adjusted/country_like/"+key] = value
                             
                             res, this_log_dict = eval_my_model(
                                 mynet, val_features, val_valid_data_mask, val_regions,
