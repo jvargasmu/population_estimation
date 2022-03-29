@@ -245,14 +245,16 @@
                 "-rsf", "1613",
                 "-mm", "m", 
                 "--loss", "LogL1", 
-                "--kernel_size", "5,5,5,5",
+                "--kernel_size", "1,1,1,1",
+                "--admin_augment", "False",
+                "--population_target", "True",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 "--random_seed_folds", "1610",
                 "--sampler", "custom",
                 "--max_step", "150000",
                 //"--population_target", "True"
-                /"--name", "this-is-a-test-run-for-naming_2"
+                "--name", "this-is-a-test-run-for-naming_2"
             ]
         },
         {

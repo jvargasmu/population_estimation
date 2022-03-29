@@ -153,7 +153,7 @@ def PixAdminTransform(
                 y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum().unsqueeze(0)
 
                 #loss = myloss(y_pred_list[0],sample[0][1])
-                loss = myloss(y_pred_list[1],sample[1][1])
+                #loss =# myloss(y_pred_list[1],sample[1][1])
 
                 # Backwards
                 loss = myloss(y_pred, y_gt)
