@@ -239,20 +239,20 @@
                 "--dropout", "0.4",
                 "-optim", "adam",
                 "-adamwr", "0",
-                "-lstep", "400",
+                "-lstep", "800",
                 "--validation_fold", "0",
-                "-rs", "0",
-                //"-rsf", "1610",
+                "-rs", "1613",
+                "-rsf", "1613",
                 "-mm", "m", 
                 "--loss", "LogL1", 
-                "--kernel_size", "1,1,1,1",
+                "--kernel_size", "5,5,5,5",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 "--random_seed_folds", "1610",
                 "--sampler", "custom",
                 "--max_step", "150000",
                 //"--population_target", "True"
-                // "--name", "this-is-a-test-run-for-naming"
+                /"--name", "this-is-a-test-run-for-naming_2"
             ]
         },
         {
