@@ -198,7 +198,7 @@ class PixScaleNet(nn.Module):
             mask = mask.unsqueeze(0)
 
         # Check if the image is too large for singe forward pass
-        PS = 2500 if forward_only else 1100 
+        PS = 2500 if forward_only else 1000 
         if torch.tensor(inputs.shape[-2:]).prod()>PS**2:
             return self.forward_batchwise(inputs, mask, name, predict_map=predict_map, forward_only=forward_only)
         
@@ -351,7 +351,7 @@ class PixScaleNet(nn.Module):
 
         #choose a responsible patch that does not exceed the GPU memory
         PS = 1800 if forward_only else 900
-        PS = 128 if self.convnet else PS
+        PS = 64 if self.convnet else PS
         oh, ow = inputs.shape[-2:]
         if predict_map:
             outvar = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
