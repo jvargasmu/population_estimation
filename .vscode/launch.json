@@ -1046,5 +1046,26 @@
                 "--admin_augment", "False"
             ]
         },
+        {
+            "name": "WorldPop target test",
+            "type": "python",
+            "request": "launch",
+            "program": "train_model_with_agg_data.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [ 
+                "-pre", "~/data/wpop/preproc2/tza_preproc_input.pkl", 
+                "-adm_rst", "~/data/wpop/OtherMastergrid/TZA/tza_subnational_2000_2020_sid.tif",
+                "-out", "~/data/wpop/predictions/wpop_tza_f_311_rs1610_tocc_rerun1/", 
+                "-data", "tza",
+                "-bu", "True", 
+                "-e5f", "True", 
+                "-train_lvl", "f",
+                "-rs", "1610",
+                "-pop_target", "False" 
+            ]
+        },
     ]
 }
