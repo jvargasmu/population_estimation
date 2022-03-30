@@ -12,3 +12,4 @@ __pycache__/
 euler_job_submission/
 euleroutputs/
 cy_utils/__pycache__/
+*.pyc
