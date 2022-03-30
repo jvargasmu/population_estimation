@@ -268,6 +268,7 @@ def superpixel_with_pix_data(
     test_dataset_name,
     optimizer,
     learning_rate,
+    num_epochs,
     weights_regularizer,
     weights_regularizer_adamw, 
     memory_mode,
@@ -317,7 +318,7 @@ def superpixel_with_pix_data(
 
             'optim': optimizer,
             'lr': learning_rate,
-            "epochs": 100,
+            "epochs": num_epochs, #100,
             'logstep': log_step,
             'maxstep': max_step,
             'train_dataset_name': train_dataset_name,
@@ -552,6 +553,8 @@ def main():
     
     parser.add_argument("--population_target", "-pop_target", type=lambda x: bool(strtobool(x)), default=False, help="Use population as target")
     
+    parser.add_argument("--num_epochs", "-ep", type=int, default=100, help="Number of epochs")
+    
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
     parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
 
@@ -595,6 +598,7 @@ def main():
         args.test_dataset_name,
         args.optimizer,
         args.learning_rate,
+        args.num_epochs,
         args.weights_regularizer,
         args.weights_regularizer_adamw,
         args.memory_mode,
