@@ -274,7 +274,10 @@ class PixScaleNet(nn.Module):
         
         # Check if masking should be applied
         if mask is not None: 
-            return pop_est[0,mask].sum().cpu()
+            if self.bayesian:
+                    return pop_est[0,:,mask[0]].sum(1).cpu()
+            else:
+                    return pop_est[0,mask].sum().cpu()
             #return pop_est.sum((0,2,3)).cpu()
         else:
             # check if the output should be the map or the sum
