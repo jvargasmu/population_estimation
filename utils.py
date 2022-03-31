@@ -86,6 +86,9 @@ def mean_absolute_percentage_error(y_true, y_pred):
 
 
 def my_mean_absolute_error(y_pred,y_true):
+    y_pred = y_pred.astype(np.float32)
+    y_true = y_true.astype(np.float32)
+    
     errors = y_pred - y_true
     output_errors = np.average(np.abs(errors), axis=0)
     return output_errors, errors
