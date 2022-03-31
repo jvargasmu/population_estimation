@@ -16,7 +16,7 @@
                 "../../../data/OtherBuildings/TZA/tza_adm3_sid.tif",
                 "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
                 "../../../data/OtherBuildings/TZA/tza_population_2000_2020_sid.csv",
-                "preprocessed_data_3.pkl",
+                "tza_preproc_input.pkl",
                 "tza",
                 "P_2020"
             ]
@@ -157,6 +157,26 @@
                 "--global_disag"
                 //"--global_disag", "True"
             ]
+        }, 
+        {
+            "name": "Py: RF train_model_with_agg_data",
+            "type": "python",
+            "request": "launch",
+            "program": "train_model_with_agg_data.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-pre", "tza_preproc_input.pkl",
+                "-adm_rst", "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "-out", "wpop/predictions/wpop_tza_c_311_rs1610/",
+                "-data", "tza",
+                "-bu", "True",
+                "-e5f", "True",
+                "-train_lvl", "c",
+                "-rs", "1610"
+            ]
         },
         {
             "name": "Py: building_disagg_baseline.py Coarse Disag",
@@ -240,17 +260,16 @@
                 "-optim", "adam",
                 "-adamwr", "0",
                 "-lstep", "800",
-                "--validation_fold", "0",
-                "-rs", "1613",
-                "-rsf", "1613",
+                "--validation_fold", "2",
+                "-rs", "1610",
+                "-rsf", "1610",
                 "-mm", "m", 
                 "--loss", "LogL1", 
                 "--kernel_size", "3,1,1,1",
-                "--admin_augment", "True",
-                //"--population_target", "True",
+                "--admin_augment", "False",
+                "--population_target", "True",
                 "--input_scaling", "True",
-                "--output_scaling", "True",
-                "--random_seed_folds", "1610",
+                "--output_scaling", "True", 
                 "--sampler", "custom",
                 "--max_step", "150000",
                 //"--population_target", "True"

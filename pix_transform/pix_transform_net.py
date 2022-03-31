@@ -1,9 +1,13 @@
+from pickle import MEMOIZE
 import numpy as np
 import torch.nn as nn
 import torch
 from torch.nn.modules.container import Sequential
 from tqdm import tqdm
 from utils import plot_2dmatrix
+
+import MinkowskiEngine as ME
+
 
 class PixTransformNet(nn.Module):
 
@@ -355,6 +359,9 @@ class PixScaleNet(nn.Module):
         #choose a responsible patch that does not exceed the GPU memory
         PS = 1800 if forward_only else 900
         PS = 64 if self.convnet else PS
+        # if self.convnet:
+        #     inputs = inputs.to_sparse()
+
         oh, ow = inputs.shape[-2:]
         if predict_map:
             outvar = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
