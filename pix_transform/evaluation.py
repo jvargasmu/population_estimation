@@ -148,8 +148,9 @@ def eval_my_model(mynet, guide_img, valid_mask, validation_regions,
                 forward_only=True
             )
             if return_scale:
-                predicted_target_img, scales = return_vals
+                predicted_target_img, interpret_coefs, scales = return_vals
                 res["scales"] = scales.squeeze()
+                res["interpret_coefs"] = interpret_coefs
             else:
                 predicted_target_img = return_vals
 
@@ -542,7 +543,8 @@ def Eval5Fold_PixAdminTransform(
                     device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                     dropout=params["dropout"],
                     input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
-                    datanames=train_dataset_name, small_net=params["small_net"], pop_target=params["population_target"]
+                    datanames=train_dataset_name, small_net=params["small_net"], pop_target=params["population_target"],
+                    interpretable=params["interpretable"]
                     ).train().to(device)
 
 

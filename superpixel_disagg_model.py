@@ -269,6 +269,7 @@ def superpixel_with_pix_data(
     optimizer,
     learning_rate,
     num_epochs,
+    interpretable,
     weights_regularizer,
     weights_regularizer_adamw, 
     memory_mode,
@@ -319,6 +320,7 @@ def superpixel_with_pix_data(
             'optim': optimizer,
             'lr': learning_rate,
             "epochs": num_epochs, #100,
+            "interpretable" : interpretable,
             'logstep': log_step,
             'maxstep': max_step,
             'train_dataset_name': train_dataset_name,
@@ -438,6 +440,7 @@ def superpixel_with_pix_data(
             predicted_target_img = res[name+'/predicted_target_img']
             predicted_target_img_adjusted = res[name+'/predicted_target_img_adjusted']
             scales = res[name+'/scales']
+            interpret_coefs = res[name+'/interpret_coefs'] # (shape example torch.Size([1, 14, 12916, 13342]))
 
             if name+'/variances' in list(res.keys()):
                 variances = res[name+'/variances']
@@ -541,8 +544,8 @@ def main():
     parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
     parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
 
-    parser.add_argument("--input_scaling", "-is", type=bool, default=False, help="Countrywise input feature scaling.")
-    parser.add_argument("--output_scaling", "-os", type=bool, default=False, help="Countrywise output scaling.")
+    parser.add_argument("--input_scaling", "-is", type=lambda x: bool(strtobool(x)), default=False, help="Countrywise input feature scaling.")
+    parser.add_argument("--output_scaling", "-os", type=lambda x: bool(strtobool(x)), default=False, help="Countrywise output scaling.")
 
     parser.add_argument("--silent_mode", "-silent", type=bool, default=False, help="Surpresses tqdm output mostly")
     parser.add_argument("--dataset_dir", "-dd", type=str, default='datasets', help="Directory of the hdf5 files")
@@ -554,6 +557,8 @@ def main():
     parser.add_argument("--population_target", "-pop_target", type=lambda x: bool(strtobool(x)), default=False, help="Use population as target")
     
     parser.add_argument("--num_epochs", "-ep", type=int, default=100, help="Number of epochs")
+    
+    parser.add_argument("--interpretable", "-interpret", type=lambda x: bool(strtobool(x)), default=True, help="Number of epochs")
     
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
     parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
@@ -599,6 +604,7 @@ def main():
         args.optimizer,
         args.learning_rate,
         args.num_epochs,
+        args.interpretable,
         args.weights_regularizer,
         args.weights_regularizer_adamw,
         args.memory_mode,

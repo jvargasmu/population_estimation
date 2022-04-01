@@ -102,13 +102,15 @@ class PixScaleNet(nn.Module):
 
     def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
-        exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None, small_net=False, pop_target=False):
+        exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, 
+        datanames=None, small_net=False, pop_target=False, interpretable=False):
         super(PixScaleNet, self).__init__()
 
         self.pop_target = pop_target
         self.channels_in = channels_in - 1
         if pop_target:
             self.channels_in = channels_in
+        self.interpretable = interpretable
         self.device = device
         self.exp_max_clamp = exp_max_clamp
         self.pred_var = pred_var
@@ -183,10 +185,17 @@ class PixScaleNet(nn.Module):
 
         self.occrate_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
         self.occrate_var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
+        
+        self.occrate_interpret_layer = nn.Sequential(nn.Conv2d(n3, self.channels_in, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
+        self.occrate_interpret_var_layer = nn.Sequential( nn.Conv2d(n3, self.channels_in, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
  
         self.params_with_regularizer += [{'params':self.occratenet.parameters(),'weight_decay':weights_regularizer}]
-        self.params_with_regularizer += [{'params':self.occrate_layer.parameters(),'weight_decay':weights_regularizer}]
-        self.params_with_regularizer += [{'params':self.occrate_var_layer.parameters(),'weight_decay':weights_regularizer}]
+        self.params_with_regularizer += [{'params':self.occrate_interpret_layer.parameters() if interpretable else self.occrate_layer.parameters(),'weight_decay':weights_regularizer}]
+        self.params_with_regularizer += [{'params':self.occrate_interpret_var_layer.parameters() if interpretable else self.occrate_var_layer.parameters(),'weight_decay':weights_regularizer}]
+
+
+    def dot_product_and_sum(self, inputs, coefs):
+        return torch.sum(inputs * coefs, 1, keepdim=True)
 
 
     def forward(self, inputs, mask=None, name=None, predict_map=False, forward_only=False):
@@ -232,8 +241,14 @@ class PixScaleNet(nn.Module):
 
         feats = self.occratenet(data)
         
+        interpret_coefs = None
         if self.pop_target:
-            pop_est = self.occrate_layer(feats)
+            if self.interpretable:
+                interpret_coefs = self.occrate_interpret_layer(feats)
+                pop_est = self.dot_product_and_sum(data, interpret_coefs)
+            else:
+                pop_est = self.occrate_layer(feats) 
+            
             if self.bayesian:
                 raise Exception("not implemented")
             else:
@@ -244,12 +259,21 @@ class PixScaleNet(nn.Module):
                 occrate = pop_est / buildings
                 occrate[:,:,buildings[0,0]==0] *= 0.
         else:
-            occrate = self.occrate_layer(feats)
+            if self.interpretable:
+                 interpret_coefs = self.occrate_interpret_layer(feats)
+                 occrate = self.dot_product_and_sum(data, interpret_coefs)
+            else:
+                occrate = self.occrate_layer(feats)
+            
             if self.bayesian:
-                if self.pred_var:
-                    var = self.occrate_var_layer(feats)
+                if self.interpretable:
+                    var = self.occrate_interpret_var_layer(feats)
+                    var = self.dot_product_and_sum(data, var)
                 else:
-                    var = torch.exp(self.occrate_var_layer(feats)) 
+                    var = self.occrate_var_layer(feats)
+                
+                if not self.pred_var:
+                    var = torch.exp(var) 
 
                 occrate = torch.cat([occrate, var], 1)
                 if self.output_scaling:
@@ -284,7 +308,7 @@ class PixScaleNet(nn.Module):
             if not predict_map:
                 return pop_est.sum((0,2,3)).cpu()
             else:
-                return pop_est.cpu(), occrate.cpu()
+                return pop_est.cpu(), interpret_coefs, occrate.cpu()
 
 
     def perform_scale_inputs(self, data, name):
@@ -358,6 +382,7 @@ class PixScaleNet(nn.Module):
         oh, ow = inputs.shape[-2:]
         if predict_map:
             outvar = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
+            interpret_coefs = torch.zeros((1,self.channels_in,oh, ow), dtype=torch.float32, device='cpu')
             scale = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
         else:
             outvar = 0
@@ -375,12 +400,14 @@ class PixScaleNet(nn.Module):
                         out = self( inputs[:,:,hi:hi+PS,oi:oi+PS], mask=this_mask, predict_map=True, name=name)
                         outvar += out.sum().cpu()
                 else:
-                    outvar[:,:,hi:hi+PS,oi:oi+PS], scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], name=name, predict_map=True, forward_only=forward_only)
+                    outvar[:,:,hi:hi+PS,oi:oi+PS], coefs, scale[:,:,hi:hi+PS,oi:oi+PS] = self( inputs[:,:,hi:hi+PS,oi:oi+PS], name=name, predict_map=True, forward_only=forward_only)
+                    if coefs is not None:
+                        interpret_coefs[:,:,hi:hi+PS,oi:oi+PS] = coefs
 
         if not predict_map:
             return outvar
         else:
-            return outvar, scale
+            return outvar, interpret_coefs, scale
         
 
     def forward_one_or_more(self, sample, mask=None):

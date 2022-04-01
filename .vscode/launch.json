@@ -1048,5 +1048,39 @@
                 "--admin_augment", "False"
             ]
         },
+        {
+            "name": "Interpretable model",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [ 
+                "-train", "tza",
+                "-train_lvl", "f", 
+                "-test", "tza", 
+                "-lr", "0.0001", 
+                "-optim", "adam",
+                "-wr", "0.01",
+                "--dropout", "0.4",
+                "-adamwr", "0.", 
+                "-lstep", "800",
+                "--validation_fold", "0",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "m",
+                "--loss", "LogL1",
+                "--input_scaling", "False", 
+                "--output_scaling", "False",
+                "--silent_mode", "True",
+                "--sampler", "custom", 
+                "--max_step", "150000", //800
+                "-wandbu", "jvargas",
+                "--name", "LogL1_f_1610_1_tocc_aug1_noscale_test",
+                "--interpretable", "True" 
+            ]
+        },
     ]
 }
