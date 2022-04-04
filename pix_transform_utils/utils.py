@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-import torchvision.transforms.functional as TVF
+#import torchvision.transforms.functional as TVF
 import numpy as np
 import scipy.misc
 
@@ -11,7 +11,8 @@ def downsample(image, scaling_factor):
 
 
 def upsample(image, scaling_factor, orig_guide_res=None):
-
+    raise Exception("not in use anymore...")
+    
     lrh, lrw = image.shape
 
     # Upsample regularly

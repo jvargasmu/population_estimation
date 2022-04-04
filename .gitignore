@@ -1,4 +1,5 @@
 HACenv/
+sHACenv3/
 # .vscode/
 output_dir/
 __pycache__/
@@ -12,4 +13,5 @@ __pycache__/
 euler_job_submission/
 euleroutputs/
 cy_utils/__pycache__/
+wpop/
 *.pyc

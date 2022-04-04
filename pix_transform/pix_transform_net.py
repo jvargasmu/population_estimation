@@ -126,6 +126,9 @@ class PixScaleNet(nn.Module):
         k1,k2,k3,k4 = kernel_size 
         self.convnet = torch.any(torch.tensor(kernel_size)>1)
 
+        # calculate receptive field
+        self.r = torch.sum(torch.tensor(kernel_size)-1)+1
+
         self.params_with_regularizer = []
 
         if self.input_scaling and (datanames is not None):
@@ -361,6 +364,16 @@ class PixScaleNet(nn.Module):
             scale = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')
         else:
             outvar = 0
+
+        import MinkowskiEngine
+
+        # if (not predict_map) and self.convnet:
+        #     nz_idx = torch.nonzero(mask)
+        #     h,w = inputs.shape[2:]
+        #     for idx in nz_idx: 
+        #         xmin, xmax = np.max([idx[1]-self.r, 0]), np.min([idx[1]+self.r+1,h])
+        #         ymin = torch.max([idx[1]-self.r, 0]) np.min([idx[1]+self.r+1,h])
+        #         outvar += self(inputs[:,:,idx[1]-self.r:idx[1]+self.r+1, idx[2]-self.r:idx[2]+self.r+1], name=name, forward_only=forward_only)[self.r,self.r]
 
         sums = []
         for hi in range(0,oh,PS):
