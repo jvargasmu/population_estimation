@@ -227,6 +227,7 @@
             "request": "launch",
             "program": "superpixel_disagg_model.py",
             "console": "integratedTerminal",
+            "justMyCode": false,
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},

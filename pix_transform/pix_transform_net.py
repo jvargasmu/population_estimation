@@ -4,6 +4,7 @@ import torch
 from torch.nn.modules.container import Sequential
 from tqdm import tqdm
 from utils import plot_2dmatrix
+import MinkowskiEngine as ME
 
 class PixTransformNet(nn.Module):
 
@@ -156,36 +157,69 @@ class PixScaleNet(nn.Module):
                 self.params_with_regularizer += [{'params':self.out_scale[name]}]
                 # self.params_with_regularizer += [{'params':self.out_bias[name],'weight_decay':weights_regularizer}]
                 self.params_with_regularizer += [{'params':self.out_bias[name]}]
-            
-        if dropout>0.0:
-            if small_net:
-                self.occratenet = nn.Sequential(
-                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
-                            )
-            else:
-                self.occratenet = nn.Sequential(
-                            nn.Dropout(p=dropout, inplace=True),                        
-                            nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
-                            nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
-                            nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
-                            )
-        else:
-            if small_net:
-                self.occratenet = nn.Sequential(
-                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
-                            )
-            else:
-                self.occratenet = nn.Sequential(
-                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2),   
-                            )
 
-        self.occrate_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
-        self.occrate_var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
+        if self.convnet:
+            if dropout>0.0:
+                if small_net:
+                    self.occratenet = nn.Sequential(
+                                ME.MinkowskiDropout(p=dropout, inplace=True),                        ME.MinkowskiConvolution(self.channels_in, n1, k1, dimension=2),
+                                ME.MinkowskiDropout(p=dropout, inplace=True), ME.MinkowskiReLU(inplace=True), ME.MinkowskiConvolution(n1, n2, k2, dimension=2),
+                                ME.MinkowskiDropout(p=dropout, inplace=True), ME.MinkowskiReLU(inplace=True), 
+                                )
+                else:
+                    self.occratenet = nn.Sequential(
+                                                                                                    ME.MinkowskiDropout(p=dropout, inplace=True),                        
+                                ME.MinkowskiConvolution(self.channels_in, n1, k1, dimension=2),   ME.MinkowskiDropout(p=dropout, inplace=True),    ME.MinkowskiReLU(inplace=True),
+                                ME.MinkowskiConvolution(n1, n2, k2, dimension=2),              ME.MinkowskiDropout(p=dropout, inplace=True),    ME.MinkowskiReLU(inplace=True),
+                                ME.MinkowskiConvolution(n2, n3, k3, dimension=2),             ME.MinkowskiDropout(p=dropout, inplace=True),    ME.MinkowskiReLU(inplace=True), 
+                                ) 
+            else:
+                if small_net:
+                    self.occratenet = nn.Sequential(
+                                                    ME.MinkowskiConvolution(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
+                                nn.ReLU(inplace=True),ME.MinkowskiConvolution(n1, n2, (k2,k2), padding=(k2-1)//2),
+                                )
+                else:
+                    self.occratenet = nn.Sequential(
+                                                    ME.MinkowskiConvolution(self.channels_in, n1, k1),
+                                nn.ReLU(inplace=True),ME.MinkowskiConvolution(n1, n2, k2),
+                                nn.ReLU(inplace=True),ME.MinkowskiConvolution(n2, n3, k3),   
+                                )
+        else:
+             
+            if dropout>0.0:
+                if small_net:
+                    self.occratenet = nn.Sequential(
+                                nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
+                                nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                                nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
+                                )
+                else:
+                    self.occratenet = nn.Sequential(
+                                nn.Dropout(p=dropout, inplace=True),                        
+                                nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+                                nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+                                nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
+                                )
+            else:
+                if small_net:
+                    self.occratenet = nn.Sequential(
+                                                    nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
+                                nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                                )
+                else:
+                    self.occratenet = nn.Sequential(
+                                                    nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
+                                nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                                nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2),   
+                                )
+
+        if self.convnet:
+            self.occrate_layer = nn.Sequential(ME.MinkowskiConvolution(n3, 1, k4, dimension=2), ME.MinkowskiSoftplus() )
+            self.occrate_var_layer = nn.Sequential( ME.MinkowskiConvolution(n3, 1, k4, dimension=2), ME.MinkowskiSoftplus() if pred_var else ME.MinkowskiReLU(inplace=True) )
+        else:
+            self.occrate_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
+            self.occrate_var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
  
         self.params_with_regularizer += [{'params':self.occratenet.parameters(),'weight_decay':weights_regularizer}]
         self.params_with_regularizer += [{'params':self.occrate_layer.parameters(),'weight_decay':weights_regularizer}]
@@ -193,6 +227,8 @@ class PixScaleNet(nn.Module):
 
 
     def forward(self, inputs, mask=None, name=None, predict_map=False, forward_only=False):
+
+
 
         if len(inputs.shape)==3:
             inputs = inputs.unsqueeze(0)
@@ -206,14 +242,14 @@ class PixScaleNet(nn.Module):
             return self.forward_batchwise(inputs, mask, name, predict_map=predict_map, forward_only=forward_only)
         
         if (mask is not None) and (not predict_map):
-            mask = mask.to(self.device)
+            # mask = mask.to(self.device)
             if not self.convnet:
+                mask = mask.to(self.device)
                 inputs = inputs[:,:,mask[0]].unsqueeze(3)
                 mask = mask[mask].unsqueeze(0).unsqueeze(2)
             # inputs = inputs[:,:,mask[0]].unsqueeze(3)
             # mask = mask[mask].unsqueeze(0).unsqueeze(2)
             mask = mask.cpu()
-        
         # check inputs
         inputs[inputs>1e32] = 0
 
@@ -233,10 +269,17 @@ class PixScaleNet(nn.Module):
         if self.input_scaling:
             data = self.perform_scale_inputs(data, name)
 
-        feats = self.occratenet(data)
+        if self.convnet:  
+            dat = data[0,:,mask[0]].permute((1,0)).unsqueeze(1) 
+            coords = mask[0].nonzero().to(torch.int).unsqueeze(1) 
+            coords, fe = ME.utils.sparse_collate(list(coords), list(dat) ) 
+            data = ME.SparseTensor(features=fe, coordinates=coords.to(self.device), minkowski_algorithm=ME.MinkowskiAlgorithm.MEMORY_EFFICIENT, tensor_stride=torch.Tensor([1,1]).to(self.device)) 
+
+        data = self.occratenet(data)
         
         if self.pop_target:
-            pop_est = self.occrate_layer(feats)
+            pop_est = self.occrate_layer(data)
+
             if self.bayesian:
                 raise Exception("not implemented")
             else:
@@ -247,12 +290,15 @@ class PixScaleNet(nn.Module):
                 occrate = pop_est / buildings
                 occrate[:,:,buildings[0,0]==0] *= 0.
         else:
-            occrate = self.occrate_layer(feats)
+            occrate = self.occrate_layer(data)
+            # occrate.tensor_stride = torch.tensor(occrate.tensor_stride, device=self.device)
+            occrate = occrate.sparse() if self.convnet else occrate
+            # occrate = occrate.sparse(torch.tensor([0,0]).to(torch.int32)) if self.convnet else occrate
             if self.bayesian:
                 if self.pred_var:
-                    var = self.occrate_var_layer(feats)
+                    var = self.occrate_var_layer(data)
                 else:
-                    var = torch.exp(self.occrate_var_layer(feats)) 
+                    var = torch.exp(self.occrate_var_layer(data)) 
 
                 occrate = torch.cat([occrate, var], 1)
                 if self.output_scaling:
@@ -365,9 +411,11 @@ class PixScaleNet(nn.Module):
         else:
             outvar = 0
 
-        import MinkowskiEngine
 
         # if (not predict_map) and self.convnet:
+        #     feats = inputs[0,:,mask[0]].permute((1,0))
+        #     coords = mask[0].nonzero().to(torch.int)
+        #     ME.SparseTensor(features = feats, coordinates=coords)
         #     nz_idx = torch.nonzero(mask)
         #     h,w = inputs.shape[2:]
         #     for idx in nz_idx: 
