@@ -99,7 +99,7 @@ def get_finest_level_indexes(id_to_cr_id, choice_ind_c):
     return np.array(choice_ind_f)    
 
 
-def perform_rf_parameter_search(train_features, train_labels, val_features, val_labels, log_of_target):
+def perform_rf_parameter_search(train_features, train_labels, val_features, val_labels, log_of_target, random_seed):
     n_estimators_values = np.arange(20,201,20)
     max_depth_values = list(np.arange(4, 21, 4)) + [None]
     best_accuracy = -999999
@@ -107,7 +107,7 @@ def perform_rf_parameter_search(train_features, train_labels, val_features, val_
     best_max_depth = None
     for n_estimators_val in n_estimators_values:
         for max_depth_val in max_depth_values:
-            clf = RandomForestRegressor(random_state=42, n_jobs=4, n_estimators=n_estimators_val, max_depth=max_depth_val)
+            clf = RandomForestRegressor(random_state=random_seed, n_jobs=4, n_estimators=n_estimators_val, max_depth=max_depth_val)
             final_train_labels = train_labels
             
             if log_of_target:
@@ -128,7 +128,7 @@ def perform_rf_parameter_search(train_features, train_labels, val_features, val_
 
 
 def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path, output_dir, dataset_name, 
-                              built_up_area_agg, eval_5fold, train_level, random_seed, population_target, log_of_target):
+                              built_up_area_agg, eval_5fold, train_level, random_seed, random_seed_folds, population_target, log_of_target):
     # Create output directory if it does not exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -196,7 +196,7 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path, output_dir
         all_pixel_features, height, width = get_all_pixel_features(inputs, feats_list)
         # Split dataset in folds, using same splits as the ones used for ScaleNet
         #np.random.seed(1610)
-        np.random.seed(random_seed)
+        np.random.seed(random_seed_folds)
         trainidxs, validxs, houtidxs = [],[],[]
         n_samples = len(cr_areas)
         n_splits = n_folds
@@ -275,10 +275,10 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path, output_dir
             valid_density_val_arr = density_val_arr[mask_valid_val_samples]
             # obtain best RF paramenters
             best_n_estimators, best_max_depth = perform_rf_parameter_search(valid_features_train_arr, valid_density_train_arr, 
-                                                                         valid_features_val_arr, valid_density_val_arr, log_of_target)
+                                                                         valid_features_val_arr, valid_density_val_arr, log_of_target, random_seed)
             
             # train the model in using the current fold training dataset
-            model = RandomForestRegressor(random_state=42, n_jobs=4, n_estimators=best_n_estimators, max_depth=best_max_depth)
+            model = RandomForestRegressor(random_state=random_seed, n_jobs=4, n_estimators=best_n_estimators, max_depth=best_max_depth)
             final_valid_density_train_arr = valid_density_train_arr
             if log_of_target:
                 final_valid_density_train_arr = np.log(valid_density_train_arr)
@@ -310,7 +310,7 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path, output_dir
         if log_of_target:
             final_cr_density_arr = np.log(cr_density_arr)
         # Fit model
-        model = RandomForestRegressor(random_state=42, n_jobs=4)
+        model = RandomForestRegressor(random_state=random_seed, n_jobs=4)
         model.fit(cr_features_arr, final_cr_density_arr)
         print("feature importance {}".format(model.feature_importances_))
 
@@ -373,14 +373,15 @@ def main():
     parser.add_argument("--built_up_area_agg", "-bu", type=lambda x: bool(strtobool(x)), default=True, help="Flag that indicates if we should aggregate features using only the built up area")
     parser.add_argument("--eval_5fold", "-e5f", type=lambda x: bool(strtobool(x)), default=False, help="Perform 5 fold validation")
     parser.add_argument("--train_level", "-train_lvl", type=str, default="f", help="Train census level: c (coarse), f (finest)")
-    parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed used to dataset splitting")
+    parser.add_argument("--random_seed", "-rs", type=int, default=42, help="Random seed for the RF model")
+    parser.add_argument("--random_seed_folds", "-rsf", type=int, default=1610, help="Random seed used to dataset splitting.")
     parser.add_argument("--population_target", "-pop_target", type=lambda x: bool(strtobool(x)), default=True, help="Use population as target")
     parser.add_argument("--log_of_target", "-log", type=lambda x: bool(strtobool(x)), default=True, help="Apply log to the target")
     args = parser.parse_args()
 
     train_model_with_agg_data(args.preproc_data_path, args.rst_wp_regions_path,
                              args.output_dir, args.dataset_name, args.built_up_area_agg, args.eval_5fold, args.train_level, 
-                             args.random_seed, args.population_target, args.log_of_target)
+                             args.random_seed, args.random_seed_folds, args.population_target, args.log_of_target)
 
 
 if __name__ == "__main__":
