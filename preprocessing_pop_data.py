@@ -223,11 +223,34 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
 
     # Get regions parent's id (WorldPop id to parent region in humdata)
     num_wp_ids = len(wp_ids)
-    id_to_cr_id = np.zeros(num_wp_ids).astype(np.uint32)
+    id_to_gr_id = np.zeros(num_wp_ids).astype(np.uint32)
     for id in valid_ids:
         hd_id = matches_wp_to_hd[id]
         gid = hd_parents[hd_id]
-        id_to_cr_id[id] = gid
+        id_to_gr_id[id] = gid
+    
+    # correct sequential IDs of coarse level regions
+    gr_ids_with_no_data = []
+    for gr_id in range(1, num_coarse_regions):
+        if gr_id not in id_to_gr_id:
+            gr_ids_with_no_data.append(gr_id)
+    
+    if len(gr_ids_with_no_data) == 0:
+        id_to_cr_id = id_to_gr_id
+        final_num_coarse_regions = num_coarse_regions
+        fina_cr_ids = cr_ids
+    else:
+        id_to_cr_id = np.zeros(num_wp_ids).astype(np.uint32)
+        for id in range(num_wp_ids):
+            gid = id_to_gr_id[id]
+            shift_value = 0
+            for gr_id_nodata in gr_ids_with_no_data:
+                if gid > gr_id_nodata:
+                    shift_value += 1
+            id_to_cr_id[id] = gid - shift_value
+
+        final_num_coarse_regions = len(np.unique(id_to_cr_id))
+        fina_cr_ids = np.arange(final_num_coarse_regions, dtype=np.uint32)
 
     # Valid WorldPop census data
     valid_census = {}
@@ -254,9 +277,10 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
         "valid_ids": valid_ids,
         "no_valid_ids": no_valid_ids,
         "id_to_cr_id": id_to_cr_id,
-        "num_coarse_regions": num_coarse_regions,
-        "cr_ids": cr_ids,
-        "geo_metadata": geo_metadata
+        "num_coarse_regions": final_num_coarse_regions,
+        "cr_ids": fina_cr_ids,
+        "geo_metadata": geo_metadata,
+        "id_to_gr_id": id_to_gr_id
     }
 
     with open(output_path, 'wb') as handle:
