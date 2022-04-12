@@ -1,9 +1,10 @@
 import torch
 import torch.nn.functional as F
-import torchvision.transforms.functional as TVF
+#import torchvision.transforms.functional as TVF
 import numpy as np
 import scipy.misc
 
+"""
 def downsample(image, scaling_factor):
     image = F.avg_pool2d(torch.from_numpy(image).unsqueeze(0).double(), scaling_factor)
     image = image.squeeze().numpy()
@@ -35,6 +36,7 @@ def upsample(image, scaling_factor, orig_guide_res=None):
         B = outimg
 
     return B
+"""
 
 
 def align_images(img_s,img_t,limits=(-1.,1.),steps=25):

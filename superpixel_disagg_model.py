@@ -21,8 +21,8 @@ from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_
     set_value_for_each_region
 
 from pix_transform.pix_admin_transform import PixAdminTransform
-from pix_transform.pix_transform import PixTransform
-from pix_transform_utils.utils import downsample,align_images
+# from pix_transform.pix_transform import PixTransform
+# from pix_transform_utils.utils import downsample,align_images
 from pix_transform.evaluation import Eval5Fold_PixAdminTransform
 # from prox_tv import tvgen
 from pix_transform_utils.plots import plot_result
@@ -558,7 +558,7 @@ def main():
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
     parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
 
-    args = parser.parse_args()
+    args = parser.parse_args()  
 
 
     # check arguments and fill with default values

@@ -16,7 +16,7 @@
                 "../../../data/OtherBuildings/TZA/tza_adm3_sid.tif",
                 "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
                 "../../../data/OtherBuildings/TZA/tza_population_2000_2020_sid.csv",
-                "preprocessed_data_3.pkl",
+                "preprocessed_data_3_tza.pkl",
                 "tza",
                 "P_2020"
             ]
@@ -397,6 +397,27 @@
                 "--name", "this-is-a-test-run-for-naming_2"
             ]
         },{
+            "name": "TZA train_model_with_agg_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "train_model_with_agg_data.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-pre", "preprocessed_data_3_tza.pkl",
+                "-adm_rst", "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "-out", "../dataout/wpop_tza_c_311_rs1610/",
+                "-data", "tza",
+                "-bu", "True",
+                "-e5f", "True",
+                "-train_lvl", "c",
+                "-rs", "1610",
+                "-rsf", "1610"
+            ]
+        },{
             "name": "MOZ train_model_with_agg_data.py",
             "type": "python",
             "request": "launch",
@@ -414,8 +435,8 @@
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "c",
-                "-rs", "1610"
-
+                "-rs", "1610",
+                "-rsf", "1610"
             ]
         },{
             "name": "RWA train_model_with_agg_data.py",
@@ -434,8 +455,9 @@
                 "-data", "rwa",
                 "-bu", "True",
                 "-e5f", "True",
-                "-train_lvl", "c",
-                "-rs", "1614"
+                "-train_lvl", "f",
+                "-rs", "1610",
+                "-rsf", "1610"
             ]
         },{
             "name": "UGA train_model_with_agg_data.py",
@@ -450,12 +472,13 @@
             "args": [
                 "-pre", "preprocessed_data_3_uga.pkl",
                 "-adm_rst", "../../../data/OtherBuildings/UGA/uga_wpop_regions.tif",
-                "-out", "../dataout/wpop_uga_f_311_rs1610/",
+                "-out", "../dataout/wpop_uga_c_311_rs1612/",
                 "-data", "uga",
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "f",
-                "-rs", "1614"
+                "-rs", "1611",
+                "-rsf", "1611"
             ]
         },{
             "name": "NGA train_model_with_agg_data.py",
@@ -475,7 +498,8 @@
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "c",
-                "-rs", "1612"
+                "-rs", "1614",
+                "-rsf", "1610"
             ]
         },{
             "name": "COD train_model_with_agg_data.py",
@@ -495,7 +519,8 @@
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "f",
-                "-rs", "1610"
+                "-rs", "1610",
+                "-rsf", "1610"
             ]
         },
         {
