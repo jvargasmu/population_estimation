@@ -37,7 +37,6 @@ def read_input_raster_data_to_np(input_paths):
 def read_input_raster_data(input_paths):
     inputs = {}
     for kinp in input_paths.keys():
-        print("read {}".format(input_paths[kinp]))
         inputs[kinp] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
     
     for suffix in ["", "_mean_area"]:
