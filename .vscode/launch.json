@@ -541,7 +541,7 @@
                 //"--dropout", "0.4",
                 "-optim", "adam",
                 "-adamwr", "0",
-                "-lstep", "400",
+                "-lstep", "40",
                 "--validation_split", "0.2",
                 "-rs", "1610",
                 "-rsf", "1610",
