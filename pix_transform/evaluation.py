@@ -652,6 +652,8 @@ def EvalModel_PixAdminTransform(
             res_dict[name+'/'+key] = res[key]
         torch.cuda.empty_cache()
 
+    log_dict["batchiter"] = 0
+
     wandb.log(log_dict)
     return res_dict, log_dict
 

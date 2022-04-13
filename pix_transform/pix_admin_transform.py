@@ -191,10 +191,10 @@ def PixAdminTransform(
                     with torch.no_grad():
                         # Validate and Test the model and save model
                         log_dict = {}
-                        
+
                         # Validation
                         if params["validation_split"]>0. or (params["validation_fold"] is not None):
-                            this_val_scores_avg = np.zeros((3,))
+                            this_val_scores_avg, n = np.zeros((3,)), 0
                             for name in test_dataset_names:
                                 logging.info(f'Validating dataset of {name}')
                                 agg_preds,val_census = [],[]
@@ -214,7 +214,9 @@ def PixAdminTransform(
 
                                 metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
                                 best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
-                                this_val_scores_avg += [metrics["r2"], metrics["mae"],  metrics["mape"]]
+                                if name in train_dataset_name:
+                                    this_val_scores_avg += [metrics["r2"], metrics["mae"],  metrics["mape"]]
+                                    n += 1
 
                                 for key in metrics.keys():
                                     log_dict[name + '/validation/' + key ] = metrics[key]
@@ -245,7 +247,7 @@ def PixAdminTransform(
                                 torch.cuda.empty_cache()
 
                             avg_metrics = {}
-                            avg_metrics["r2"], avg_metrics["mae"],  avg_metrics["mape"] = this_val_scores_avg/len(test_dataset_names)
+                            avg_metrics["r2"], avg_metrics["mae"],  avg_metrics["mape"] = this_val_scores_avg/n
                             best_val_scores_avg = checkpoint_model(mynet, optimizer.state_dict(), epoch, avg_metrics, '/AVG/VAL/', best_val_scores_avg)
                             for key,value in avg_metrics.items():
                                 log_dict["validation/average/"+key] = value  
