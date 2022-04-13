@@ -29,8 +29,11 @@ python superpixel_disagg_model.py -train uga,rwa,tza,nga,moz,cod -train_lvl f,f,
 
 ### ScaleNet - transfer country - fine (& adj.)
 
-python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 40 --validation_fold 0 -rs 4 -mm m,m,m,m,m --loss NormL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets
-python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test uga,rwa,tza,nga,moz,cod -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 40 --validation_fold 0 -rs 4 -mm m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets
+python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 40 --validation_fold 0 -rs 4 -mm m,m,m,m,m --loss NormL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets
+python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 40 --validation_fold 0 -rs 4 -mm m,m,m,m,m --loss laplaceNLL --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets
+python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 40 --validation_fold 0 -rs 4 -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets
+python superpixel_disagg_model.py -train uga,rwa -train_lvl f,f,f,f,f -test uga,rwa -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 400 --validation_fold 0 -rs 1610 -rsf 1610 -mm m,m,d,d,m --loss LogL1 --input_scaling True --output_scaling True --dataset_dir datasets --name transfer_to_tza
+python superpixel_disagg_model.py -train uga,rwa,tza -train_lvl f,f,f,f,f -test tza -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 400 --validation_fold 0 -rs 1610 -rsf 1610 -mm d,d,d --loss LogL1 --input_scaling True --output_scaling True --dataset_dir datasets --name transfer_to_tza_evaled --eval_model transfer_to_tza --e5f_metric best_mape_avg
 
 ### Building Disaggregation - transfer country - fine (& adj.)
 python building_disagg_baseline.py --output_dir output_dir/ --train_dataset_name uga,moz,rwa --test_dataset_name tza --global_disag 

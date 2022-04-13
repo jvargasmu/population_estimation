@@ -433,8 +433,9 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 np.random.shuffle(orig_indices)
                 choice_val_c = orig_indices[:split_int]
                 choice_hout_c = np.array([], dtype=np.int64)
-                if validation_split > 0.0:
-                    choice_hout_c = orig_indices[-split_int:]
+                # no_holdout at this point, there is no case where we need a custom split and a non-zero length holdout
+                # if validation_split > 0.0 and holdout:
+                #     choice_hout_c = orig_indices[-split_int:]
             
             ind_val_hout_c = np.zeros(len(tY_c), dtype=bool)
             ind_val_hout_c[choice_val_c] = True 

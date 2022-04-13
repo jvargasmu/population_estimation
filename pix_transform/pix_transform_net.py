@@ -288,7 +288,7 @@ class PixScaleNet(nn.Module):
 
 
     def perform_scale_inputs(self, data, name):
-        if name not in self.datanames:
+        if name not in list(self.in_scale.keys()):
             self.calculate_mean_input_scale()
             return (data - self.mean_in_bias) / self.mean_in_scale #+ self.mean_in_bias
         else:
@@ -298,7 +298,7 @@ class PixScaleNet(nn.Module):
     def calculate_mean_input_scale(self):
         self.mean_in_scale = 0
         self.mean_in_bias = 0
-        for name in self.datanames:
+        for name in list(self.in_scale.keys()):
             self.mean_in_scale += self.in_scale[name]
             self.mean_in_bias += self.in_bias[name]
         self.mean_in_scale = self.mean_in_scale/self.datanames.__len__()
@@ -314,7 +314,7 @@ class PixScaleNet(nn.Module):
             - Scaled and clamped predictions
         """
         if self.bayesian:
-            if name not in self.datanames:
+            if name not in list(self.out_scale.keys()):
                 self.calculate_mean_output_scale()  
                 preds_0 = preds[:,0:1]*self.mean_out_scale #+ self.mean_out_bias
                 preds_1 = preds[:,1:2]*torch.square(self.mean_out_scale)
@@ -324,7 +324,7 @@ class PixScaleNet(nn.Module):
                 preds_1 = preds[:,1:2]*torch.square(self.out_scale[name])
                 preds = torch.cat([preds_0,preds_1], 1) 
         else: 
-            if name not in self.datanames:
+            if name not in list(self.out_scale.keys()):
                 self.calculate_mean_output_scale()
                 preds = preds*self.mean_out_scale #+ self.mean_out_bias
             else:
@@ -343,7 +343,7 @@ class PixScaleNet(nn.Module):
     def calculate_mean_output_scale(self):
         self.mean_out_scale = 0
         self.mean_out_bias = 0
-        for name in self.datanames:
+        for name in list(self.out_scale.keys()):
             self.mean_out_scale += self.out_scale[name]
             self.mean_out_bias += self.out_bias[name]
         self.mean_out_scale = self.mean_out_scale/self.datanames.__len__()
