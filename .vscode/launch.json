@@ -16,7 +16,7 @@
                 "../../../data/OtherBuildings/TZA/tza_adm3_sid.tif",
                 "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
                 "../../../data/OtherBuildings/TZA/tza_population_2000_2020_sid.csv",
-                "preprocessed_data_3.pkl",
+                "preprocessed_data_3_tza.pkl",
                 "tza",
                 "P_2020"
             ]
@@ -384,7 +384,7 @@
                 "--validation_fold", "0",
                 "-rs", "1610",
                 "-rsf", "1610",
-                "-mm", "m", 
+                "-mm", "d", 
                 "--loss", "LogL1", 
                 "--kernel_size", "1,1,1,1",
                 "--admin_augment", "True",
@@ -395,6 +395,27 @@
                 "--max_step", "150000",
                 //"--population_target", "True"
                 "--name", "this-is-a-test-run-for-naming_2"
+            ]
+        },{
+            "name": "TZA train_model_with_agg_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "train_model_with_agg_data.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-pre", "preprocessed_data_3_tza.pkl",
+                "-adm_rst", "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "-out", "../dataout/wpop_tza_c_311_rs1610/",
+                "-data", "tza",
+                "-bu", "True",
+                "-e5f", "True",
+                "-train_lvl", "c",
+                "-rs", "1610",
+                "-rsf", "1610"
             ]
         },{
             "name": "MOZ train_model_with_agg_data.py",
@@ -414,8 +435,8 @@
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "c",
-                "-rs", "1610"
-
+                "-rs", "1610",
+                "-rsf", "1610"
             ]
         },{
             "name": "RWA train_model_with_agg_data.py",
@@ -434,8 +455,9 @@
                 "-data", "rwa",
                 "-bu", "True",
                 "-e5f", "True",
-                "-train_lvl", "c",
-                "-rs", "1614"
+                "-train_lvl", "f",
+                "-rs", "1610",
+                "-rsf", "1610"
             ]
         },{
             "name": "UGA train_model_with_agg_data.py",
@@ -450,12 +472,13 @@
             "args": [
                 "-pre", "preprocessed_data_3_uga.pkl",
                 "-adm_rst", "../../../data/OtherBuildings/UGA/uga_wpop_regions.tif",
-                "-out", "../dataout/wpop_uga_f_311_rs1610/",
+                "-out", "../dataout/wpop_uga_c_311_rs1612/",
                 "-data", "uga",
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "f",
-                "-rs", "1614"
+                "-rs", "1611",
+                "-rsf", "1611"
             ]
         },{
             "name": "NGA train_model_with_agg_data.py",
@@ -475,7 +498,8 @@
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "c",
-                "-rs", "1612"
+                "-rs", "1614",
+                "-rsf", "1610"
             ]
         },{
             "name": "COD train_model_with_agg_data.py",
@@ -495,10 +519,140 @@
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "f",
-                "-rs", "1610"
+                "-rs", "1610",
+                "-rsf", "1610"
             ]
-        },
-        {
+        },{
+            "name": "Transfer to TZA",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-train", "uga,rwa,cod,nga,moz",
+                "-train_lvl", "f,f,f,f,f",
+                "-test", "uga,rwa,nga,moz,cod,tza",
+                "-lr", "0.000001",
+                "-wr", "0.01",
+                //"--dropout", "0.4",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "1600",
+                "--validation_split", "0.2",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "m,m,d,d,m",
+                "--loss", "LogL1",
+                "--input_scaling", "True",
+                "--output_scaling", "True", 
+                "--dataset_dir", "datasets", 
+                "--name", "transfer_to_tza",
+                "--full_ceval", "False"
+            ]
+        },{
+            "name": "Transfer to TZA Evaled",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [ 
+                "-train", "rwa,tza",
+                "-train_lvl", "f,f,f,f,f",
+                "-test", "tza",
+                "-lr", "0.000001",
+                "-wr", "0.01",
+                //"--dropout", "0.4",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "40",
+                "--validation_split", "0.2",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "d,d,d",
+                "--loss", "LogL1",  
+                "--input_scaling", "True",
+                "--output_scaling", "True", 
+                "--eval_model", "transfer_to_tza",
+                "--e5f_metric", "best_mape_avg",
+                "--dataset_dir", "datasets",
+                //"--population_target", "True"
+                "--name", "transfer_to_tza_evaled",
+                "--full_ceval", "False"
+            ]
+        },{
+            "name": "Transfer to ",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-train", "uga,rwa,cod,nga,moz",
+                "-train_lvl", "f,f,f,f,f",
+                "-test", "uga,rwa,nga,moz,cod,tza",
+                "-lr", "0.000001",
+                "-wr", "0.01",
+                //"--dropout", "0.4",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "1600",
+                "--validation_split", "0.2",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "m,m,d,d,m",
+                "--loss", "LogL1",
+                "--input_scaling", "True",
+                "--output_scaling", "True", 
+                "--dataset_dir", "datasets", 
+                "--name", "transfer_to_tza",
+                "--full_ceval", "False"
+            ]
+        },{
+            "name": "Transfer to  Evaled",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [ 
+                "-train", "rwa,tza",
+                "-train_lvl", "f,f,f,f,f",
+                "-test", "tza",
+                "-lr", "0.000001",
+                "-wr", "0.01",
+                //"--dropout", "0.4",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "40",
+                "--validation_split", "0.2",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "d,d,d",
+                "--loss", "LogL1",  
+                "--input_scaling", "True",
+                "--output_scaling", "True", 
+                "--eval_model", "transfer_to_tza",
+                "--e5f_metric", "best_mape_avg",
+                "--dataset_dir", "datasets",
+                //"--population_target", "True"
+                "--name", "transfer_to_tza_evaled",
+                "--full_ceval", "False"
+            ]
+        },{
             "name": "MSE CV EVAL CV",
             "type": "python",
             "request": "launch",
@@ -1203,10 +1357,10 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "uga,rwa",
+                "-train", "cod",
                 "-train_lvl", "f,f,f,f,f",
                 // "-test", "cod,moz,nga,uga,rwa,tza",
-                "-test", "tza,uga,rwa",
+                "-test", "cod",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
@@ -1222,39 +1376,9 @@
                 "--output_scaling", "True",
                 //"-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
                 "--e5f_metric", "best_mape_avg",
-                "--name", "transfer_LogL1_1613_Xallo",
+                "--name", "insert_name_v2",
                 "-e5f", "transfer_LogL1_1613_1allo,transfer_LogL1_1613_2allo,transfer_LogL1_1613_3allo,transfer_LogL1_1613_4allo,transfer_LogL1_1613_5allo",
-            ]
-        },
-        {
-            "name": "Runcomparison:Bughunt",
-            "type": "python",
-            "request": "launch",
-            "program": "superpixel_disagg_model.py",
-            "console": "integratedTerminal",
-            "env": {//"DISPLAY":":1",
-                "PYTHONPATH": "${workspaceRoot}",
-                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "args": [ 
-                "-train", "uga,rwa",
-                "-train_lvl", "f,f,f,f,f",
-                "-test", "uga,rwa,tza",
-                "-lr", "0.0001",
-                "-optim", "adam",
-                "-wr", "0.01",
-                "-adamwr", "0.",
-                "-lstep", "200",
-                "--validation_fold", "0",
-                "-rs", "2",
-                "-mm", "m,m,d,d,d",
-                "--loss", "laplaceNLL",
-                "--input_scaling", "True",
-                "--output_scaling", "True",
-                //"--silent_mode", "True",
-                "--dataset_dir", "datasets",
-                "--grad_clip", "9999999",
-                
-            ]
+            ] 
         },
         {
             "name": "ScaleNet Standard Finescale",

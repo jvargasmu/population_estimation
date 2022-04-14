@@ -355,10 +355,10 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         census_ids = []
         Scales = [] 
 
-        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = memory_vars[name]
+        val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = memory_vars[name]
         res = {}
 
-        guide_res = memory_vars[name][5] 
+        guide_res = memory_vars[name][6] 
         res["predicted_target_img"] = torch.zeros(guide_res, dtype=torch.float16)
         res["variances"] = torch.zeros(guide_res, dtype=torch.float16) 
         res["scales"] = torch.zeros((2,)+guide_res, dtype=torch.float16)
@@ -457,7 +457,7 @@ def Eval5Fold_PixAdminTransform(
     for i, (name,rs) in enumerate(datalocations.items()):
         with open(rs['eval_vars'], "rb") as f:
             memory_vars[name] = pickle.load(f)
-            val_valid_ids[name] = memory_vars[name][3]
+            val_valid_ids[name] = memory_vars[name][4]
 
     # make 5 datasets for each fold
     Datasets = []
@@ -567,3 +567,93 @@ def Eval5Fold_PixAdminTransform(
         Mynets.append(mynet)
 
     return eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, params, Mynets, Datasets, memory_vars)
+
+
+
+
+
+
+def EvalModel_PixAdminTransform(
+    datalocations,
+    train_dataset_name,
+    test_dataset_names,
+    params):
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    memory_vars,val_valid_ids = {},{}
+    for i, (name,rs) in enumerate(datalocations.items()):
+        with open(rs['eval_vars'], "rb") as f:
+            memory_vars[name] = pickle.load(f)
+            val_valid_ids[name] = memory_vars[name][4]
+
+    # make 5 datasets for each fold 
+    dataset = MultiPatchDataset(datalocations, train_dataset_name, params["train_level"], params['memory_mode'], device, 
+            validation_fold=None, loss_weights=params["weights"], sampler_weights=params["custom_sampler_weights"], val_valid_ids=val_valid_ids, validation_split=0.0, build_pairs=False,  random_seed_folds=params["random_seed_folds"])
+
+    # calculate_mean_std = False
+         
+    torch.manual_seed(params["random_seed"])
+    random.seed(params["random_seed"])
+    np.random.seed(params["random_seed"])
+    torch.cuda.manual_seed(params["random_seed"])
+    torch.cuda.manual_seed_all(params["random_seed"])
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    os.environ['PYTHONHASHSEED'] = str(params["random_seed"])
+
+
+    mynet = PixScaleNet(channels_in=dataset.num_feats(),
+                weights_regularizer=params['weights_regularizer'],
+                device=device, loss=params['loss'], kernel_size=params['kernel_size'],
+                dropout=params["dropout"],
+                input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
+                datanames=train_dataset_name, small_net=params["small_net"], pop_target=params["population_target"]
+                ).train().to(device)
+
+
+    # Loading from checkpoint
+    if params["e5f_metric"] == "final":
+        checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"]))
+    elif params["e5f_metric"] in ["best_mape_avg","best_r2_avg","best_mae_avg","best_mape_adj_avg","best_r2_adj_avg","best_mae_adj_avg"]: 
+
+        checkpoint = torch.load('checkpoints/{}/AVG/VAL/{}.pth'.format(params["e5f_metric"].split("_avg")[0], params["eval_model"])) 
+    else:
+        #TODO: This works for one country in the test set. We need to verify if this would work for several countries in test_dataset_names
+        checkpoint = torch.load('checkpoints/{}/{}/VAL/{}.pth'.format(params["e5f_metric"], test_dataset_names[0], params["val_valid_ids"])) 
+    
+
+    mynet.load_state_dict(checkpoint['model_state_dict'])
+    if "input_scales_bias" in checkpoint.keys():
+        mynet.in_scale, mynet.in_bias = checkpoint["input_scales_bias"][0], checkpoint["input_scales_bias"][1]
+    if "output_scales_bias" in checkpoint.keys():
+        mynet.out_scale, mynet.out_bias = checkpoint["output_scales_bias"][0], checkpoint["output_scales_bias"][1]
+
+    mynet.eval()
+
+    log_dict,res_dict = {},{}
+    for name in test_dataset_names: 
+        logging.info(f'Testing dataset of {name}')
+        val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = memory_vars[name]
+        val_features = dataset.features[name]
+        
+        res, this_log_dict = eval_my_model(
+            mynet, val_features, val_valid_data_mask, val_regions,
+            val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
+            dataset=dataset,
+            disaggregation_data=dataset.memory_disag[name],
+            dataset_name=name, return_scale=True, silent_mode=params["silent_mode"], full_eval=True
+        )
+
+
+        for key in this_log_dict.keys():
+            log_dict[name+'/'+key] = this_log_dict[key]
+        for key in res.keys():
+            res_dict[name+'/'+key] = res[key]
+        torch.cuda.empty_cache()
+
+    log_dict["batchiter"] = 0
+
+    wandb.log(log_dict)
+    return res_dict, log_dict
+

@@ -20,14 +20,10 @@ from utils import read_input_raster_data, read_input_raster_data_to_np, compute_
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 
-from pix_transform.pix_admin_transform import PixAdminTransform
-from pix_transform.pix_transform import PixTransform
-from pix_transform_utils.utils import downsample,align_images
-from pix_transform.evaluation import Eval5Fold_PixAdminTransform
-# from prox_tv import tvgen
+from pix_transform.pix_admin_transform import PixAdminTransform 
+from pix_transform.evaluation import Eval5Fold_PixAdminTransform, EvalModel_PixAdminTransform 
 from pix_transform_utils.plots import plot_result
 from distutils.util import strtobool
-
 
 def get_dataset(dataset_name, params, building_features, related_building_features):
 
@@ -144,8 +140,8 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     for key in tqdm(cr_census.keys()):
         cr_built_area[key] = valid_data_mask[cr_regions==key].sum()
 
-    # fine_density, fine_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
-    # cr_density, cr_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
+    fine_density_full, fine_map_full = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
+    cr_density_full, cr_map_full = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
     fine_density, fine_map = calculate_densities(census=fine_census, area=fine_built_area, map=fine_regions)
     cr_density, cr_map = calculate_densities(census=cr_census, area=cr_built_area, map=cr_regions) 
     replacement = 0
@@ -172,7 +168,9 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
         "features": features,
         "feature_names":feature_names,
         "cr_map": cr_map,
+        "cr_map_full": cr_map_full,
         "fine_map": fine_map,
+        "fine_map_full": fine_map_full,
         "valid_data_mask": valid_data_mask,
         "fine_regions": fine_regions,
         "map_valid_ids": map_valid_ids,
@@ -199,7 +197,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
     # Iterate throuh the image an cut out examples
     tX,tY,tregid,tMasks,tBBox = [],[],[],[],[]
 
-    tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask, level, feature_names = training_source
+    tr_features, tr_census, tr_regions, _, _, tr_guide_res, tr_valid_data_mask, level, feature_names = training_source
     
     tr_regions = tr_regions.to(device)
     tr_valid_data_mask = tr_valid_data_mask.to(device)
@@ -232,7 +230,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
 
 def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask, geo_metadata, cr_map = validation_data
+    val_features, val_census, val_regions, val_map, val_map_full, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask, geo_metadata, cr_map, cr_map_full = validation_data
 
     dim, h, w = val_features.shape
 
@@ -244,9 +242,9 @@ def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename, 
             
     with open(var_filename, 'wb') as handle:
         pickle.dump(
-            [val_census, val_regions, val_map, val_valid_ids,\
+            [val_census, val_regions, val_map, val_map_full, val_valid_ids,\
             val_map_valid_ids, val_guide_res, val_valid_data_mask,
-            geo_metadata, cr_map], 
+            geo_metadata, cr_map, cr_map_full], 
             handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(disag_filename, 'wb') as handle:
@@ -299,26 +297,27 @@ def superpixel_with_pix_data(
     wandb_user,
     name,
     random_seed_folds,
-    kernel_size
+    kernel_size,
+    eval_model,
+    full_ceval
     ):
 
     ####  define parameters  ########################################################
 
     params = {
-            'weights_regularizer': weights_regularizer,#0.001, # spatial color head
+            'weights_regularizer': weights_regularizer,
             'weights_regularizer_adamw': weights_regularizer_adamw,
             'kernel_size': kernel_size,
             'loss': loss,
 
             "admin_augment": admin_augment,
             "population_target": population_target,
-            "load_state": load_state,
-            # "eval_only": eval_only,
+            "load_state": load_state, # not maintained anymore?
             "Net": 'ScaleNet', 
 
             'optim': optimizer,
             'lr': learning_rate,
-            "epochs": num_epochs, #100,
+            "epochs": num_epochs,
             'logstep': log_step,
             'maxstep': max_step,
             'train_dataset_name': train_dataset_name,
@@ -344,16 +343,18 @@ def superpixel_with_pix_data(
             'small_net': small_net,
             'e5f_metric': e5f_metric,
             'name': name,
-            'random_seed_folds': random_seed_folds
+            'random_seed_folds': random_seed_folds,
+            'eval_model': eval_model,
+            'full_ceval': full_ceval
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
     related_building_features = ['buildings_google_mean_area', 'buildings_maxar_mean_area', 'buildings_merge_mean_area']
 
-    fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "guide_res", "valid_data_mask", "fine", "feature_names"]
-    cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "guide_res", "valid_data_mask", "coarse", "feature_names"]
-    fine_val_data_vars = ["features", "fine_census", "fine_regions", "fine_map", "valid_ids", "map_valid_ids", "guide_res",
-                            "valid_data_mask", "geo_metadata", "cr_map"]
+    fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "fine_map_full", "guide_res", "valid_data_mask", "fine", "feature_names"]
+    cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "cr_map_full", "guide_res", "valid_data_mask", "coarse", "feature_names"]
+    fine_val_data_vars = ["features", "fine_census", "fine_regions", "fine_map", "fine_map_full", "valid_ids", "map_valid_ids", "guide_res",
+                            "valid_data_mask", "geo_metadata", "cr_map", "cr_map_full"]
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
     wandb.init(project="HAC", entity=wandb_user, config=params, name=params["name"])
@@ -411,8 +412,15 @@ def superpixel_with_pix_data(
         datalocations[ds] = {"features": h5_filename, "train_vars_f": train_var_filename_f, "train_vars_c": train_var_filename_c,
             "eval_vars": eval_var_filename, "disag": eval_disag_filename}
 
-    if eval_5fold is None:
+    if eval_5fold is None and eval_model is None:
         res, log_dict = PixAdminTransform(
+            datalocations=datalocations,
+            train_dataset_name=train_dataset_name,
+            test_dataset_names=test_dataset_name,
+            params=params, 
+        )
+    elif eval_model is not None:
+        res, log_dict = EvalModel_PixAdminTransform(
             datalocations=datalocations,
             train_dataset_name=train_dataset_name,
             test_dataset_names=test_dataset_name,
@@ -433,7 +441,7 @@ def superpixel_with_pix_data(
             print("started saving files for", name)
 
             with open(datalocations[name]['eval_vars'], "rb") as f:
-                _, _, fine_map, _, _, _, valid_data_mask, geo_metadata, cr_map = pickle.load(f) 
+                _, _, fine_map, fine_map_full, _, _, _, valid_data_mask, geo_metadata, cr_map, cr_map_full = pickle.load(f) 
 
             predicted_target_img = res[name+'/predicted_target_img']
             predicted_target_img_adjusted = res[name+'/predicted_target_img_adjusted']
@@ -449,24 +457,29 @@ def superpixel_with_pix_data(
                 #scale_vars[~valid_data_mask]= np.nan
                 scales = scales[0]
                 scale_vars_available = True
-                
 
             cr_map[~valid_data_mask]= np.nan
             predicted_target_img[~valid_data_mask]= np.nan
             predicted_target_img_adjusted[~valid_data_mask]= np.nan
             # scales[~valid_data_mask]= np.nan
             fine_map[~valid_data_mask]= np.nan
+            fine_map_full[fine_map_full==0]= np.nan
+            cr_map_full[cr_map_full==0]= np.nan
 
             #Prepate the output folder
             dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
             if not os.path.exists(dest_folder):
                 os.makedirs(dest_folder)
 
+            write_geolocated_image( cr_map_full, dest_folder+'/{}_cr_map_full.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( cr_map.numpy(), dest_folder+'/{}_cr_map.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( predicted_target_img.numpy(), dest_folder+'/{}_predicted_target_img.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( predicted_target_img_adjusted.numpy(), dest_folder+'/{}_predicted_target_img_adjusted.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
+            write_geolocated_image( fine_map_full, dest_folder+'/{}_fine_map_full.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( fine_map.numpy(), dest_folder+'/{}_fine_map.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
@@ -512,6 +525,7 @@ def main():
     parser.add_argument("--test_dataset_name", "-test", type=str, help="Test Dataset name (separated by commas)", required=True)
     parser.add_argument("--eval_5fold", "-e5f", type=str, default=None, help="Evaluates 5 fold cross with the 5 pretrained models specified in a comma sparated list. \
                             Example: '-e5f fine-shape-1418,morning-blaze-1415,volcanic-shadow-1416,devoted-snowball-1417,eternal-donkey-1419', for the folds 0,1,2,3,4 respectively")
+    parser.add_argument("--eval_model", "-em", type=str, default=None, help="Evaluates the model on the specified test dataset(s).")
 
     parser.add_argument("--sampler", "-sap", type=str, default=None, help="Options: natural (not recommended yet), custom (see --custom_sampler_weights), <blank> (no sampler)")
     parser.add_argument("--custom_sampler_weights", "-csw", type=str,  default='1', help="ordered by --train_dataset_name weight for the sampler (separated by commas) ")
@@ -537,7 +551,8 @@ def main():
     parser.add_argument("--validation_fold", "-fold", type=int, default=None, help="Validation fold. One of [0,1,2,3,4]. When used --validation_split is ignored.")
     parser.add_argument("--random_seed", "-rs", type=int, default=1610, help="Random seed for this run. This does not (!) affect the random split of the validation/heldout/test-fold.")
     parser.add_argument("--random_seed_folds", "-rsf", type=int, default=1610, help=" This does only affect the random split of the validation/heldout/test-fold.")
-    
+    parser.add_argument("--full_ceval", type=lambda x: bool(strtobool(x)), default=True, help="Doing full evaluation during training?")
+
     parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
     parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
 
@@ -558,7 +573,7 @@ def main():
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
     parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
 
-    args = parser.parse_args()
+    args = parser.parse_args()  
 
 
     # check arguments and fill with default values
@@ -629,7 +644,9 @@ def main():
         args.wandb_user,
         args.name,
         args.random_seed_folds,
-        args.kernel_size
+        args.kernel_size,
+        args.eval_model,
+        args.full_ceval
     )
 
 
