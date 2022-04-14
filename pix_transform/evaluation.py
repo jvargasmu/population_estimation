@@ -355,10 +355,10 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
         census_ids = []
         Scales = [] 
 
-        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = memory_vars[name]
+        val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = memory_vars[name]
         res = {}
 
-        guide_res = memory_vars[name][5] 
+        guide_res = memory_vars[name][6] 
         res["predicted_target_img"] = torch.zeros(guide_res, dtype=torch.float16)
         res["variances"] = torch.zeros(guide_res, dtype=torch.float16) 
         res["scales"] = torch.zeros((2,)+guide_res, dtype=torch.float16)
@@ -457,7 +457,7 @@ def Eval5Fold_PixAdminTransform(
     for i, (name,rs) in enumerate(datalocations.items()):
         with open(rs['eval_vars'], "rb") as f:
             memory_vars[name] = pickle.load(f)
-            val_valid_ids[name] = memory_vars[name][3]
+            val_valid_ids[name] = memory_vars[name][4]
 
     # make 5 datasets for each fold
     Datasets = []
@@ -585,7 +585,7 @@ def EvalModel_PixAdminTransform(
     for i, (name,rs) in enumerate(datalocations.items()):
         with open(rs['eval_vars'], "rb") as f:
             memory_vars[name] = pickle.load(f)
-            val_valid_ids[name] = memory_vars[name][3]
+            val_valid_ids[name] = memory_vars[name][4]
 
     # make 5 datasets for each fold 
     dataset = MultiPatchDataset(datalocations, train_dataset_name, params["train_level"], params['memory_mode'], device, 
@@ -634,7 +634,7 @@ def EvalModel_PixAdminTransform(
     log_dict,res_dict = {},{}
     for name in test_dataset_names: 
         logging.info(f'Testing dataset of {name}')
-        val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = memory_vars[name]
+        val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = memory_vars[name]
         val_features = dataset.features[name]
         
         res, this_log_dict = eval_my_model(

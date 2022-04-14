@@ -256,7 +256,7 @@ def PixAdminTransform(
                         if params["full_ceval"]:
                             for name in test_dataset_names: 
                                 logging.info(f'Testing dataset of {name}')
-                                val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
+                                val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = dataset.memory_vars[name]
                                 val_features = dataset.features[name]
                                 
                                 res, this_log_dict = eval_my_model(
@@ -317,7 +317,7 @@ def PixAdminTransform(
         for name in test_dataset_names: 
 
             logging.info(f'Testing dataset of {name}')
-            val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _ = dataset.memory_vars[name]
+            val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = dataset.memory_vars[name]
             val_features = dataset.features[name]
             
             res, this_log_dict = eval_my_model(

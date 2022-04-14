@@ -140,8 +140,8 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     for key in tqdm(cr_census.keys()):
         cr_built_area[key] = valid_data_mask[cr_regions==key].sum()
 
-    # fine_density, fine_map = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
-    # cr_density, cr_map = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
+    fine_density_full, fine_map_full = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
+    cr_density_full, cr_map_full = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
     fine_density, fine_map = calculate_densities(census=fine_census, area=fine_built_area, map=fine_regions)
     cr_density, cr_map = calculate_densities(census=cr_census, area=cr_built_area, map=cr_regions) 
     replacement = 0
@@ -168,7 +168,9 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
         "features": features,
         "feature_names":feature_names,
         "cr_map": cr_map,
+        "cr_map_full": cr_map_full,
         "fine_map": fine_map,
+        "fine_map_full": fine_map_full,
         "valid_data_mask": valid_data_mask,
         "fine_regions": fine_regions,
         "map_valid_ids": map_valid_ids,
@@ -195,7 +197,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
     # Iterate throuh the image an cut out examples
     tX,tY,tregid,tMasks,tBBox = [],[],[],[],[]
 
-    tr_features, tr_census, tr_regions, tr_map, tr_guide_res, tr_valid_data_mask, level, feature_names = training_source
+    tr_features, tr_census, tr_regions, _, _, tr_guide_res, tr_valid_data_mask, level, feature_names = training_source
     
     tr_regions = tr_regions.to(device)
     tr_valid_data_mask = tr_valid_data_mask.to(device)
@@ -228,7 +230,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
 
 def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    val_features, val_census, val_regions, val_map, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask, geo_metadata, cr_map = validation_data
+    val_features, val_census, val_regions, val_map, val_map_full, val_valid_ids, val_map_valid_ids, val_guide_res, val_valid_data_mask, geo_metadata, cr_map, cr_map_full = validation_data
 
     dim, h, w = val_features.shape
 
@@ -240,9 +242,9 @@ def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename, 
             
     with open(var_filename, 'wb') as handle:
         pickle.dump(
-            [val_census, val_regions, val_map, val_valid_ids,\
+            [val_census, val_regions, val_map, val_map_full, val_valid_ids,\
             val_map_valid_ids, val_guide_res, val_valid_data_mask,
-            geo_metadata, cr_map], 
+            geo_metadata, cr_map, cr_map_full], 
             handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(disag_filename, 'wb') as handle:
@@ -349,10 +351,10 @@ def superpixel_with_pix_data(
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
     related_building_features = ['buildings_google_mean_area', 'buildings_maxar_mean_area', 'buildings_merge_mean_area']
 
-    fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "guide_res", "valid_data_mask", "fine", "feature_names"]
-    cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "guide_res", "valid_data_mask", "coarse", "feature_names"]
-    fine_val_data_vars = ["features", "fine_census", "fine_regions", "fine_map", "valid_ids", "map_valid_ids", "guide_res",
-                            "valid_data_mask", "geo_metadata", "cr_map"]
+    fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "fine_map_full", "guide_res", "valid_data_mask", "fine", "feature_names"]
+    cr_train_source_vars = ["features", "cr_census", "cr_regions", "cr_map", "cr_map_full", "guide_res", "valid_data_mask", "coarse", "feature_names"]
+    fine_val_data_vars = ["features", "fine_census", "fine_regions", "fine_map", "fine_map_full", "valid_ids", "map_valid_ids", "guide_res",
+                            "valid_data_mask", "geo_metadata", "cr_map", "cr_map_full"]
     cr_disaggregation_data_vars = ["id_to_cr_id", "cr_census", "cr_regions"]
 
     wandb.init(project="HAC", entity=wandb_user, config=params, name=params["name"])
@@ -439,7 +441,7 @@ def superpixel_with_pix_data(
             print("started saving files for", name)
 
             with open(datalocations[name]['eval_vars'], "rb") as f:
-                _, _, fine_map, _, _, _, valid_data_mask, geo_metadata, cr_map = pickle.load(f) 
+                _, _, fine_map, fine_map_full, _, _, _, valid_data_mask, geo_metadata, cr_map, cr_map_full = pickle.load(f) 
 
             predicted_target_img = res[name+'/predicted_target_img']
             predicted_target_img_adjusted = res[name+'/predicted_target_img_adjusted']
@@ -455,24 +457,29 @@ def superpixel_with_pix_data(
                 #scale_vars[~valid_data_mask]= np.nan
                 scales = scales[0]
                 scale_vars_available = True
-                
 
             cr_map[~valid_data_mask]= np.nan
             predicted_target_img[~valid_data_mask]= np.nan
             predicted_target_img_adjusted[~valid_data_mask]= np.nan
             # scales[~valid_data_mask]= np.nan
             fine_map[~valid_data_mask]= np.nan
+            fine_map_full[fine_map_full==0]= np.nan
+            cr_map_full[cr_map_full==0]= np.nan
 
             #Prepate the output folder
             dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
             if not os.path.exists(dest_folder):
                 os.makedirs(dest_folder)
 
+            write_geolocated_image( cr_map_full, dest_folder+'/{}_cr_map_full.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( cr_map.numpy(), dest_folder+'/{}_cr_map.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( predicted_target_img.numpy(), dest_folder+'/{}_predicted_target_img.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( predicted_target_img_adjusted.numpy(), dest_folder+'/{}_predicted_target_img_adjusted.tiff'.format(name),
+                geo_metadata["geo_transform"], geo_metadata["projection"] )
+            write_geolocated_image( fine_map_full, dest_folder+'/{}_fine_map_full.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( fine_map.numpy(), dest_folder+'/{}_fine_map.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )

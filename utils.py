@@ -380,7 +380,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             if name not in self.val_valid_ids.keys():          
                 with open(rs['eval_vars'], "rb") as f:
                     self.memory_vars[name] = pickle.load(f)
-                    self.val_valid_ids[name] = self.memory_vars[name][3]
+                    self.val_valid_ids[name] = self.memory_vars[name][4]
             # print("After loading of eval memory vars",process.memory_info().rss/1000/1000,"mb used")
             with open(rs['disag'], "rb") as f:
                 self.memory_disag[name] = pickle.load(f) 
