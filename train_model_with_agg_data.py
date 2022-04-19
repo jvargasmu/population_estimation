@@ -194,6 +194,7 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path, output_dir
     if eval_5fold:
         n_folds = 5
         all_pixel_features, height, width = get_all_pixel_features(inputs, feats_list)
+        del inputs
         # Split dataset in folds, using same splits as the ones used for ScaleNet
         #np.random.seed(1610)
         np.random.seed(random_seed_folds)
@@ -352,14 +353,16 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path, output_dir
     for id in valid_census.keys():
         preds_and_gt_dict[id] = {"pred": agg_preds[id], "gt": valid_census[id]}
 
+    # Compute metrics
+    metrics = compute_performance_metrics(agg_preds, valid_census)
+    print("Metrics after disagg r2 {} mae {} mse {} mape {}".format(metrics["r2"], metrics["mae"], metrics["mse"], metrics["mape"]))
+
     # Save predictions
     preds_and_gt_path = "{}preds_and_gt.pkl".format(output_dir)
     with open(preds_and_gt_path, 'wb') as handle:
         pickle.dump(preds_and_gt_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    # Compute metrics
-    metrics = compute_performance_metrics(agg_preds, valid_census)
-    print("Metrics after disagg r2 {} mae {} mse {} mape {}".format(metrics["r2"], metrics["mae"], metrics["mse"], metrics["mape"]))
+
     
 
 def main():
