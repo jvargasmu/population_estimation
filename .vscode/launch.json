@@ -1206,7 +1206,7 @@
                 "-train", "uga,rwa",
                 "-train_lvl", "f,f,f,f,f",
                 // "-test", "cod,moz,nga,uga,rwa,tza",
-                "-test", "tza,uga,rwa",
+                "-test", "tza,uga,rwa,cod,rwa,nga",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
