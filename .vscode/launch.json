@@ -1357,10 +1357,10 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "cod",
+                "-train", "rwa",
                 "-train_lvl", "f,f,f,f,f",
                 // "-test", "cod,moz,nga,uga,rwa,tza",
-                "-test", "tza,uga,rwa,cod,rwa,nga",
+                "-test", "moz,cod,nga",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
@@ -1376,7 +1376,7 @@
                 "--output_scaling", "True",
                 //"-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
                 "--e5f_metric", "best_mape_avg",
-                "--name", "insert_name_v2",
+                "--name", "insert_name_v4",
                 "-e5f", "transfer_LogL1_1613_1allo,transfer_LogL1_1613_2allo,transfer_LogL1_1613_3allo,transfer_LogL1_1613_4allo,transfer_LogL1_1613_5allo",
             ] 
         },

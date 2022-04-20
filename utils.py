@@ -356,6 +356,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.tregid_val, self.max_tregid_val = {},{}
         self.tregid_hout, self.max_tregid_hout = {},{}
         self.Masks, self.Masks_train, self.Masks_val, self.Masks_hout = {},{},{},{}
+        self.regMasks, self.regMasks_train, self.regMasks_val, self.regMasks_hout = {},{},{},{}
         self.weight_list = {}
         self.memory_disag, self.memory_disag_val, self.feature_names = {},{},{}
         self.memory_disag_hout = {}
@@ -369,9 +370,9 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             print("Initial:",process.memory_info().rss/1000/1000,"mb used")
 
             with open(rs['train_vars_f'], "rb") as f:
-                _, _, _, tY_f, tregid_f, tMasks_f, tBBox_f, _ = pickle.load(f)
+                _, _, _, tY_f, tregid_f, tMasks_f, tregMasks_f, tBBox_f, _ = pickle.load(f)
             with open(rs['train_vars_c'], "rb") as f:
-                _, _, _, tY_c, tregid_c, tMasks_c, tBBox_c, feature_names = pickle.load(f)
+                _, _, _, tY_c, tregid_c, tMasks_c, tregMasks_c, tBBox_c, feature_names = pickle.load(f)
 
             self.feature_names[name] = feature_names
             # print("After loading trainvars",process.memory_info().rss/1000/1000,"mb used")
@@ -443,6 +444,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
             tY_f = np.asarray(tY_f)
             tMasks_f = np.asarray(tMasks_f, dtype=object)
+            tregMasks_f = np.asarray(tregMasks_f, dtype=object)
             tBBox_f = np.asarray(tBBox_f)
             tregid_f = np.asarray(tregid_f).astype(np.int16)
             tregid_c = np.asarray(tregid_c).astype(np.int16)
@@ -466,14 +468,15 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             ind_train_f = ~ind_val_hout_f
 
             if train_level[i]=='f':
-                tY, tregid, tMasks, tBBox = tY_f, tregid_f, tMasks_f, tBBox_f
+                tY, tregid, tMasks, tregMasks, tBBox = tY_f, tregid_f, tMasks_f, tregMasks_f, tBBox_f
                 ind_train = ind_train_f
             elif train_level[i]=='c':
-                tY, tregid, tMasks, tBBox = tY_c, tregid_c, tMasks_c, tBBox_c
+                tY, tregid, tMasks, tregMasks, tBBox = tY_c, tregid_c, tMasks_c, tregMasks_c, tBBox_c
                 ind_train = ind_train_c
 
             tY = np.asarray(tY).astype(np.float32)
             tMasks = np.asarray(tMasks, dtype=object)
+            tregMasks = np.asarray(tregMasks, dtype=object)
             tBBox = np.asarray(tBBox)
 
             # Prepare validation variables
@@ -490,6 +493,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             if self.tregid_val[name].__len__()>0:
                 self.max_tregid_val[name] = np.max(self.tregid_val[name])
             self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
+            self.regMasks_val[name] = tregMasks_f[ind_val_f][valid_val_boxes]
             self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
             
             # Prepare the holdout (test) variables #TODO: refactor val and hout variables computation
@@ -506,6 +510,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             if self.tregid_hout[name].__len__()>0:
                 self.max_tregid_hout[name] = np.max(self.tregid_hout[name])
             self.Masks_hout[name] = tMasks_f[ind_hout_f][valid_hout_boxes]
+            self.regMasks_hout[name] = tregMasks_f[ind_hout_f][valid_hout_boxes]
             self.loc_list_hout.extend( [(name, k) for k,_ in enumerate(self.BBox_hout[name])])
 
             # Prepare the training variables
@@ -514,6 +519,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.BBox_train[name] = self.BBox_train[name][valid_train_boxes] 
             self.Ys_train[name] =  tY[ind_train][valid_train_boxes]
             self.Masks_train[name] = tMasks[ind_train][valid_train_boxes]
+            self.regMasks_train[name] = tregMasks[ind_train][valid_train_boxes]
             if name in train_dataset_name:
                 self.loc_list_train.extend( [(name, k) for k,_ in enumerate(self.BBox_train[name])])
 
@@ -525,6 +531,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.tregid[name] = tregid_f[valid_boxes]
             self.max_tregid[name] = np.max(self.tregid[name])
             self.Masks[name] = tMasks_f[valid_boxes]
+            self.regMasks[name] = tregMasks_f[valid_boxes]
             self.loc_list.extend( [(name, k) for k,_ in enumerate(self.BBox[name])])
 
             # Initialize sample weights
@@ -641,7 +648,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
         if return_BB:
-            return X, Y, Mask, name, census_id, self.BBox_val[name][k]
+            return X, Y, Mask, name, census_id, self.BBox_val[name][k], torch.tensor(self.regMasks_hout[name][k])
         else:
             return X, Y, Mask, name, census_id
     
@@ -658,7 +665,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
         if return_BB:
-            return X, Y, Mask, name, census_id, self.BBox_hout[name][k]
+            return X, Y, Mask, name, census_id, self.BBox_hout[name][k], torch.tensor(self.regMasks_hout[name][k])
         else:
             return X, Y, Mask, name, census_id
 

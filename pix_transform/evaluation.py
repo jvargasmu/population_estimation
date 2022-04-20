@@ -380,7 +380,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                 val_census_list = []
 
                 for idx in tqdm(range(len(dataset.Ys_hout[name])), disable=params["silent_mode"]):
-                    X, Y, Mask, name, census_id, BB = dataset.get_single_holdout_item(idx, name, return_BB=True) 
+                    X, Y, Mask, name, census_id, BB, regMasks = dataset.get_single_holdout_item(idx, name, return_BB=True) 
                     pop_est, scale = mynet.forward(X, mask=None, name=name, predict_map=True, forward_only=True)
 
                     rmin, rmax, cmin, cmax = BB
@@ -388,9 +388,10 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     res["predicted_target_img"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,0,Mask].to(torch.float16)
                     if pop_est.shape[1]==2:
                         res["variances"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,1,Mask].to(torch.float16)  
-                    res["scales"][:,rmin:rmax, cmin:cmax] = scale[0,:].to(torch.float16)
-                    res["fold_map"][rmin:rmax, cmin:cmax] = k  
-                    res["id_map"][rmin:rmax, cmin:cmax] = census_id
+                    res["scales"][:,rmin:rmax, cmin:cmax][:,regMasks] = scale[0,:,regMasks].to(torch.float16)
+                    # res["scales"][:,rmin:rmax, cmin:cmax] = scale[0,:].to(torch.float16)
+                    res["fold_map"][rmin:rmax, cmin:cmax][torch.tensor(regMasks)] = k  
+                    res["id_map"][rmin:rmax, cmin:cmax][regMasks] = census_id
                     
                     pred = pop_est[0,0,Mask].sum().detach().cpu().numpy()
                     agg_preds.append(pred)

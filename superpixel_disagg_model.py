@@ -195,7 +195,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Iterate throuh the image an cut out examples
-    tX,tY,tregid,tMasks,tBBox = [],[],[],[],[]
+    tX,tY,tregid,tMasks,tregMasks,tBBox = [],[],[],[],[],[]
 
     tr_features, tr_census, tr_regions, _, _, tr_guide_res, tr_valid_data_mask, level, feature_names = training_source
     
@@ -203,30 +203,33 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
     tr_valid_data_mask = tr_valid_data_mask.to(device)
     
     for regid in tqdm(tr_census.keys(), disable=silent_mode):
-        mask = (regid==tr_regions) * tr_valid_data_mask
-        boundingbox = bbox2(mask)
+        regmask = regid==tr_regions
+        mask = regmask * tr_valid_data_mask
+        boundingbox = bbox2(regmask)
+        # boundingbox = bbox2(mask)
         rmin, rmax, cmin, cmax = boundingbox
         tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
         tY.append(np.asarray(tr_census[regid]))
         tregid.append(np.asarray(regid))
         tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
+        tregMasks.append(regmask[rmin:rmax, cmin:cmax].cpu().numpy())
         boundingbox = [rmin.cpu(), rmax.cpu(), cmin.cpu(), cmax.cpu()]
         tBBox.append(boundingbox)
         
     tr_regions = tr_regions.cpu()
     tr_valid_data_mask = tr_valid_data_mask.cpu().numpy()
 
-    dim, h, w = tr_features.shape
+    # write to disk
+    with open(var_filename, 'wb') as handle:
+        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tregid, tMasks, tregMasks, tBBox, feature_names], handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    dim, h, w = tr_features.shape
     if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
             h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0, chunks=(1,dim,512,512))
             for i,feat in tqdm(enumerate(tr_features)):
                 h5_features[:,i] = feat
     
-    with open(var_filename, 'wb') as handle:
-        pickle.dump([tr_census, tr_regions, tr_valid_data_mask, tY, tregid, tMasks, tBBox, feature_names], handle, protocol=pickle.HIGHEST_PROTOCOL)
-
 
 def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename,  var_filename, disag_filename):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
