@@ -11,6 +11,7 @@ datasets2/
 __pycache__/
 euler_job_submission/
 euleroutputs/
+wpop/
 sHACenv4/
 cy_utils/__pycache__/
 *.pyc

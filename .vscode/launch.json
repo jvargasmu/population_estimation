@@ -439,6 +439,42 @@
                 "-rsf", "1610"
             ]
         },{
+            "name": "MOZ all c data train_model_with_agg_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "train_model_with_agg_data.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-pre", "preprocessed_data_3_moz.pkl",
+                "-adm_rst", "../../../data/OtherBuildings/MOZ/moz_wpop_regions.tif",
+                "-out", "../dataout/wpop_moz_c_311_rs1610/",
+                "-data", "moz",
+                "-bu", "True",
+                "-e5f", "False",
+                //"-train_lvl", "c",
+                "-rs", "46",
+                //"-rsf", "1610" python building_disagg_baseline.py --output_dir ~/data/wpop/preproc2/tza_bdisagg/ --train_dataset_name tza
+            ]
+        },{
+            "name": "MOZ building_disagg_baseline.py",
+            "type": "python",
+            "request": "launch",
+            "program": "building_disagg_baseline.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "--output_dir", "wpop/preproc2/moz_bdisagg/",
+                "--train_dataset_name", "moz",
+                //"-rsf", "1610" --output_dir ~/data/wpop/preproc2/tza_bdisagg/ --train_dataset_name tza
+            ]
+        },{
             "name": "RWA train_model_with_agg_data.py",
             "type": "python",
             "request": "launch",
@@ -472,7 +508,7 @@
             "args": [
                 "-pre", "preprocessed_data_3_uga.pkl",
                 "-adm_rst", "../../../data/OtherBuildings/UGA/uga_wpop_regions.tif",
-                "-out", "../dataout/wpop_uga_c_311_rs1612/",
+                "-out", "../dataout/wpop_uga_c_311_rs1610/",
                 "-data", "uga",
                 "-bu", "True",
                 "-e5f", "True",
@@ -1357,27 +1393,27 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "rwa",
+                "-train", "tza",
                 "-train_lvl", "f,f,f,f,f",
                 // "-test", "cod,moz,nga,uga,rwa,tza",
-                "-test", "moz,cod,nga",
+                "-test", "tza",
                 "-lr", "0.0001",
                 "-optim", "adam",
                 "-wr", "0.01",
-                //"--dropout", "0.4",
+                "--dropout", "0.4",
                 "-adamwr", "0.",
-                "-lstep", "80",
-                "-rs", "1613",
-                "-rsf", "1613",
+                "-lstep", "800",
+                "-rs", "1611",
+                "-rsf", "1611",
                 "-mm", "d,d,d,d,d,d",
-                "--loss", "LogL1",
+                "--loss", "l1",
                 // "--loss", "laplaceNLL",
                 "--input_scaling", "True",
                 "--output_scaling", "True",
                 //"-e5f", "efficient-darkness-1637,super-river-1631,giddy-darkness-1639,treasured-universe-1635,vibrant-silence-1636",
-                "--e5f_metric", "best_mape_avg",
-                "--name", "insert_name_v4",
-                "-e5f", "transfer_LogL1_1613_1allo,transfer_LogL1_1613_2allo,transfer_LogL1_1613_3allo,transfer_LogL1_1613_4allo,transfer_LogL1_1613_5allo",
+                "--e5f_metric", "best_mape",
+                "--name", "l1_c_1611_X",
+                "-e5f", "l1_c_1611_1,l1_c_1611_2,l1_c_1611_3,l1_c_1611_4,l1_c_1611_5",
             ] 
         },
         {
