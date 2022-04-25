@@ -147,7 +147,7 @@ def compute_prediction_map_metrics(dataset, dataset_name, pred_map, inputs, outp
 
 
 def train_model_with_agg_data_for_transfer_task(preproc_data_dir, output_dir, train_dataset_name, test_dataset_name, 
-                              built_up_area_agg, eval_5splits, train_perc, train_level, random_seed, 
+                              built_up_area_agg, train_perc, train_level, random_seed, 
                               random_seed_folds, population_target, log_of_target):
     
     # Create output directory if it does not exist
@@ -196,59 +196,58 @@ def train_model_with_agg_data_for_transfer_task(preproc_data_dir, output_dir, tr
     final_density_arr = np.concatenate(final_density_arr, axis=0)
     num_samples = final_features_arr.shape[0]
     
-    if eval_5splits:
-        num_splits = 5
+    if train_perc < 1:
+        
         np.random.seed(random_seed_folds)
         
-        for validation_split in range(num_splits):
-            
-            orig_indices = np.arange(num_samples)
-            np.random.shuffle(orig_indices)
-            # Split dataset
-            num_train_samples = int(num_samples * train_perc)
-            train_idxs = orig_indices[:num_train_samples]
-            val_idxs = orig_indices[num_train_samples:]
-            
-            features_train_arr = final_features_arr[train_idxs, :]
-            density_train_arr = final_density_arr[train_idxs]
-            features_val_arr = final_features_arr[val_idxs, :]
-            density_val_arr = final_density_arr[val_idxs]
-            
-            # remove samples with density equal to 0 because when taking the log it does not work that well
-            mask_valid_train_samples = density_train_arr > 0
-            valid_features_train_arr = features_train_arr[mask_valid_train_samples, :]
-            valid_density_train_arr = density_train_arr[mask_valid_train_samples]
-            mask_valid_val_samples = density_val_arr > 0
-            valid_features_val_arr = features_val_arr[mask_valid_val_samples, :]
-            valid_density_val_arr = density_val_arr[mask_valid_val_samples]
-            
-            # obtain best RF paramenters
-            best_n_estimators, best_max_depth = perform_rf_parameter_search(valid_features_train_arr, valid_density_train_arr, 
-                                                                            valid_features_val_arr, valid_density_val_arr, log_of_target, random_seed)
-            
-            # train the model
-            model = RandomForestRegressor(random_state=random_seed, n_jobs=4, n_estimators=best_n_estimators, max_depth=best_max_depth)
-            final_valid_density_train_arr = valid_density_train_arr
-            if log_of_target:
-                final_valid_density_train_arr = np.log(valid_density_train_arr)
-            model.fit(valid_features_train_arr, final_valid_density_train_arr)
-            print("model split {} feature importance {}".format(validation_split, model.feature_importances_))
-            
-            # Perform prediction in each test dataset country
-            for i,ds in enumerate(test_dataset_name):
-                test_dataset = datasets[ds]
-                input_paths = cfg.input_paths[ds]
-                inputs = read_input_raster_data(input_paths)
-                feats_list = test_dataset["feature_names"]
-                all_pixel_features, height, width = get_all_pixel_features(inputs, feats_list)
+        orig_indices = np.arange(num_samples)
+        np.random.shuffle(orig_indices)
+        # Split dataset
+        num_train_samples = int(num_samples * train_perc)
+        train_idxs = orig_indices[:num_train_samples]
+        val_idxs = orig_indices[num_train_samples:]
+        
+        features_train_arr = final_features_arr[train_idxs, :]
+        density_train_arr = final_density_arr[train_idxs]
+        features_val_arr = final_features_arr[val_idxs, :]
+        density_val_arr = final_density_arr[val_idxs]
+        
+        # remove samples with density equal to 0 because when taking the log it does not work that well
+        mask_valid_train_samples = density_train_arr > 0
+        valid_features_train_arr = features_train_arr[mask_valid_train_samples, :]
+        valid_density_train_arr = density_train_arr[mask_valid_train_samples]
+        mask_valid_val_samples = density_val_arr > 0
+        valid_features_val_arr = features_val_arr[mask_valid_val_samples, :]
+        valid_density_val_arr = density_val_arr[mask_valid_val_samples]
+        
+        # obtain best RF paramenters
+        best_n_estimators, best_max_depth = perform_rf_parameter_search(valid_features_train_arr, valid_density_train_arr, 
+                                                                        valid_features_val_arr, valid_density_val_arr, log_of_target, random_seed)
+        
+        # train the model
+        model = RandomForestRegressor(random_state=random_seed, n_jobs=4, n_estimators=best_n_estimators, max_depth=best_max_depth)
+        final_valid_density_train_arr = valid_density_train_arr
+        if log_of_target:
+            final_valid_density_train_arr = np.log(valid_density_train_arr)
+        model.fit(valid_features_train_arr, final_valid_density_train_arr)
+        print("feature importance {}".format(model.feature_importances_))
+        
+        # Perform prediction in each test dataset country
+        for i,ds in enumerate(test_dataset_name):
+            test_dataset = datasets[ds]
+            input_paths = cfg.input_paths[ds]
+            inputs = read_input_raster_data(input_paths)
+            feats_list = test_dataset["feature_names"]
+            all_pixel_features, height, width = get_all_pixel_features(inputs, feats_list)
 
-                predictions = model.predict(all_pixel_features)
-                pred_map = predictions.reshape((height, width))
-                if log_of_target:
-                    pred_map = np.exp(pred_map)
-                pred_map = pred_map.astype(np.float32)
-                
-                compute_prediction_map_metrics(test_dataset, ds, pred_map, inputs, output_dir)
+            predictions = model.predict(all_pixel_features)
+            pred_map = predictions.reshape((height, width))
+            if log_of_target:
+                pred_map = np.exp(pred_map)
+            pred_map = pred_map.astype(np.float32)
+            
+            compute_prediction_map_metrics(test_dataset, ds, pred_map, inputs, output_dir)
+        
     else:
         
         # remove samples with density equal to 0 because when taking the log it does not work that well
@@ -288,7 +287,6 @@ def main():
     parser.add_argument("--train_dataset_name", "-train", type=str, help="Train Dataset name (separated by commas)", required=True)
     parser.add_argument("--test_dataset_name", "-test", type=str, help="Test Dataset name (separated by commas)", required=True)
     parser.add_argument("--built_up_area_agg", "-bu", type=lambda x: bool(strtobool(x)), default=True, help="Flag that indicates if we should aggregate features using only the built up area")
-    parser.add_argument("--eval_5splits", "-e5s", type=lambda x: bool(strtobool(x)), default=False, help="Perform 5 evaluations with different splits")
     parser.add_argument("--train_perc", "-tperc", type=float, default=0.8, help="Traininig percentage")
     parser.add_argument("--train_level", "-train_lvl", type=str, default="f", help="Train census level: c (coarse), f (finest)")
     parser.add_argument("--random_seed", "-rs", type=int, default=42, help="Random seed for the RF model")
@@ -305,7 +303,7 @@ def main():
     
     train_model_with_agg_data_for_transfer_task(args.preproc_data_dir,
                              args.output_dir, args.train_dataset_name, args.test_dataset_name, args.built_up_area_agg, 
-                             args.eval_5splits, args.train_perc, args.train_level, 
+                             args.train_perc, args.train_level, 
                              args.random_seed, args.random_seed_folds, args.population_target, args.log_of_target)
 
 
