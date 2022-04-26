@@ -569,15 +569,17 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [
-                "-train", "uga,rwa,cod,nga,moz",
+                //"-train", "uga,rwa,cod,nga,moz",
+                "-train", "uga,rwa,tza",
                 "-train_lvl", "f,f,f,f,f",
-                "-test", "uga,rwa,nga,moz,cod,tza",
+                //"-test", "uga,rwa,nga,moz,cod,tza",
+                "-test", "uga,tza",
                 "-lr", "0.000001",
                 "-wr", "0.01",
                 //"--dropout", "0.4",
                 "-optim", "adam",
                 "-adamwr", "0",
-                "-lstep", "1600",
+                "-lstep", "100",
                 "--validation_split", "0.2",
                 "-rs", "1610",
                 "-rsf", "1610",
@@ -586,7 +588,7 @@
                 "--input_scaling", "True",
                 "--output_scaling", "True", 
                 "--dataset_dir", "datasets", 
-                "--name", "transfer_to_tza",
+                "--name", "transfer_to_tza_test",
                 "--full_ceval", "False"
             ]
         },{

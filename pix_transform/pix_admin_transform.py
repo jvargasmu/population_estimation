@@ -25,7 +25,7 @@ from pix_transform.pix_transform_net import PixTransformNet, PixScaleNet
 
 from bayesian_dl.loss import GaussianNLLLoss, LaplacianNLLLoss
 
-from pix_transform.evaluation import disag_map, disag_wo_map, disag_and_eval_map, eval_my_model, checkpoint_model
+from pix_transform.evaluation import disag_map, disag_wo_map, disag_and_eval_map, eval_my_model, checkpoint_model, log_scales
 
 if 'ipykernel' in sys.modules:
     from tqdm import tqdm_notebook as tqdm
@@ -150,10 +150,7 @@ def PixAdminTransform(
 
                 # Sum over the census data per patch 
                 y_pred = torch.stack([pred*samp[4] for pred,samp in zip(y_pred_list, sample)]).sum(0)
-                y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum().unsqueeze(0)
-
-                #loss = myloss(y_pred_list[0],sample[0][1])
-                #loss =# myloss(y_pred_list[1],sample[1][1])
+                y_gt = torch.tensor([samp[1]*samp[4] for samp in sample]).sum().unsqueeze(0) 
 
                 # Backwards
                 loss = myloss(y_pred, y_gt)
@@ -269,6 +266,9 @@ def PixAdminTransform(
                                 for key in this_log_dict.keys():
                                     log_dict[name+'/'+key] = this_log_dict[key]
                                 torch.cuda.empty_cache()
+
+                    #log scales
+                    log_dict = log_scales(mynet, list(datalocations.keys()), dataset, log_dict)
 
                     # log_dict['train/loss'] = loss 
                     log_dict['batchiter'] = batchiter
