@@ -304,7 +304,7 @@ def log_scales(mynet, datalocations, dataset, metrics):
                 metrics[name + "/output_scaling/output_bias"] = mynet.out_bias[name].detach().cpu().numpy() 
 
             elif "mean_out_scale" in dir(mynet): 
-                metrics[name + "/iutput_scaling/output_scaling"] = mynet.mean_out_scale.detach().cpu().numpy()
+                metrics[name + "/output_scaling/output_scaling"] = mynet.mean_out_scale.detach().cpu().numpy()
                 metrics[name + "/output_scaling/output_bias"] = mynet.mean_out_bias.detach().cpu().numpy()
     
     return metrics
