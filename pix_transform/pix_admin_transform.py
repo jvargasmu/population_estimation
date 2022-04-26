@@ -208,7 +208,7 @@ def PixAdminTransform(
                                     torch.cuda.empty_cache()
 
                                 metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
-                                best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
+                                # best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
                                 if name in train_dataset_name:
                                     this_val_scores_avg += [metrics["r2"], metrics["mae"],  metrics["mape"]]
                                     n += 1
@@ -221,9 +221,12 @@ def PixAdminTransform(
                                 for key,value in this_metrics_dis.items():
                                     log_dict[name + "/validation/adjusted/coarse/"+key] = value  
                                     
-                                this_metrics = compute_performance_metrics_arrays(agg_preds_arr_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
-                                for key,value in this_metrics.items():
+                                adj_metrics = compute_performance_metrics_arrays(agg_preds_arr_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
+                                for key,value in adj_metrics.items():
+                                    metrics["adjusted/"+key] = value
                                     log_dict[name + "/validation/adjusted/coarse/"+key] = value  
+                                
+                                best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
 
                                 # "fake" new dissagregation data and reuse the function
                                 # Do the disagregation on country level

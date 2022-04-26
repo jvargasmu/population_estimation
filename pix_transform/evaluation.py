@@ -336,13 +336,13 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
             'checkpoints/best_r2{}{}.pth'.format(dataset_name, wandb.run.name) )
     
     if log_dict["mae"]<best_mae:
-        best_mae =log_dict["mae"]
+        best_mae = log_dict["mae"]
         log_dict["best_mae"] = best_mae
         torch.save(saved_dict,
             'checkpoints/best_mae{}{}.pth'.format(dataset_name, wandb.run.name) )
 
     if log_dict["mape"]<best_mape:
-        best_mape =log_dict["mape"]
+        best_mape = log_dict["mape"]
         log_dict["best_mape"] = best_mape
         torch.save(saved_dict,
             'checkpoints/best_mape{}{}.pth'.format(dataset_name, wandb.run.name) )
@@ -358,7 +358,6 @@ def checkpoint_model(mynet, optimizerstate, epoch, log_dict, dataset_name, best_
         log_dict["adjusted/best_mae"] = best_mae_adj
         torch.save(saved_dict,
             'checkpoints/best_mae_adj{}{}.pth'.format(dataset_name, wandb.run.name) )
-
 
     if "adjusted/mape" in log_dict.keys() and log_dict["adjusted/mape"]<best_mape_adj:
         best_mape_adj = log_dict["adjusted/mape"]
@@ -581,12 +580,9 @@ def Eval5Fold_PixAdminTransform(
         # Loading from checkpoint
         if params["e5f_metric"] == "final":
             checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"][k]))
-        elif params["e5f_metric"] in ["best_mape_avg","best_r2_avg","best_mae_avg","best_mape_adj_avg","best_r2_adj_avg","best_mae_adj_avg"]:
-            #TODO: Strip off the "_avg" ending and use the AVG/VAL conversion for the path
-
+        elif params["e5f_metric"] in ["best_mape_avg","best_r2_avg","best_mae_avg","best_mape_adj_avg","best_r2_adj_avg","best_mae_adj_avg"]: 
             checkpoint = torch.load('checkpoints/{}/AVG/VAL/{}.pth'.format(params["e5f_metric"].split("_avg")[0], params["eval_5fold"][k])) 
-        else:
-            #TODO: This works for one country in the test set. We need to verify if this would work for several countries in test_dataset_names
+        else: 
             checkpoint = torch.load('checkpoints/{}/{}/VAL/{}.pth'.format(params["e5f_metric"], test_dataset_names[0], params["eval_5fold"][k])) 
         
         mynet.load_state_dict(checkpoint['model_state_dict'])
