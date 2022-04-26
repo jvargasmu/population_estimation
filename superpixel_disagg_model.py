@@ -374,7 +374,7 @@ def superpixel_with_pix_data(
 
     ####  load dataset  #############################################################
 
-    assert(all(elem=="c" or elem=="f" for elem in train_level))
+    assert(all(elem=="c" or elem=="f" or elem=="ac" for elem in train_level))
 
     datalocations = {} 
     test_but_not_train = list(set(test_dataset_name) - set(train_dataset_name) )

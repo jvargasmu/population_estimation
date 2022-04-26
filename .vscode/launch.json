@@ -268,7 +268,7 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [
                 "-train", "moz",
-                "-train_lvl", "f",
+                "-train_lvl", "ac",
                 "-test", "moz",
                 "-lr", "0.00001",
                 "-wr", "0.3",
@@ -279,7 +279,7 @@
                 "--validation_fold", "0",
                 "-rs", "1610",
                 "-rsf", "1610",
-                "-mm", "m", 
+                "-mm", "d", 
                 "--loss", "LogL1", 
                 "--kernel_size", "1,1,1,1",
                 "--admin_augment", "True",
