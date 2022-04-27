@@ -420,8 +420,8 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                         res["variances"][rmin:rmax, cmin:cmax][Mask] = pop_est[:,1,Mask].to(torch.float16)  
                     res["scales"][:,rmin:rmax, cmin:cmax][:,regMasks] = scale[0,:,regMasks].to(torch.float16)
                     # res["scales"][:,rmin:rmax, cmin:cmax] = scale[0,:].to(torch.float16)
-                    res["fold_map"][rmin:rmax, cmin:cmax][torch.tensor(regMasks)] = k  
-                    res["id_map"][rmin:rmax, cmin:cmax][regMasks] = census_id
+                    res["fold_map"][rmin:rmax, cmin:cmax][torch.tensor(regMasks)] = 1.0 * k  
+                    res["id_map"][rmin:rmax, cmin:cmax][regMasks] = 1.0 * census_id
                     
                     pred = pop_est[0,0,Mask].sum().detach().cpu().numpy()
                     agg_preds.append(pred)
