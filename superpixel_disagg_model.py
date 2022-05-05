@@ -21,7 +21,7 @@ from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_
     set_value_for_each_region
 
 from pix_transform.pix_admin_transform import PixAdminTransform 
-from pix_transform.evaluation import Eval5Fold_PixAdminTransform, EvalModel_PixAdminTransform 
+from pix_transform.evaluation import Eval5Fold_PixAdminTransform, EvalModel_PixAdminTransform, Eval5Fold_FeatureImportance
 from pix_transform_utils.plots import plot_result
 from distutils.util import strtobool
 
@@ -41,6 +41,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     cr_census_arr = pdata["cr_census_arr"]
     valid_ids = pdata["valid_ids"]
     no_valid_ids = pdata["no_valid_ids"]
+    print("no_valid_ids {}".format(no_valid_ids))
     id_to_cr_id = pdata["id_to_cr_id"]
     fine_census = pdata["valid_census"]
     num_coarse_regions = pdata["num_coarse_regions"]
@@ -292,6 +293,7 @@ def superpixel_with_pix_data(
     dataset_dir,
     max_step,
     eval_5fold,
+    eval_feat_importance,
     grad_clip,
     lr_scheduler_step,
     lr_scheduler_gamma,
@@ -302,7 +304,8 @@ def superpixel_with_pix_data(
     random_seed_folds,
     kernel_size,
     eval_model,
-    full_ceval
+    full_ceval,
+    remove_feat_idxs
     ):
 
     ####  define parameters  ########################################################
@@ -340,6 +343,7 @@ def superpixel_with_pix_data(
             'silent_mode': silent_mode,
             'dataset_dir': dataset_dir,
             'eval_5fold': eval_5fold,
+            'eval_feat_importance' : eval_feat_importance,
             'grad_clip': grad_clip,
             'lr_scheduler_step': lr_scheduler_step,
             'lr_scheduler_gamma': lr_scheduler_gamma,
@@ -348,7 +352,8 @@ def superpixel_with_pix_data(
             'name': name,
             'random_seed_folds': random_seed_folds,
             'eval_model': eval_model,
-            'full_ceval': full_ceval
+            'full_ceval': full_ceval,
+            'remove_feat_idxs' : remove_feat_idxs
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
@@ -429,6 +434,13 @@ def superpixel_with_pix_data(
             test_dataset_names=test_dataset_name,
             params=params, 
         )
+    elif eval_5fold is not None and eval_feat_importance > 0:
+        res, log_dict = Eval5Fold_FeatureImportance(
+            datalocations=datalocations,
+            train_dataset_name=train_dataset_name,
+            test_dataset_names=test_dataset_name,
+            params=params, 
+        )
     else:
         res, log_dict = Eval5Fold_PixAdminTransform(
             datalocations=datalocations,
@@ -473,7 +485,12 @@ def superpixel_with_pix_data(
             dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
             if not os.path.exists(dest_folder):
                 os.makedirs(dest_folder)
-
+            print("dest_folder {}".format(dest_folder))
+            
+            log_output_path = dest_folder+'/log_dict.pkl'.format(name)
+            with open(log_output_path, 'wb') as handle:
+                pickle.dump(log_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            
             write_geolocated_image( cr_map_full, dest_folder+'/{}_cr_map_full.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
             write_geolocated_image( cr_map.numpy(), dest_folder+'/{}_cr_map.tiff'.format(name),
@@ -529,6 +546,7 @@ def main():
     parser.add_argument("--eval_5fold", "-e5f", type=str, default=None, help="Evaluates 5 fold cross with the 5 pretrained models specified in a comma sparated list. \
                             Example: '-e5f fine-shape-1418,morning-blaze-1415,volcanic-shadow-1416,devoted-snowball-1417,eternal-donkey-1419', for the folds 0,1,2,3,4 respectively")
     parser.add_argument("--eval_model", "-em", type=str, default=None, help="Evaluates the model on the specified test dataset(s).")
+    parser.add_argument("--eval_feat_importance", "-efi", type=int, default=0, help="Evaluates feature importance give as a parameter the number of permutations to perform")
 
     parser.add_argument("--sampler", "-sap", type=str, default=None, help="Options: natural (not recommended yet), custom (see --custom_sampler_weights), <blank> (no sampler)")
     parser.add_argument("--custom_sampler_weights", "-csw", type=str,  default='1', help="ordered by --train_dataset_name weight for the sampler (separated by commas) ")
@@ -575,6 +593,8 @@ def main():
     
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
     parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
+    
+    parser.add_argument("--remove_feat_idxs", "-rmfi", type=str, default=None, help="Comaseparated list of indexes of features to be removed")
 
     args = parser.parse_args()  
 
@@ -601,6 +621,8 @@ def main():
     args.kernel_size = unroll_arglist(args.kernel_size, '1', 4)
     args.kernel_size = [ int(el) for el in args.kernel_size ] 
 
+    if args.remove_feat_idxs is not None:
+        args.remove_feat_idxs = [int(el) for el in args.remove_feat_idxs.split(",") ] 
 
     import gc
     for obj in gc.get_objects():   # Browse through ALL objects
@@ -639,6 +661,7 @@ def main():
         args.dataset_dir,
         args.max_step,
         args.eval_5fold,
+        args.eval_feat_importance,
         args.grad_clip,
         args.lr_scheduler_step,
         args.lr_scheduler_gamma,
@@ -649,7 +672,8 @@ def main():
         args.random_seed_folds,
         args.kernel_size,
         args.eval_model,
-        args.full_ceval
+        args.full_ceval,
+        args.remove_feat_idxs
     )
 
 

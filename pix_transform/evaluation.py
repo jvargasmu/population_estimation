@@ -26,6 +26,8 @@ from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_
     set_value_for_each_region
 
 from pix_transform.pix_transform_net import PixScaleNet
+import config_pop as cfg
+
 
 def disag_map(predicted_target_img, agg_preds_arr, disaggregation_data):
 
@@ -421,7 +423,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
                     res["scales"][:,rmin:rmax, cmin:cmax][:,regMasks] = scale[0,:,regMasks].to(torch.float16)
                     # res["scales"][:,rmin:rmax, cmin:cmax] = scale[0,:].to(torch.float16)
                     res["fold_map"][rmin:rmax, cmin:cmax][torch.tensor(regMasks)] = 1.0 * k  
-                    res["id_map"][rmin:rmax, cmin:cmax][regMasks] = 1.0 * census_id
+                    res["id_map"][rmin:rmax, cmin:cmax][regMasks] = census_id.to(torch.float16) #1.0 * census_id
                     
                     pred = pop_est[0,0,Mask].sum().detach().cpu().numpy()
                     agg_preds.append(pred)
@@ -490,12 +492,18 @@ def Eval5Fold_PixAdminTransform(
             memory_vars[name] = pickle.load(f)
             val_valid_ids[name] = memory_vars[name][4]
 
+    index_permutation_feat = None
+    permutation_random_seed = 42
+    if "index_permutation_feat" in params.keys():
+        index_permutation_feat = params["index_permutation_feat"]
+        permutation_random_seed = params["permutation_random_seed"]
     # make 5 datasets for each fold
     Datasets = []
     for k in range(5): 
         Datasets.append(
             MultiPatchDataset(datalocations, train_dataset_name, params["train_level"], params['memory_mode'], device, 
-                params["validation_split"], k, params["weights"], params["custom_sampler_weights"], val_valid_ids, build_pairs=False,  random_seed_folds=params["random_seed_folds"] )
+                params["validation_split"], k, params["weights"], params["custom_sampler_weights"], val_valid_ids, build_pairs=False,  random_seed_folds=params["random_seed_folds"],
+                index_permutation_feat=index_permutation_feat, permutation_random_seed=permutation_random_seed, remove_feat_idxs=params["remove_feat_idxs"])
         )
 
         calculate_mean_std = False
@@ -685,3 +693,76 @@ def EvalModel_PixAdminTransform(
     wandb.log(log_dict)
     return res_dict, log_dict
 
+
+def Eval5Fold_FeatureImportance(
+    datalocations,
+    train_dataset_name,
+    test_dataset_names,
+    params):
+    
+    metric_name = params["e5f_metric"].split("_")[1]
+    country_code = test_dataset_names[0] # TODO: implement method for multiple countries (now is just picking the first test country)
+    
+    with open(datalocations[country_code]['train_vars_c'], "rb") as f:
+        _, _, _, tY_c, tregid_c, tMasks_c, tregMasks_c, tBBox_c, feature_names = pickle.load(f)
+    
+    # Obtain original results witout 
+    res_orig, log_dict_orig = Eval5Fold_PixAdminTransform(
+            datalocations=datalocations,
+            train_dataset_name=train_dataset_name,
+            test_dataset_names=test_dataset_names,
+            params=params, 
+        )
+    
+    metric_orig = log_dict_orig["{}/{}".format(country_code, metric_name)]
+    metric_orig_adj = log_dict_orig["{}/adjusted/{}".format(country_code, metric_name)]
+    
+    # Obtain results by applying permutation of features
+    num_features = len(feature_names)
+    num_permutations = params["eval_feat_importance"]
+    feat_importance = {"not_adj": {}, "adj": {}}
+    # permute each features
+    for i in range(num_features):
+        feat_name = feature_names[i]
+        array_metric = []
+        array_metric_adj = []
+        print("permute feature : {}".format(feat_name))
+        # permute it several times 
+        for k in range(num_permutations):
+            params["index_permutation_feat"] = i
+            params["permutation_random_seed"] = params["random_seed"] + k
+            res, log_dict = Eval5Fold_PixAdminTransform(
+                datalocations=datalocations,
+                train_dataset_name=train_dataset_name,
+                test_dataset_names=test_dataset_names,
+                params=params, 
+            )
+            # obtain metric value
+            metric = log_dict["{}/{}".format(country_code, metric_name)]
+            metric_adj = log_dict["{}/adjusted/{}".format(country_code, metric_name)]
+            array_metric.append(metric)
+            array_metric_adj.append(metric_adj)
+            
+            log_dict_orig["log_feat_{}_perm_{}".format(feat_name, k)] = log_dict
+        
+        array_metric = np.array(array_metric)
+        array_metric_adj = np.array(array_metric_adj)
+        
+        avg_metric = np.mean(array_metric)
+        avg_metric_adj = np.mean(array_metric_adj)
+        # compute the difference in performance
+        feat_importance["not_adj"][feat_name] =  { "importance_score" : metric_orig - avg_metric, 
+                                                "avg_metric" : avg_metric,
+                                                "array_metrics" : array_metric    
+                                                }
+        feat_importance["adj"][feat_name] = { "importance_score" : metric_orig_adj - avg_metric_adj, 
+                                                "avg_metric" : avg_metric_adj,
+                                                "array_metrics" : array_metric_adj    
+                                                }
+    
+    feat_importance["feature_names"] = feature_names
+    log_dict_orig["feat_importance"] = feat_importance
+    print("{} : not-adj {} adj {}".format(metric_name, metric_orig, metric_orig_adj))
+    print(feat_importance)
+    
+    return res_orig, log_dict_orig
