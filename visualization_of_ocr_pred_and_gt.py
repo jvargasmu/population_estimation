@@ -9,12 +9,6 @@ from utils import read_input_raster_data
 
 
 def visualization_of_ocr_pred_and_gt(dataset_name, rst_wp_regions_path, preproc_data_path, pred_map_path, output_dir):
-    # Building occupancy rate comparison options
-    # Map1-option1: scale_map (per pixel estimations of scale), average of those estimations per ADM [we are computing average of averages]
-    # Map1-option2: pred_map is aggregated-sum per ADM and then we divide it by the number of buildings per ADM
-    # Map2-option1: divide census data by the number of buildings in each ADM
-    # Maps to compare: Map1-option2 vs Map2-option1 (This maps give a sense of how densely populated are different regions)
-    # The Percentage error per administrative regions is the sames as comparing population predictions
     # Read raster data
     input_paths = cfg.input_paths[dataset_name]
     inputs = read_input_raster_data(input_paths)
@@ -52,9 +46,6 @@ def visualization_of_ocr_pred_and_gt(dataset_name, rst_wp_regions_path, preproc_
         if  valid_ocr_census[id] > 0:
             fine_map_mape[wp_rst_regions == id] = abs(valid_ocr_preds[id] - valid_ocr_census[id]) / valid_ocr_census[id]
             fine_map_mpe[wp_rst_regions == id] = (valid_ocr_preds[id] - valid_ocr_census[id]) / valid_ocr_census[id]
-    
-    #fine_map_pred[wp_rst_regions <= 2] = np.nan
-    #fine_map_gt[wp_rst_regions <= 2] = np.nan
     
     fine_map_pred_path = os.path.join(output_dir, "ocr_fine_map_pred.tif")
     fine_map_gt_path = os.path.join(output_dir, "ocr_fine_map_gt.tif")

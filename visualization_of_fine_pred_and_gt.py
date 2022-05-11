@@ -39,9 +39,6 @@ def visualization_of_fine_pred_and_gt(rst_wp_regions_path, preproc_data_path, pr
             fine_map_mape[wp_rst_regions == id] = abs(valid_f_preds[id] - valid_census[id]) / valid_census[id]
             fine_map_mpe[wp_rst_regions == id] = (valid_f_preds[id] - valid_census[id]) / valid_census[id]
     
-    #fine_map_pred[wp_rst_regions <= 2] = np.nan
-    #fine_map_gt[wp_rst_regions <= 2] = np.nan
-    
     fine_map_pred_path = os.path.join(output_dir, "fine_map_pred.tif")
     fine_map_gt_path = os.path.join(output_dir, "fine_map_gt.tif")
     fine_map_mape_path = os.path.join(output_dir, "fine_map_mape.tif")
