@@ -19,6 +19,7 @@ import wandb
 import psutil
 import os
 import pdb
+import config_pop as cfg
 
 def get_properties_dict(data_dict_orig):
     data_dict = []
@@ -434,10 +435,10 @@ class PatchDataset(torch.utils.data.Dataset):
 class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
     def __init__(self, datalocations, train_dataset_name, train_level, memory_mode, device,
-        validation_split, validation_fold, loss_weights, sampler_weights, val_valid_ids={}, build_pairs=True, random_seed_folds=1610):
+        validation_split, validation_fold, loss_weights, sampler_weights, val_valid_ids={}, build_pairs=True, random_seed_folds=1610,
+        index_permutation_feat=None, permutation_random_seed=42, remove_feat_idxs=None):
 
-        self.device = device
-        
+        self.device = device    
         print("Preparing dataloader for: ", list(datalocations.keys()))
         self.features = {}
         self.loc_list, self.loc_list_train, self.loc_list_val = [],[],[]
@@ -458,9 +459,19 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.source_census_val = {}
         self.source_census_hout = {}
         process = psutil.Process(os.getpid())
+        
         for i, (name, rs) in tqdm(enumerate(datalocations.items())):
             print("Preparing dataloader: ", name)
             print("Initial:",process.memory_info().rss/1000/1000,"mb used")
+            
+            # get map of valid ids
+            rst_wp_regions_path = cfg.metadata[name]["rst_wp_regions_path"]
+            preproc_data_path = cfg.metadata[name]["preproc_data_path"]
+            fine_regions = gdal.Open(rst_wp_regions_path).ReadAsArray().astype(np.uint32)
+            with open(preproc_data_path, 'rb') as handle:
+                pdata = pickle.load(handle)
+            no_valid_ids = pdata["no_valid_ids"]
+            map_valid_ids = create_map_of_valid_ids(fine_regions, no_valid_ids)
 
             with open(rs['train_vars_f'], "rb") as f:
                 _, _, _, tY_f, tregid_f, tMasks_f, tregMasks_f, tBBox_f, _ = pickle.load(f)
@@ -482,7 +493,33 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
             if memory_mode[i]=='m':
                 #self.features[name] = h5py.File(rs["features"], 'r', driver='core')["features"]
-                self.features[name] = h5py.File(rs["features"], 'r')["features"][:]
+                features = h5py.File(rs["features"], 'r')["features"][:]
+                if index_permutation_feat is not None:
+                    print("read file and permute feature : {}".format(self.feature_names[name][index_permutation_feat]))
+                    num_images = features.shape[0]
+                    num_channels = features.shape[1]
+                    height = features.shape[2]
+                    width = features.shape[3]
+                    features = features.reshape(num_images, num_channels, height * width)
+                    valid_features = features[:, :, map_valid_ids.flatten() == 1]
+                    num_valid_samples =  valid_features.shape[2]
+                    np.random.seed(permutation_random_seed)
+                    permutation_indexes = np.arange(num_valid_samples)
+                    np.random.shuffle(permutation_indexes)
+                    valid_features[:, index_permutation_feat, :] = valid_features[:, index_permutation_feat, permutation_indexes]
+                    features[:,:,map_valid_ids.flatten() == 1] = valid_features
+                    features = features.reshape(num_images, num_channels, height, width)
+                    del valid_features
+                
+                if remove_feat_idxs is not None:
+                    new_features = []
+                    for idx in range(len(feature_names)):
+                        if idx not in remove_feat_idxs:
+                            new_features.append(features[:, idx, :, :])
+                    features = np.concatenate(new_features)
+                    features = np.expand_dims(features, axis=0)
+                
+                self.features[name] = features     
 
             elif memory_mode[i]=='d':
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
