@@ -672,24 +672,24 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.loc_list_hout.extend( [(name, k) for k,_ in enumerate(self.BBox_hout[name])])
 
             # Prepare the training variables
-            if train_level[i]=='ac':
-                self.BBox_train[name] = tBBox
-                valid_train_boxes = (self.BBox_train[name][:,1]-self.BBox_train[name][:,0]) * (self.BBox_train[name][:,3]-self.BBox_train[name][:,2])>0
-                self.BBox_train[name] = self.BBox_train[name][valid_train_boxes] 
-                self.Ys_train[name] =  tY[valid_train_boxes]
-                self.Masks_train[name] = tMasks[valid_train_boxes]
-                self.regMasks_train[name] = tregMasks[valid_train_boxes]
-                if name in train_dataset_name:
-                    self.loc_list_train.extend( [(name, k) for k,_ in enumerate(self.BBox_train[name])])
-            else:
-                self.BBox_train[name] = tBBox[ind_train]
-                valid_train_boxes = (self.BBox_train[name][:,1]-self.BBox_train[name][:,0]) * (self.BBox_train[name][:,3]-self.BBox_train[name][:,2])>0
-                self.BBox_train[name] = self.BBox_train[name][valid_train_boxes] 
-                self.Ys_train[name] =  tY[ind_train][valid_train_boxes]
-                self.Masks_train[name] = tMasks[ind_train][valid_train_boxes]
-                self.regMasks_train[name] = tregMasks[ind_train][valid_train_boxes]
-                if name in train_dataset_name:
-                    self.loc_list_train.extend( [(name, k) for k,_ in enumerate(self.BBox_train[name])])
+            # if train_level[i]=='ac':
+            #     self.BBox_train[name] = tBBox
+            #     valid_train_boxes = (self.BBox_train[name][:,1]-self.BBox_train[name][:,0]) * (self.BBox_train[name][:,3]-self.BBox_train[name][:,2])>0
+            #     self.BBox_train[name] = self.BBox_train[name][valid_train_boxes] 
+            #     self.Ys_train[name] =  tY[valid_train_boxes]
+            #     self.Masks_train[name] = tMasks[valid_train_boxes]
+            #     self.regMasks_train[name] = tregMasks[valid_train_boxes]
+            #     if name in train_dataset_name:
+            #         self.loc_list_train.extend( [(name, k) for k,_ in enumerate(self.BBox_train[name])])
+            # else:
+            self.BBox_train[name] = tBBox[ind_train]
+            valid_train_boxes = (self.BBox_train[name][:,1]-self.BBox_train[name][:,0]) * (self.BBox_train[name][:,3]-self.BBox_train[name][:,2])>0
+            self.BBox_train[name] = self.BBox_train[name][valid_train_boxes] 
+            self.Ys_train[name] =  tY[ind_train][valid_train_boxes]
+            self.Masks_train[name] = tMasks[ind_train][valid_train_boxes]
+            self.regMasks_train[name] = tregMasks[ind_train][valid_train_boxes]
+            if name in train_dataset_name:
+                self.loc_list_train.extend( [(name, k) for k,_ in enumerate(self.BBox_train[name])])
 
             # Prepare the complete variables, we only use the finest level for this
             self.BBox[name] = tBBox_f
