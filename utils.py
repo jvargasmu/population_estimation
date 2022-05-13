@@ -4,6 +4,11 @@ import numpy as np
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from sklearn.utils import check_array
 from sklearn.model_selection import KFold
+from scipy.interpolate import interpn
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.colors import Normalize 
+import matplotlib.ticker as ticker
 from tqdm import tqdm
 import copy
 from pylab import figure, imshow, matshow, grid, savefig
@@ -23,7 +28,7 @@ def get_properties_dict(data_dict_orig):
     return data_dict
 
 
-def read_input_raster_data_to_np(input_paths):
+def read_input_raster_data_to_np(input_paths, keys=None):
     #assuming every covariate has same dimensions
     first_name = list(input_paths.keys())[0]
     hwdims = gdal.Open(input_paths[first_name]).ReadAsArray().astype(np.float32).shape
@@ -33,6 +38,20 @@ def read_input_raster_data_to_np(input_paths):
         print("read {}".format(input_paths[kinp]))
         inputs[i] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
     return inputs
+
+
+def read_input_raster_data_to_np_buildings(input_paths, keys=None):
+    #assuming every covariate has same dimensions
+    first_name = list(input_paths.keys())[0]
+    hwdims = gdal.Open(input_paths[first_name]).ReadAsArray().astype(np.float32).shape
+    fdim = input_paths.__len__()
+    inputs = np.zeros((fdim,) + hwdims, dtype=np.float32) 
+    for i,kinp in enumerate(input_paths.keys()):
+        if ("buildings_google" in kinp) or ("buildings_maxar" in kinp):
+            print("read {}".format(input_paths[kinp]))
+            inputs[i] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
+    return inputs
+
 
 
 def read_input_raster_data(input_paths):
@@ -93,6 +112,73 @@ def my_mean_absolute_error(y_pred,y_true):
     output_errors = np.average(np.abs(errors), axis=0)
     return output_errors, errors
 
+def density_scatter( x , y, ax = None, sort = True, bins = 20, millions = True, cmap='inferno', ** kwargs )   :
+    """
+    Scatter plot colored by 2d histogram
+    """
+    @ticker.FuncFormatter
+    def million_formatter(x, pos):
+        return "%.1fM" % (x/1E6)
+    @ticker.FuncFormatter
+    def tousends_formatter(x, pos):
+        return "%.0fk" % (x/1E3)
+
+    def add_identity(axes, *line_args, **line_kwargs):
+        identity, = axes.plot([], [], *line_args, **line_kwargs)
+        def callback(axes):
+            low_x, high_x = axes.get_xlim()
+            low_y, high_y = axes.get_ylim()
+            low = max(low_x, low_y)
+            high = min(high_x, high_y)
+            identity.set_data([low, high], [low, high])
+        callback(axes)
+        axes.callbacks.connect('xlim_changed', callback)
+        axes.callbacks.connect('ylim_changed', callback)
+        return axes
+        
+    if ax is None :
+        fig , ax = plt.subplots(dpi=200)
+    data , x_e, y_e = np.histogram2d( x, y, bins = bins, density = False )
+    z = interpn( ( 0.5*(x_e[1:] + x_e[:-1]) , 0.5*(y_e[1:]+y_e[:-1]) ) , data , np.vstack([x,y]).T , method = "splinef2d", bounds_error = False)
+
+    #To be sure to plot all data
+    z[np.where(np.isnan(z))] = 0.0
+
+    # Sort the points by density, so that the densest points are plotted last
+    if sort :
+        idx = z.argsort()
+        x, y, z = x[idx], y[idx], z[idx]
+
+    ax.scatter( x, y, c=z, cmap=cmap, **kwargs )
+    if millions:
+        ax.xaxis.set_major_formatter(tousends_formatter)
+        ax.yaxis.set_major_formatter(tousends_formatter) 
+    plt.xticks(rotation='45') 
+    plt.xlabel("Census Data")
+    plt.ylabel("Prediced Census Data") 
+
+    maxi = np.max([x.max(), y.max()])
+    plt.xlim([0, maxi])
+    plt.ylim([0, maxi])
+
+    norm = Normalize(vmin = np.min(z), vmax = int(np.max(z)))
+    cbar = fig.colorbar(cm.ScalarMappable(norm = norm, cmap=cmap), ax=ax)
+    # cbar = fig.colorbar(ax=ax)
+    cbar.ax.set_ylabel('#Samples')
+    add_identity(ax, color='r', ls='--', alpha=0.5)
+
+    return fig, ax
+
+def pop_colorbar(min=0, max=465, cmap="viridis", ylabel='[Population/ha]', fontsize=10):
+    fig , ax = plt.subplots(dpi=400)
+    norm = Normalize(vmin=min, vmax=max)
+    cbar = fig.colorbar(cm.ScalarMappable(norm = norm, cmap=cmap), ax=ax) 
+    cbar.ax.set_ylabel('[Population/ha]', fontsize=fontsize)
+    for t in cbar.ax.get_yticklabels():
+        t.set_fontsize(fontsize)
+    fig.show()
+    plt.savefig('foo.png', bbox_inches = "tight")
+
 
 def compute_performance_metrics_arrays(preds, gt): 
     
@@ -119,12 +205,19 @@ def compute_performance_metrics_arrays(preds, gt):
     mse = mean_squared_error(gt, preds)
     mape, percentage_error = mean_absolute_percentage_error(gt,preds)
 
+    # fig, ax = density_scatter(gt,preds, bins=150, s=20, cmap="cividis")
+    # fig.show()
+    # plt.savefig('foo.png', bbox_inches = "tight")
+
+    # pop_colorbar(0,465)
+
     metrics.update({
     "r2": r2, "mae": mae, "mse": mse, "mape": mape,
     "aux/errors/errors": errors, "aux/errors/min_errors": np.min(errors), "aux/errors/max_errors":  np.max(errors), "aux/errors/median_error":  np.median(errors), "aux/errors/mean_error":  np.mean(errors), "aux/errors/std_error":  np.std(errors), 
     # "aux/errors/abs/abs_errors": np.abs(errors), "aux/errors/abs/min_abs_errors": np.min(np.abs(errors)), "aux/errors/abs/max_abs_error":  np.max(np.abs(errors)), "aux/errors/abs/median_abs_error":  np.median(np.abs(errors)), "aux/errors/abs/mean_abs_error": np.mean(np.abs(errors)), "aux/errors/abs/std_abs_error": np.std(np.abs(errors)),
     "aux/errors_percentage/percentage_errors": percentage_error, "aux/errors_percentage/min_percentage_errors": np.min(percentage_error), "aux/errors_percentage/max_percentage_error":  np.max(percentage_error), "aux/errors_percentage/median_percentage_error":  np.median(percentage_error), "aux/errors_percentage/mean_percentage_error":  np.mean(percentage_error), "aux/errors_percentage/std_percentage_error": np.std(percentage_error),
     # "aux/errors_percentage/abs/abs_percentage_errors": np.abs(percentage_error), "aux/errors_percentage/abs/min_abs_percentage_errors": np.min(np.abs(percentage_error)), "aux/errors_percentage/abs/max_abs_percentage_errors":  np.max(np.abs(percentage_error)), "aux/errors_percentage/abs/median_abs_percentage_error":  np.median(np.abs(percentage_error)), "aux/errors_percentage/abs/mean_abs_percentage_error":  np.mean(np.abs(percentage_error)), "aux/errors_percentage/abs/std_abs_percentage_error":  np.std(np.abs(percentage_error))
+    #"scatterplot": [fig,ax]
     })
 
     return metrics
@@ -476,13 +569,21 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             
             ind_val_hout_c = np.zeros(len(tY_c), dtype=bool)
             ind_val_hout_c[choice_val_c] = True 
+            # For the "ac" option the holdout can still be used in the training data
             ind_val_hout_c[choice_hout_c] = True 
             ind_train_c = ~ind_val_hout_c 
 
+            ind_val_c =  np.zeros(len(tY_c), dtype=bool)
+            ind_val_c[choice_val_c] = True 
+
             tY_f = np.asarray(tY_f)
+            tY_c = np.asarray(tY_c)
             tMasks_f = np.asarray(tMasks_f, dtype=object)
+            tMasks_c = np.asarray(tMasks_c, dtype=object)
             tregMasks_f = np.asarray(tregMasks_f, dtype=object)
+            tregMasks_c = np.asarray(tregMasks_c, dtype=object)
             tBBox_f = np.asarray(tBBox_f)
+            tBBox_c = np.asarray(tBBox_c)
             tregid_f = np.asarray(tregid_f).astype(np.int16)
             tregid_c = np.asarray(tregid_c).astype(np.int16)
 
@@ -507,31 +608,50 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             if train_level[i]=='f':
                 tY, tregid, tMasks, tregMasks, tBBox = tY_f, tregid_f, tMasks_f, tregMasks_f, tBBox_f
                 ind_train = ind_train_f
+                # ind_val = ind_val_f
             elif train_level[i] in ['c','ac']:
                 tY, tregid, tMasks, tregMasks, tBBox = tY_c, tregid_c, tMasks_c, tregMasks_c, tBBox_c
                 ind_train = ind_train_c
+                # ind_val = ind_val_c
 
             tY = np.asarray(tY).astype(np.float32)
             tMasks = np.asarray(tMasks, dtype=object)
             tregMasks = np.asarray(tregMasks, dtype=object)
             tBBox = np.asarray(tBBox)
 
-            # Prepare validation variables
-            self.BBox_val[name] = tBBox_f[ind_val_f]
-            valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
-            self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
-            self.Ys_val[name] =  tY_f[ind_val_f][valid_val_boxes] 
-            self.tregid_val[name] = tregid_f[ind_val_f][valid_val_boxes]
-            target_to_source_val = self.memory_disag[name][0].clone()
-            target_to_source_val[~np.in1d(self.memory_disag[name][0], tregid_val_c)] = 0
-            # coarse_regid_val = self.memory_disag[name][0][self.tregid_val[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_val_c"
-            self.source_census_val[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_val_c}
-            self.memory_disag_val[name] = target_to_source_val, self.source_census_val[name], self.memory_disag[name][2]
-            if self.tregid_val[name].__len__()>0:
-                self.max_tregid_val[name] = np.max(self.tregid_val[name])
-            self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
-            self.regMasks_val[name] = tregMasks_f[ind_val_f][valid_val_boxes]
-            self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
+            # Prepare validation variables. Validation should be on the same level es training!! 
+            if train_level[i]=='f':
+                self.BBox_val[name] = tBBox_f[ind_val_f]
+                valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
+                self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
+                self.Ys_val[name] =  tY_f[ind_val_f][valid_val_boxes] 
+                self.tregid_val[name] = tregid_f[ind_val_f][valid_val_boxes]
+                target_to_source_val = self.memory_disag[name][0].clone()
+                target_to_source_val[~np.in1d(self.memory_disag[name][0], tregid_val_c)] = 0
+                # coarse_regid_val = self.memory_disag[name][0][self.tregid_val[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_val_c"
+                self.source_census_val[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_val_c}
+                self.memory_disag_val[name] = target_to_source_val, self.source_census_val[name], self.memory_disag[name][2]
+                if self.tregid_val[name].__len__()>0:
+                    self.max_tregid_val[name] = np.max(self.tregid_val[name])
+                self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
+                self.regMasks_val[name] = tregMasks_f[ind_val_f][valid_val_boxes]
+                self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
+            elif train_level[i] in ['c','ac']:
+                self.BBox_val[name] = tBBox_c[ind_val_c]
+                valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
+                self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
+                self.Ys_val[name] =  tY_c[ind_val_c][valid_val_boxes] 
+                self.tregid_val[name] = tregid_c[ind_val_c][valid_val_boxes]
+                target_to_source_val = self.memory_disag[name][0].clone()
+                target_to_source_val[~np.in1d(self.memory_disag[name][0], tregid_val_c)] = 0
+                # coarse_regid_val = self.memory_disag[name][0][self.tregid_val[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_val_c"
+                self.source_census_val[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_val_c}
+                self.memory_disag_val[name] = target_to_source_val, self.source_census_val[name], self.memory_disag[name][2]
+                if self.tregid_val[name].__len__()>0:
+                    self.max_tregid_val[name] = np.max(self.tregid_val[name])
+                self.Masks_val[name] = tMasks_c[ind_val_c][valid_val_boxes]
+                self.regMasks_val[name] = tregMasks_c[ind_val_c][valid_val_boxes]
+                self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
             
             # Prepare the holdout (test) variables #TODO: refactor val and hout variables computation
             self.BBox_hout[name] = tBBox_f[ind_hout_f]

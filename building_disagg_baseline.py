@@ -3,7 +3,7 @@ import argparse
 import pickle
 import numpy as np
 from osgeo import gdal
-from utils import read_input_raster_data, read_input_raster_data_to_np, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids
+from utils import read_input_raster_data, read_input_raster_data_to_np, read_input_raster_data_to_np_buildings, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 import config_pop as cfg
@@ -19,7 +19,7 @@ def disaggregate_weighted_by_preds(cr_census_arr, pred_map, map_valid_ids,
         pred_map_masked = np.multiply(pred_map, final_mask)
 
     # Compute total predictions per region
-    pred_map_masked = np.squeeze(pred_map_masked)
+    # pred_map_masked = np.squeeze(pred_map_masked)
     pred_map_per_cr_region = compute_accumulated_values_by_region(cr_regions.astype(np.uint32), pred_map_masked.astype(np.float32), map_valid_ids.astype(np.uint32),
                                                                   num_cr_regions)
 
@@ -82,7 +82,7 @@ def building_disagg_baseline(output_dir, dataset_name, test_dataset_name, global
         wp_ids = list(np.unique(wp_rst_regions))
         num_wp_ids = len(wp_ids)
         print("num_wp_ids {}".format(num_wp_ids))
-        inputs = read_input_raster_data_to_np(input_paths)
+        inputs = read_input_raster_data_to_np_buildings(input_paths)
         # input_buildings = inputs["buildings_google"]
 
         feature_names = list(input_paths.keys())
@@ -144,8 +144,9 @@ def building_disagg_baseline(output_dir, dataset_name, test_dataset_name, global
 
         _, scale = disaggregate_weighted_by_preds(np.concatenate([[0], [all_cr_census_arr]]), all_unnorm_weights,
                                                        all_map_valid_ids, all_cr_regions, num_coarse_regions, output_dir,
-                                                       mask=all_mask, save_images=True, geo_metadata=geo_metadata, return_global_scale=True)
-                                                        
+                                                       mask=all_mask, save_images=False, geo_metadata=geo_metadata, return_global_scale=True)
+
+        print("Scale:", scale)                             
         # evaluate on testdataset
         name = test_dataset_name
             
@@ -167,7 +168,7 @@ def building_disagg_baseline(output_dir, dataset_name, test_dataset_name, global
         wp_ids = list(np.unique(wp_rst_regions))
         num_wp_ids = len(wp_ids)
         print("num_wp_ids {}".format(num_wp_ids))
-        inputs = read_input_raster_data_to_np(input_paths)
+        inputs = read_input_raster_data_to_np_buildings(input_paths)
         # input_buildings = inputs["buildings_google"]
 
         feature_names = list(input_paths.keys())
