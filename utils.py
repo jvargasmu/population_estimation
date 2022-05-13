@@ -570,7 +570,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             ind_val_hout_c = np.zeros(len(tY_c), dtype=bool)
             ind_val_hout_c[choice_val_c] = True 
             # For the "ac" option the holdout can still be used in the training data
-            ind_val_hout_c[choice_hout_c] = True 
+            if train_level[i] not in ['ac']:
+                ind_val_hout_c[choice_hout_c] = True 
             ind_train_c = ~ind_val_hout_c 
 
             ind_val_c =  np.zeros(len(tY_c), dtype=bool)
