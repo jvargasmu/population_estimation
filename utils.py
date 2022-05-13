@@ -569,13 +569,21 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             
             ind_val_hout_c = np.zeros(len(tY_c), dtype=bool)
             ind_val_hout_c[choice_val_c] = True 
+            # For the "ac" option the holdout can still be used in the training data
             ind_val_hout_c[choice_hout_c] = True 
             ind_train_c = ~ind_val_hout_c 
 
+            ind_val_c =  np.zeros(len(tY_c), dtype=bool)
+            ind_val_c[choice_val_c] = True 
+
             tY_f = np.asarray(tY_f)
+            tY_c = np.asarray(tY_c)
             tMasks_f = np.asarray(tMasks_f, dtype=object)
+            tMasks_c = np.asarray(tMasks_c, dtype=object)
             tregMasks_f = np.asarray(tregMasks_f, dtype=object)
+            tregMasks_c = np.asarray(tregMasks_c, dtype=object)
             tBBox_f = np.asarray(tBBox_f)
+            tBBox_c = np.asarray(tBBox_c)
             tregid_f = np.asarray(tregid_f).astype(np.int16)
             tregid_c = np.asarray(tregid_c).astype(np.int16)
 
@@ -600,34 +608,50 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             if train_level[i]=='f':
                 tY, tregid, tMasks, tregMasks, tBBox = tY_f, tregid_f, tMasks_f, tregMasks_f, tBBox_f
                 ind_train = ind_train_f
-                ind_val = ind_val_f
+                # ind_val = ind_val_f
             elif train_level[i] in ['c','ac']:
                 tY, tregid, tMasks, tregMasks, tBBox = tY_c, tregid_c, tMasks_c, tregMasks_c, tBBox_c
                 ind_train = ind_train_c
-                ind_val = choice_val_c
+                # ind_val = ind_val_c
 
             tY = np.asarray(tY).astype(np.float32)
             tMasks = np.asarray(tMasks, dtype=object)
             tregMasks = np.asarray(tregMasks, dtype=object)
             tBBox = np.asarray(tBBox)
 
-            # Prepare validation variables #TODO: make it coarse if the training is also coarse
-
-            self.BBox_val[name] = tBBox_f[ind_val_f]
-            valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
-            self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
-            self.Ys_val[name] =  tY_f[ind_val_f][valid_val_boxes] 
-            self.tregid_val[name] = tregid_f[ind_val_f][valid_val_boxes]
-            target_to_source_val = self.memory_disag[name][0].clone()
-            target_to_source_val[~np.in1d(self.memory_disag[name][0], tregid_val_c)] = 0
-            # coarse_regid_val = self.memory_disag[name][0][self.tregid_val[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_val_c"
-            self.source_census_val[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_val_c}
-            self.memory_disag_val[name] = target_to_source_val, self.source_census_val[name], self.memory_disag[name][2]
-            if self.tregid_val[name].__len__()>0:
-                self.max_tregid_val[name] = np.max(self.tregid_val[name])
-            self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
-            self.regMasks_val[name] = tregMasks_f[ind_val_f][valid_val_boxes]
-            self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
+            # Prepare validation variables. Validation should be on the same level es training!! 
+            if train_level[i]=='f':
+                self.BBox_val[name] = tBBox_f[ind_val_f]
+                valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
+                self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
+                self.Ys_val[name] =  tY_f[ind_val_f][valid_val_boxes] 
+                self.tregid_val[name] = tregid_f[ind_val_f][valid_val_boxes]
+                target_to_source_val = self.memory_disag[name][0].clone()
+                target_to_source_val[~np.in1d(self.memory_disag[name][0], tregid_val_c)] = 0
+                # coarse_regid_val = self.memory_disag[name][0][self.tregid_val[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_val_c"
+                self.source_census_val[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_val_c}
+                self.memory_disag_val[name] = target_to_source_val, self.source_census_val[name], self.memory_disag[name][2]
+                if self.tregid_val[name].__len__()>0:
+                    self.max_tregid_val[name] = np.max(self.tregid_val[name])
+                self.Masks_val[name] = tMasks_f[ind_val_f][valid_val_boxes]
+                self.regMasks_val[name] = tregMasks_f[ind_val_f][valid_val_boxes]
+                self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
+            elif train_level[i] in ['c','ac']:
+                self.BBox_val[name] = tBBox_c[ind_val_c]
+                valid_val_boxes = (self.BBox_val[name][:,1]-self.BBox_val[name][:,0]) * (self.BBox_val[name][:,3]-self.BBox_val[name][:,2])>0
+                self.BBox_val[name] = self.BBox_val[name][valid_val_boxes]
+                self.Ys_val[name] =  tY_c[ind_val_c][valid_val_boxes] 
+                self.tregid_val[name] = tregid_c[ind_val_c][valid_val_boxes]
+                target_to_source_val = self.memory_disag[name][0].clone()
+                target_to_source_val[~np.in1d(self.memory_disag[name][0], tregid_val_c)] = 0
+                # coarse_regid_val = self.memory_disag[name][0][self.tregid_val[name]].unique(return_counts=True)[0] # consistency check: this should be the same as "tregid_val_c"
+                self.source_census_val[name] = { key: value for key,value in self.memory_disag[name][1].items() if key in tregid_val_c}
+                self.memory_disag_val[name] = target_to_source_val, self.source_census_val[name], self.memory_disag[name][2]
+                if self.tregid_val[name].__len__()>0:
+                    self.max_tregid_val[name] = np.max(self.tregid_val[name])
+                self.Masks_val[name] = tMasks_c[ind_val_c][valid_val_boxes]
+                self.regMasks_val[name] = tregMasks_c[ind_val_c][valid_val_boxes]
+                self.loc_list_val.extend( [(name, k) for k,_ in enumerate(self.BBox_val[name])])
             
             # Prepare the holdout (test) variables #TODO: refactor val and hout variables computation
             self.BBox_hout[name] = tBBox_f[ind_hout_f]
