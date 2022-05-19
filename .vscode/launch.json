@@ -290,7 +290,7 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [
                 "-train", "moz",
-                "-train_lvl", "ac",
+                "-train_lvl", "c",
                 "-test", "moz",
                 "-lr", "0.00001",
                 "-wr", "0.3",
@@ -304,6 +304,7 @@
                 "-mm", "d", 
                 "--loss", "LogL1", 
                 "--kernel_size", "1,1,1,1",
+                "--load_state", "03moz_c_new_single_1614_4",
                 "--admin_augment", "True",
                 //"--population_target", "True",
                 "--input_scaling", "True",
