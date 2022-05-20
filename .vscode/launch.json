@@ -266,17 +266,17 @@
                 "--validation_fold", "0",
                 "-rs", "1610",
                 "-rsf", "1610",
-                "-mm", "m", 
+                "-mm", "d", 
                 "--loss", "LogL1", 
                 "--kernel_size", "1,1,1,1",
-                "--admin_augment", "True",
-                //"--population_target", "True",
+                "--admin_augment", "False",
+                "--population_target", "False",
                 "--input_scaling", "True",
                 "--output_scaling", "True", 
                 "--sampler", "custom",
                 "--max_step", "150000",
                 //"--population_target", "True"
-                "--name", "this-is-a-test-run-for-naming_2"
+                "--name", "this-is-a-test-run-for-tza"
             ]
         },{
             "name": "MOZ_CV LogL1 kernel superpixel_disagg_model.py fold x",
