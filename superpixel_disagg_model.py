@@ -589,7 +589,7 @@ def main():
     
     parser.add_argument("--population_target", "-pop_target", type=lambda x: bool(strtobool(x)), default=False, help="Use population as target")
     
-    parser.add_argument("--num_epochs", "-ep", type=int, default=100, help="Number of epochs")
+    parser.add_argument("--num_epochs", "-ep", type=int, default=2000, help="Number of epochs")
     
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
     parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
