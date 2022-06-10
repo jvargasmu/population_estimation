@@ -222,6 +222,38 @@ input_paths = {
             root_path),
         "moz_wdpa_dst_cat1_100m_2015": "{}Covariates/MOZ/WDPA/WDPA_1/moz_wdpa_dst_cat1_100m_2015.tif".format(
             root_path),
+    },
+    "zmb" : {
+        "buildings_google": "{}OtherBuildings/ZMB/ZMB_own_google_bcount.tif".format(root_path),
+        "buildings_maxar": "{}OtherBuildings/ZMB/ZMB_buildings_v2_0_count.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/ZMB/ZMB_own_google_barea.tif".format(root_path),
+        "buildings_maxar_mean_area": "{}OtherBuildings/ZMB/ZMB_buildings_v2_0_mean_area.tif".format(root_path),
+        "zmb_tt50k_100m_2000": "{}Covariates/ZMB/Accessibility/zmb_tt50k_100m_2000.tif".format(
+            root_path),
+        "zmb_dst_bsgme_100m_2015": "{}Covariates/ZMB/BSGM/2015/DTE/zmb_dst_bsgme_100m_2015.tif".format(
+            root_path),
+        "zmb_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/ZMB/BuiltSettlement/2014/DTE/zmb_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
+            root_path),
+        "zmb_dst_coastline_100m_2000_2020": "{}Covariates/ZMB/Coastline/DST/zmb_dst_coastline_100m_2000_2020.tif".format(
+            root_path),
+        "zmb_dmsp_100m_2011": "{}Covariates/ZMB/DMSP/zmb_dmsp_100m_2011.tif".format(
+            root_path),
+        "zmb_esaccilc_dst_water_100m_2000_2012": "{}Covariates/ZMB/ESA_CCI_Water/DST/zmb_esaccilc_dst_water_100m_2000_2012.tif".format(
+            root_path),
+        "zmb_osm_dst_roadintersec_100m_2016": "{}Covariates/ZMB/OSM/DST/zmb_osm_dst_roadintersec_100m_2016.tif".format(
+            root_path),
+        "zmb_osm_dst_waterway_100m_2016": "{}Covariates/ZMB/OSM/DST/zmb_osm_dst_waterway_100m_2016.tif".format(
+            root_path),
+        "zmb_osm_dst_road_100m_2016": "{}Covariates/ZMB/OSM/DST/zmb_osm_dst_road_100m_2016.tif".format(
+            root_path),
+        "zmb_srtm_slope_100m": "{}Covariates/ZMB/Slope/zmb_srtm_slope_100m.tif".format(
+            root_path),
+        "zmb_srtm_topo_100m": "{}Covariates/ZMB/Topo/zmb_srtm_topo_100m.tif".format(
+            root_path),
+        "zmb_viirs_100m_2015": "{}Covariates/ZMB/VIIRS/zmb_viirs_100m_2015.tif".format(
+            root_path),
+        "zmb_wdpa_dst_cat1_100m_2015": "{}Covariates/ZMB/WDPA/WDPA_1/zmb_wdpa_dst_cat1_100m_2015.tif".format(
+            root_path),
     }
 }
 
@@ -583,6 +615,32 @@ norms = {
         "moz_viirs_100m_2015": (0.2205 , 1.0825),
         "moz_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
         'buildings_merge_mean_area': (26.3673, 48.1988)
+    },
+    "zmb":{
+        "buildings_j": (0.00089380914, 8.41622997e-03),
+        # "buildings": (0.265996819, 1.83158563e+00),
+        "esaccilc_dst011_100m_2000": (2.81727052, 5.69885715e+00),
+        "esaccilc_dst040_100m_2000": (0.44520899, 2.72345595e+00),
+        "esaccilc_dst130_100m_2000": (3.09648584, 4.70480562e+00),
+        "esaccilc_dst140_100m_2000": (9.18009012, 9.85124076e+00),
+        "esaccilc_dst150_100m_2000": (108.52330299, 8.17261502e+01),
+        "esaccilc_dst160_100m_2000": (8.65616757, 9.26884634e+00),
+        "esaccilc_dst190_100m_2000": (37.38046272, 3.10730075e+01),
+        "esaccilc_dst200_100m_2000": (64.73759992, 4.46013049e+01),
+        "zmb_tt50k_100m_2000": (209.1351, 188.1936),
+        "zmb_dst_bsgme_100m_2015": (3.2670, 4.2283),
+        "zmb_dst_ghslesaccilcgufghsll_100m_2014": (3.3381, 4.2542),
+        "zmb_dst_coastline_100m_2000_2020": (698.8104,  326.6751),
+        "zmb_dmsp_100m_2011": (71.8836 ,  399.8602 ),
+        "zmb_esaccilc_dst_water_100m_2000_2012":(18.1815, 14.8920), 
+        "zmb_osm_dst_roadintersec_100m_2016":(19.8096, 29.5883), 
+        "zmb_osm_dst_waterway_100m_2016": (15.2655, 15.4519), 
+        "zmb_osm_dst_road_100m_2016": (3.7082,  5.6608), 
+        "zmb_srtm_slope_100m": (3.2089 , 3.8157),
+        "zmb_srtm_topo_100m": (1143.9080 , 402.7680),
+        "zmb_viirs_100m_2015": (0.2205 , 1.0825),
+        "zmb_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
+        'buildings_merge_mean_area': (26.3673, 48.1988)
     }
 }
 
@@ -634,6 +692,14 @@ metadata = {
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_moz.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/MOZ/moz_wpop_regions.tif'.format(root_path)
+    },
+    "zmb":{
+        "wp_no_data": [0],
+        "wp_covariates_no_data": -9999,
+        "hd_no_data": [0],
+        "scale_maxar_to_google": None,
+        "preproc_data_path": 'preprocessed_data_3_zmb.pkl',
+        "rst_wp_regions_path": '{}OtherBuildings/ZMB/zmb_adm4_sid.tif'.format(root_path)
     }
 }
 
