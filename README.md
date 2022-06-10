@@ -26,7 +26,7 @@ time python superpixel_disagg_model.py -train tza,uga -train_lvl c,f -test tza,u
 ## Installation Steps
 
  - 'git clone' this repo
- - 'virtualenv -p python3 env'
+ - 'virtualenv -p python3 HACenv'
  - 'source HACenv/bin/activate'
  - 'pip install --upgrade pip'
  - 'pip install gdal==3.2.1'
