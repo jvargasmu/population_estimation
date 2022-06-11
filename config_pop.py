@@ -226,7 +226,7 @@ input_paths = {
     "zmb" : {
         "buildings_google": "{}OtherBuildings/ZMB/ZMB_own_google_bcount.tif".format(root_path),
         "buildings_maxar": "{}OtherBuildings/ZMB/ZMB_buildings_v2_0_count.tif".format(root_path),
-        "buildings_google_mean_area": "{}OtherBuildings/ZMB/ZMB_own_google_barea.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/ZMB/ZMB_own_google_barea_v2.tif".format(root_path),
         "buildings_maxar_mean_area": "{}OtherBuildings/ZMB/ZMB_buildings_v2_0_mean_area.tif".format(root_path),
         "zmb_tt50k_100m_2000": "{}Covariates/ZMB/Accessibility/zmb_tt50k_100m_2000.tif".format(
             root_path),
