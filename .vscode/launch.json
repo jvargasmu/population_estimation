@@ -324,7 +324,7 @@
                 //"--population_target", "True"
                 "--name", "this-is-a-test-for-zmb"
             ]
-        },
+        },{
             "name": "MOZ_CV LogL1 kernel superpixel_disagg_model.py fold x",
             "type": "python",
             "request": "launch",
