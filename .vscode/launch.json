@@ -20,9 +20,8 @@
                 "tza",
                 "P_2020"
             ]
-        },
-        {
-            "name": "Py: UGA preprocessing_pop_data.py",
+        },{
+                "name": "Py: UGA preprocessing_pop_data.py",
             "type": "python",
             "request": "launch",
             "program": "preprocessing_pop_data.py",
@@ -100,7 +99,18 @@
                 "moz",
                 "P_2020"
             ]
-        }, 
+        },{
+        "name": "Py: ZMB compute_gbuilding_count_map.py",
+        "type": "python",
+        "request": "launch",
+        "program": "compute_gbuilding_count_map.py",
+        "console": "integratedTerminal",
+        "args": [
+            "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_buildings_v2_0_count.tif",
+            "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/",
+            "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_own_google_raster_area.tif", 
+        ]
+    },
         {
             "name": "Py: train_model_with_agg_data.py",
             "type": "python",
@@ -110,13 +120,13 @@
             "env": {//"DISPLAY":":1",
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
-            "args": [
-                "preprocessed_data_3.pkl",
-                "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
-                "output_dir/",
-                //"P_2020",
-                "tza"
-            ]
+                "args": [
+                    "preprocessed_data_3.pkl",
+                    "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                    "output_dir/",
+                    //"P_2020",
+                    "tza"
+                ]
         }, 
         {
             "name": "Py: building_disagg_baseline.py Global Disag",
@@ -278,7 +288,43 @@
                 //"--population_target", "True"
                 "--name", "this-is-a-test-run-for-tza"
             ]
-        },{
+        },
+        {
+            "name": "ZMB LogL1 kernel superpixel_disagg_model.py fold x",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-train", "zmb",
+                "-train_lvl", "c",
+                "-test", "zmb",
+                "-lr", "0.0001",
+                "-wr", "0.01",
+                "--dropout", "0.4",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "800",
+                "--validation_fold", "0",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "m", 
+                "--loss", "LogL1", 
+                "--kernel_size", "1,1,1,1",
+                "--admin_augment", "True",
+                //"--population_target", "True",
+                "--input_scaling", "True",
+                "--output_scaling", "True", 
+                "--sampler", "custom",
+                "--max_step", "150000",
+                //"--population_target", "True"
+                "--name", "this-is-a-test-for-zmb"
+            ]
+        },
             "name": "MOZ_CV LogL1 kernel superpixel_disagg_model.py fold x",
             "type": "python",
             "request": "launch",
