@@ -32,7 +32,8 @@ def rounder(values):
 
 def compute_percentage_of_built_up_area(regions_path, csv_dir, output_path, mode="count"):
     # Get csv paths
-    csv_paths = [os.path.join(csv_dir, elem) for elem in os.listdir(csv_dir) if elem.endswith(".csv")]
+    # csv_paths = [os.path.join(csv_dir, elem) for elem in os.listdir(csv_dir) if elem.endswith(".csv")]
+    csv_paths = [csv_dir]
     # Read image
     with rs.open(regions_path) as guide_raster:
         meta = guide_raster.meta.copy()
@@ -68,7 +69,11 @@ def compute_percentage_of_built_up_area(regions_path, csv_dir, output_path, mode
 
                     if (pix_y >= 0 and pix_y < width) and (pix_x >= 0 and pix_x < height):
                         counts[pix_y, pix_x] += 1 
-                        area_map[pix_y, pix_x] += ((area_map[pix_y, pix_x] * (counts[pix_y, pix_x]-1)) + area) / (counts[pix_y, pix_x])
+                        area_map[pix_y, pix_x] = ((area_map[pix_y, pix_x] * (counts[pix_y, pix_x]-1)) + area) / (counts[pix_y, pix_x])
+                        # if area >20000:
+                        #     print("Sus")
+                        # if area_map.max()>20000:
+                        #     print("also sus")
 
     if mode=="count":
         output = counts
@@ -85,7 +90,7 @@ def compute_percentage_of_built_up_area(regions_path, csv_dir, output_path, mode
         with rs.open('/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_own_google_bcount.tif', 'w', **meta) as dst: 
             dst.write(counts,1)  # rasterio bands are 1-indexed 
 
-        with rs.open('/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_own_google_barea_v2.tif', 'w', **meta) as dst: 
+        with rs.open('/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_own_google_barea_v3.tif', 'w', **meta) as dst: 
             dst.write(area_map,1)  # rasterio bands are 1-indexed 
     return output
 
