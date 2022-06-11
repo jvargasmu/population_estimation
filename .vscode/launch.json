@@ -21,6 +21,21 @@
                 "P_2020"
             ]
         },{
+            "name": "Py: ZMB preprocessing_pop_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "preprocessing_pop_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "../../../data/OtherBuildings/ZMB/zmb_admbnda_adm3_20181019/zmb_admbnda_adm3_20181019.shp",
+                "../../../data/OtherBuildings/ZMB/zmb_adm3_sid.tif",
+                "../../../data/OtherBuildings/ZMB/zmb_subnational_2000_2020_sid.tif",
+                "../../../data/OtherBuildings/ZMB/zmb_population_2000_2020_sid.csv",
+                "preprocessed_data_3_zmb.pkl",
+                "zmb",
+                "P_2020"
+            ]
+        },{
                 "name": "Py: UGA preprocessing_pop_data.py",
             "type": "python",
             "request": "launch",
