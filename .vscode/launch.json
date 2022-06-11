@@ -20,6 +20,17 @@
                 "tza",
                 "P_2020"
             ]
+        },{
+            "name": "Py: ZMB compute_gbuilding_count_map.py",
+            "type": "python",
+            "request": "launch",
+            "program": "compute_gbuilding_count_map.py",
+            "console": "integratedTerminal",
+            "args": [
+                "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_buildings_v2_0_count.tif",
+                "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/",
+                "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_own_google_raster_area.tif", 
+            ]
         },
         {
             "name": "Py: UGA preprocessing_pop_data.py",
@@ -119,7 +130,7 @@
             ]
         }, 
         {
-            "name": "Py: building_disagg_baseline.py Global Disag",
+            "name": "Py: building_disagg_baseline.py TZA",
             "type": "python",
             "request": "launch",
             "program": "building_disagg_baseline.py",
@@ -130,10 +141,11 @@
             "args": [
                 // "preprocessed_data_3.pkl",
                 // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
-                "--output_dir", "output_dir/",
+                "--output_dir", "output_dir/Buildingdisag/TZA/",
                 //"P_2020",
-                "--train_dataset_name", "tza,uga",
-                "--global_disag"
+                "--train_dataset_name", "moz",
+                // "--test_dataset_name", "tza",
+                //"--global_disag"
             ]
         }, 
         {
@@ -150,8 +162,8 @@
                 // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
                 "--output_dir", "output_dir/",
                 //"P_2020",
-                // "--train_dataset_name", "cod,uga,nga,moz,rwa",
-                "--train_dataset_name", "uga,rwa,moz",
+                "--train_dataset_name", "cod,uga,nga,moz,rwa",
+                //"--train_dataset_name", "uga,rwa,moz",
                 // "--train_dataset_name", "tza",
                 "--test_dataset_name", "tza",
                 "--global_disag"
@@ -172,8 +184,8 @@
                 // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
                 "--output_dir", "output_dir/",
                 //"P_2020",
-                // "--train_dataset_name", "cod,uga,nga,moz,rwa",
-                "--train_dataset_name", "uga,rwa,tza",
+                "--train_dataset_name", "cod,uga,nga,moz,rwa",
+                //"--train_dataset_name", "uga,rwa,tza",
                 // "--train_dataset_name", "tza",
                 "--test_dataset_name", "moz",
                 "--global_disag"
@@ -181,7 +193,7 @@
             ]
         },
         {
-            "name": "Py: building_disagg_baseline.py Coarse Disag",
+            "name": "Py: building_disagg_baseline.py MOZ",
             "type": "python",
             "request": "launch",
             "program": "building_disagg_baseline.py",
@@ -192,10 +204,9 @@
             "args": [
                 // "preprocessed_data_3.pkl",
                 // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
-                "--output_dir", "output_dir/",
+                "--output_dir", "output_dir//Buildingdisag/MOZ/",
                 //"P_2020",
-                "--train_dataset_name", "tza",
-                "--test_dataset_name", "tza",
+                "--train_dataset_name", "moz", 
                 //"--global_disag", "True"
             ]
         },
@@ -264,8 +275,8 @@
                 "-adamwr", "0",
                 "-lstep", "800",
                 "--validation_fold", "0",
-                "-rs", "1610",
-                "-rsf", "1610",
+                "-rs", "1612",
+                "-rsf", "1612",
                 "-mm", "d", 
                 "--loss", "LogL1", 
                 "--kernel_size", "1,1,1,1",
@@ -372,7 +383,7 @@
                 "--validation_fold", "0",
                 "-rs", "1610",
                 "-rsf", "1610",
-                "-mm", "m", 
+                "-mm", "d", 
                 "--loss", "LogL1", 
                 "--kernel_size", "1,1,1,1",
                 "--admin_augment", "True",
@@ -660,9 +671,9 @@
                 "PYTHONPATH": "${workspaceRoot}",
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [ 
-                "-train", "rwa,tza",
+                "-train", "rwa",
                 "-train_lvl", "f,f,f,f,f",
-                "-test", "tza",
+                "-test", "rwa",
                 "-lr", "0.000001",
                 "-wr", "0.01",
                 //"--dropout", "0.4",

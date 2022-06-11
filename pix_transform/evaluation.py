@@ -673,6 +673,9 @@ def EvalModel_PixAdminTransform(
         val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = memory_vars[name]
         val_features = dataset.features[name]
         
+        print((val_regions>0).sum())
+        print(val_valid_data_mask.sum())
+
         res, this_log_dict = eval_my_model(
             mynet, val_features, val_valid_data_mask, val_regions,
             val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
