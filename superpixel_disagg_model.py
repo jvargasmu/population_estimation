@@ -228,7 +228,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
     if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
             h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0, chunks=(1,dim,512,512))
-            for i,feat in tqdm(enumerate(tr_features)):
+            for i,feat in enumerate(tqdm(tr_features)):
                 h5_features[:,i] = feat
     
 
