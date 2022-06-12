@@ -117,6 +117,25 @@ python superpixel_disagg_model.py -train moz -train_lvl c -test moz -lr 0.00001 
 python superpixel_disagg_model.py -train moz -train_lvl c -test moz -lr 0.00001 -optim adam -wr 0.3 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 4 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 50000 --name 03moz_c_new_single_${rs}_X --e5f_metric best_mape -e5f 03moz_c_new_${rs}_1,03moz_c_new_${rs}_2,03moz_c_new_${rs}_3,03moz_c_new_single_${rs}_4,03moz_c_new_single_${rs}_5
 
 
+#zmb coarse mod, in paper
+python superpixel_disagg_model.py -train zmb -train_lvl c -test moz -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp1_${rs}_1
+python superpixel_disagg_model.py -train zmb -train_lvl c -test moz -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 1 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp1_${rs}_2
+python superpixel_disagg_model.py -train zmb -train_lvl c -test moz -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 2 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp1_${rs}_3
+python superpixel_disagg_model.py -train zmb -train_lvl c -test moz -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 3 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp1_${rs}_4
+python superpixel_disagg_model.py -train zmb -train_lvl c -test moz -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 4 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp1_${rs}_5
+python superpixel_disagg_model.py -train zmb -train_lvl c -test moz -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 4 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp1_${rs}_X --e5f_metric best_mape -e5f zmb_c_exp1_${rs}_1,zmb_c_exp1_${rs}_2,zmb_c_exp1_${rs}_3,zmb_c_exp1_${rs}_4,zmb_c_exp1_${rs}_5
+
+# zmb experiments
+python superpixel_disagg_model.py -train zmb -train_lvl c -test zmb -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp1_${rs}_1
+
+python superpixel_disagg_model.py -train zmb -train_lvl c -test zmb -lr 0.00001 -optim adam -wr 0.001 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp2_${rs}_1
+python superpixel_disagg_model.py -train zmb -train_lvl c -test zmb -lr 0.00001 -optim adam -wr 0.1 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp3_${rs}_1
+python superpixel_disagg_model.py -train zmb -train_lvl c -test zmb -lr 0.00001 -optim adam -wr 0.01 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_c_exp3_${rs}_1
+
+
+python superpixel_disagg_model.py -train zmb -train_lvl f -test zmb -lr 0.00001 -optim adam -wr 0.001 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_f_exp3_${rs}_1 
+python superpixel_disagg_model.py -train zmb -train_lvl f -test zmb -lr 0.00001 -optim adam -wr 0.1 --dropout 0.4 -adamwr 0. -lstep 200 --validation_fold 0 -rs ${rs} -rsf ${rs} -mm m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --sampler custom --max_step 75000 --name zmb_f_exp4_${rs}_1 
+
 
 # moz coarse ablation 1
 #moz coarse mod, in paper

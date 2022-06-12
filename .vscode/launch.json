@@ -318,8 +318,12 @@
                 "-train", "zmb",
                 "-train_lvl", "c",
                 "-test", "zmb",
+<<<<<<< HEAD
                 // "-lr", "0.0001",
                 "-lr", "0.00003",
+=======
+                "-lr", "0.0003",
+>>>>>>> 7264227 (save changes in a commit)
                 "-wr", "0.01",
                 "--dropout", "0.4",
                 "-optim", "adam",
@@ -531,6 +535,27 @@
                 "-adm_rst", "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
                 "-out", "../dataout/wpop_tza_c_311_rs1610/",
                 "-data", "tza",
+                "-bu", "True",
+                "-e5f", "True",
+                "-train_lvl", "c",
+                "-rs", "1610",
+                "-rsf", "1610"
+            ]
+        },{
+            "name": "ZMB train_model_with_agg_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "train_model_with_agg_data.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-pre", "preprocessed_data_3_zmb.pkl",
+                "-adm_rst", "../../../data/OtherBuildings/ZMB/zmb_adm4_sid.tif.tif",
+                "-out", "../dataout/wpop_zmb_c_311_rs1610/",
+                "-data", "zmb",
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "c",
