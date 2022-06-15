@@ -37,6 +37,8 @@ def compute_avg_feats(feats_list, features, valid_ids, id_to_cr_id, areas, group
         for id in valid_ids:
             cr_id = id_to_cr_id[id]
             grouped_features[cr_id][feat] += features[id][feat] * (areas[id] / grouped_area[cr_id])
+            if grouped_features[cr_id][feat]>1000000:
+                print("Suss")
 
     return grouped_features
 
@@ -258,7 +260,7 @@ def train_model_with_agg_data(preproc_data_path, rst_wp_regions_path, output_dir
                 features_hout = select_subset_dict(features, choice_hout, offset=id_offset)
                 features_train_arr = transform_dict_to_matrix(features_train)
                 features_val_arr = transform_dict_to_matrix(features_val)
-                density = compute_density(target_norm, valid_census, list(valid_census.keys())) #TODO: verify if is correct
+                density = compute_density(target_norm, valid_census, list(valid_census.keys()))
             
             # Compute log of density to be used as target for training the model
             density_train = select_subset_dict(density, choice_train, offset=id_offset)

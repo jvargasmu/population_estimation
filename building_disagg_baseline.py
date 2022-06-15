@@ -19,7 +19,8 @@ def disaggregate_weighted_by_preds(cr_census_arr, pred_map, map_valid_ids,
         pred_map_masked = np.multiply(pred_map, final_mask)
 
     # Compute total predictions per region
-    # pred_map_masked = np.squeeze(pred_map_masked)
+    if pred_map_masked.shape.__len__()==3:
+        pred_map_masked = np.squeeze(pred_map_masked)
     pred_map_per_cr_region = compute_accumulated_values_by_region(cr_regions.astype(np.uint32), pred_map_masked.astype(np.float32), map_valid_ids.astype(np.uint32),
                                                                   num_cr_regions)
 
@@ -88,7 +89,7 @@ def building_disagg_baseline(output_dir, dataset_name, test_dataset_name, global
         feature_names = list(input_paths.keys())
         
         # Merging building inputs from google and maxar if both are available
-        merge_with_maxar = False
+        merge_with_maxar = True
         if ('buildings_google' in feature_names) and ('buildings_maxar' in feature_names) and merge_with_maxar:
             # Taking the max over both available inputs
             #  max operation for mean building areas

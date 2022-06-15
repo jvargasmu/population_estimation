@@ -459,7 +459,7 @@ no_data_values = {
         "zmb_osm_dst_road_100m_2016": -99999,
         "zmb_srtm_slope_100m": 255.,
         "zmb_srtm_topo_100m": 32767.,
-        "zmb_viirs_100m_2015": 3.4028e+38,
+        "zmb_viirs_100m_2015": 3.4028235e+38,
         "zmb_wdpa_dst_cat1_100m_2015": -99999,
     }
 }

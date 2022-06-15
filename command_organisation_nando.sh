@@ -331,9 +331,13 @@ python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,
 python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza -lr 0.000001 -wr 0.01 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_tza_${rs} --full_ceval False 
 python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test tza -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_tza_${rs}_evaled --eval_model transfer_to_tza_${rs} --e5f_metric best_mape_avg
 
-# tza, l1
- python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza -lr 0.000001 -wr 0.01 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss l1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_tza_l1_${rs} --full_ceval False 
+# tza, l1, 
+python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza -lr 0.000001 -wr 0.01 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss l1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_tza_l1_${rs} --full_ceval False 
 python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz -train_lvl f,f,f,f,f -test tza -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss l1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_tza_l1_${rs}_evaled --eval_model transfer_to_tza_l1_${rs} --e5f_metric best_mape_avg
+ 
+# tza, l1, with zmb
+python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz,zmb -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza -lr 0.000001 -wr 0.01 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss l1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_tza_l1_withzmb_${rs} --full_ceval False 
+python superpixel_disagg_model.py -train uga,rwa,cod,nga,moz,zmb -train_lvl f,f,f,f,f -test tza -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss l1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_tza_l1_withzmb_${rs}_evaled --eval_model transfer_to_tza_l1_withzmb_${rs} --e5f_metric best_mape_avg
  
 # to moz, in paper
 python superpixel_disagg_model.py -train uga,rwa,cod,nga,tza -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza -lr 0.000001 -wr 3.0 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 50000 --name transfer_to_moz_3_${rs} --full_ceval False 
@@ -342,6 +346,8 @@ python superpixel_disagg_model.py -train uga,rwa,cod,nga,tza -train_lvl f,f,f,f,
 # to moz, l1
 python superpixel_disagg_model.py -train uga,rwa,cod,nga,tza -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza -lr 0.000001 -wr 1.0 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss l1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_moz_1_l1_${rs} --full_ceval False 
 python superpixel_disagg_model.py -train uga,rwa,cod,nga,tza -train_lvl f,f,f,f,f -test moz -lr 0.000001 -optim adam -wr 1.0 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss l1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_moz_1_l1_${rs}_evaled --eval_model transfer_to_moz_1_l1_${rs} --e5f_metric best_mape_avg
+
+
 
 # to moz, more lr
 python superpixel_disagg_model.py -train uga,rwa,cod,nga,tza -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza -lr 0.00001 -wr 1.0 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 50000 --name transfer_to_moz_1mlr_${rs} --full_ceval False 
@@ -358,6 +364,24 @@ python superpixel_disagg_model.py -train uga,moz,cod,nga,tza -train_lvl f,f,f,f,
 # to uga
 python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza -lr 0.000001 -wr 0.01 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_uga_${rs} --full_ceval False 
 python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza -train_lvl f,f,f,f,f -test uga -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_uga_${rs}_evaled --eval_model transfer_to_uga_${rs} --e5f_metric best_mape_avg
+
+# to zmb
+python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza,uga -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza,zmb -lr 0.000001 -wr 0.01 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_zmb_v1_${rs} --full_ceval False 
+python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza,uga -train_lvl f,f,f,f,f -test zmb -lr 0.000001 -optim adam -wr 0.01 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_zmb_v1_${rs}_evaled --eval_model transfer_to_zmb_v1_${rs} --e5f_metric best_mape_avg 
+
+# to zmb
+python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza,uga -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza,zmb -lr 0.00001 -wr 0.01 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_zmb_v2_${rs} --full_ceval False 
+python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza,uga -train_lvl f,f,f,f,f -test zmb -lr 0.00001 -optim adam -wr 0.01 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_zmb_v2_${rs}_evaled --eval_model transfer_to_zmb_v2_${rs} --e5f_metric best_mape_avg 
+
+# to zmb
+python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza,uga -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza,zmb -lr 0.00001 -wr 0.1 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_zmb_v3_${rs} --full_ceval False 
+python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza,uga -train_lvl f,f,f,f,f -test zmb -lr 0.00001 -optim adam -wr 0.1 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_zmb_v3_${rs}_evaled --eval_model transfer_to_zmb_v3_${rs} --e5f_metric best_mape_avg 
+
+# to zmb
+python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza,uga -train_lvl f,f,f,f,f -test uga,rwa,nga,moz,cod,tza,zmb -lr 0.000001 -wr 0.1 -optim adam -adamwr 0 -lstep 800 --validation_split 0.2 -rs ${rs} -rsf ${rs} -mm m,m,m,m,m --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_zmb_v4_${rs} --full_ceval False 
+python superpixel_disagg_model.py -train rwa,moz,cod,nga,tza,uga -train_lvl f,f,f,f,f -test zmb -lr 0.000001 -optim adam -wr 0.1 -adamwr 0. -lstep 800 -rs ${rs} -rsf ${rs} -mm d,d,d,d,d,d --loss LogL1 --input_scaling True --output_scaling True --silent_mode True --dataset_dir datasets --max_step 30000 --name transfer_to_zmb_v4_${rs}_evaled --eval_model transfer_to_zmb_v4_${rs} --e5f_metric best_mape_avg 
+
+
 
 
 ### Building Disaggregation - transfer country - fine (& adj.) 

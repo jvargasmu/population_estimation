@@ -21,19 +21,17 @@
                 "P_2020"
             ]
         },{
-            "name": "Py: ZMB preprocessing_pop_data.py",
+            "name": "Py: ZMB preprocessing_zmb_census_data.py",
             "type": "python",
             "request": "launch",
-            "program": "preprocessing_pop_data.py",
+            "program": "preprocessing_zmb_pop_data.py",
             "console": "integratedTerminal",
             "args": [
-                "../../../data/OtherBuildings/ZMB/zmb_admbnda_adm3_20181019/zmb_admbnda_adm3_20181019.shp",
-                "../../../data/OtherBuildings/ZMB/zmb_adm3_sid.tif",
-                "../../../data/OtherBuildings/ZMB/zmb_subnational_2000_2020_sid.tif",
-                "../../../data/OtherBuildings/ZMB/zmb_population_2000_2020_sid.csv",
+                "../../../data/OtherBuildings/ZMB/zmb_adm4_sid.tif",
+                "../../../data/OtherBuildings/ZMB/zambia.csv",
+                "2020",
                 "preprocessed_data_3_zmb.pkl",
-                "zmb",
-                "P_2020"
+                "zmb"
             ]
         },{
                 "name": "Py: UGA preprocessing_pop_data.py",
@@ -204,6 +202,28 @@
                 "--global_disag"
                 //"--global_disag", "True"
             ]
+        }, 
+        {
+            "name": "Py: building_disagg_baseline.py Global Disag Transfer to ZMB",
+            "type": "python",
+            "request": "launch",
+            "program": "building_disagg_baseline.py",
+            "console": "integratedTerminal",
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                // "preprocessed_data_3.pkl",
+                // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
+                "--output_dir", "output_dir/",
+                //"P_2020",
+                "--train_dataset_name", "cod,uga,nga,moz,rwa,tza",
+                // "--train_dataset_name", "uga,rwa,tza",
+                // "--train_dataset_name", "tza",
+                "--test_dataset_name", "zmb",
+                "--global_disag"
+                //"--global_disag", "True"
+            ]
         },
         {
             "name": "Py: building_disagg_baseline.py Coarse Disag",
@@ -219,8 +239,8 @@
                 // "../../../data/OtherBuildings/TZA/tza_subnational_2000_2020_sid.tif",
                 "--output_dir", "output_dir/",
                 //"P_2020",
-                "--train_dataset_name", "tza",
-                "--test_dataset_name", "tza",
+                "--train_dataset_name", "zmb",
+                // "--test_dataset_name", "zmb",
                 //"--global_disag", "True"
             ]
         },
@@ -317,13 +337,9 @@
             "args": [
                 "-train", "zmb",
                 "-train_lvl", "c",
-                "-test", "zmb",
-<<<<<<< HEAD
-                // "-lr", "0.0001",
-                "-lr", "0.00003",
-=======
-                "-lr", "0.0003",
->>>>>>> 7264227 (save changes in a commit)
+                "-test", "zmb", 
+                // "-lr", "0.0001", 
+                "-lr", "0.00001", 
                 "-wr", "0.01",
                 "--dropout", "0.4",
                 "-optim", "adam",
@@ -332,7 +348,7 @@
                 "--validation_fold", "0",
                 "-rs", "1610",
                 "-rsf", "1610",
-                "-mm", "m", 
+                "-mm", "d", 
                 "--loss", "LogL1", 
                 "--kernel_size", "1,1,1,1",
                 "--admin_augment", "True",
@@ -553,14 +569,14 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [
                 "-pre", "preprocessed_data_3_zmb.pkl",
-                "-adm_rst", "../../../data/OtherBuildings/ZMB/zmb_adm4_sid.tif.tif",
-                "-out", "../dataout/wpop_zmb_c_311_rs1610/",
+                "-adm_rst", "../../../data/OtherBuildings/ZMB/zmb_adm4_sid.tif",
+                "-out", "../dataout/wpop_zmb_c_311_rs1611/",
                 "-data", "zmb",
                 "-bu", "True",
                 "-e5f", "True",
                 "-train_lvl", "c",
-                "-rs", "1610",
-                "-rsf", "1610"
+                "-rs", "1611",
+                "-rsf", "1611"
             ]
         },{
             "name": "MOZ train_model_with_agg_data.py",

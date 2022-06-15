@@ -58,7 +58,10 @@ def read_input_raster_data(input_paths):
     inputs = {}
     for kinp in input_paths.keys():
         inputs[kinp] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
-    
+        invalid_mask = inputs[kinp]>1e+37
+        if invalid_mask.sum()>0:
+            inputs[kinp][inputs[kinp]>1e+37] = np.median(inputs[kinp][inputs[kinp]<=1e+37])
+
     for suffix in ["", "_mean_area"]:
         buildings_feat = "buildings{}".format(suffix)
         buildings_google_feat = "buildings_google{}".format(suffix)
