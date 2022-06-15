@@ -32,6 +32,18 @@
                 "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/open_buildings_v1_polygons_wb_10m_ZMB.csv",
                 "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_own_google_raster_area.tif", 
             ]
+        },{
+            "name": "Py: TZA compute_gbuilding_count_map.py",
+            "type": "python",
+            "request": "launch",
+            "program": "compute_gbuilding_count_map.py",
+            "console": "integratedTerminal",
+            "args": [
+                "/scratch/Nando/HAC2/data/OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif",
+                // "/scratch/Nando/HAC2/data/OtherBuildings/ZMB/",
+                "/scratch/Nando/HAC2/data/OtherBuildings/TZA/open_buildings_v1_polygons_wb_10m_TZA.csv",
+                "/scratch/Nando/HAC2/data/OtherBuildings/TZA/TZA_own_google_raster_area.tif", 
+            ]
         },
         {
             "name": "Py: UGA preprocessing_pop_data.py",

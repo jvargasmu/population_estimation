@@ -30,7 +30,7 @@ def rounder(values):
     return np.frompyfunc(f, 1, 1)
 
 
-def compute_percentage_of_built_up_area(regions_path, csv_dir, output_path, mode="count"):
+def compute_percentage_of_built_up_area(regions_path, csv_dir, output_path, mode="count", thresh=0.0):
     # Get csv paths
     # csv_paths = [os.path.join(csv_dir, elem) for elem in os.listdir(csv_dir) if elem.endswith(".csv")]
     csv_paths = [csv_dir]
@@ -47,9 +47,7 @@ def compute_percentage_of_built_up_area(regions_path, csv_dir, output_path, mode
     # width, height = img_obj.RasterXSize, img_obj.RasterYSize
     xmax = xmin + width * xpixel
     ymin = ymax + height * ypixel
-    print("ymin {} ymax {} xmin {}, xmax {}, width {}, height {}, xpixel {} ypixel {}".format(ymin, ymax, xmin, xmax,
-                                                                                              width, height, xpixel,
-                                                                                              ypixel))
+    print("ymin {} ymax {} xmin {}, xmax {}, width {}, height {}, xpixel {} ypixel {}".format(ymin, ymax, xmin, xmax, width, height, xpixel, ypixel))
     
     counts = np.zeros((height, width)).astype(np.float32)
     area_map = np.zeros((height, width)).astype(np.float32)
@@ -67,34 +65,24 @@ def compute_percentage_of_built_up_area(regions_path, csv_dir, output_path, mode
                     pix_y = int(math.floor((latitude - ymax) / -abs(ypixel)))
                     pix_x = int(math.floor((longitude - xmin) / xpixel))
 
-                    if (pix_y >= 0 and pix_y < width) and (pix_x >= 0 and pix_x < height):
+                    if (pix_y >= 0 and pix_y < width) and (pix_x >= 0 and pix_x < height) and confidence>thresh:
                         counts[pix_y, pix_x] += 1 
                         area_map[pix_y, pix_x] = ((area_map[pix_y, pix_x] * (counts[pix_y, pix_x]-1)) + area) / (counts[pix_y, pix_x])
-                        # if area >20000:
-                        #     print("Sus")
-                        # if area_map.max()>20000:
-                        #     print("also sus")
 
     if mode=="count":
         output = counts
     elif mode=="area":
         output = area_map
 
-    # write_geoloc_image(output, output_path, regions_path)
-
     with rs.Env(): 
         meta.update({"driver": "GTiff", "count": 1, 'dtype': 'float32'}) 
-        # meta.update({"driver": "GTiff",'dtype': 'float32'}) 
-        # with rs.open(output_path, 'w', **meta) as dst: 
-        #     dst.write(output,1)  # rasterio bands are 1-indexed 
-        with rs.open('/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_own_google_bcount.tif', 'w', **meta) as dst: 
+        with rs.open('/scratch/Nando/HAC2/data/OtherBuildings/TZA/TZA_own_google_bcount_000.tif', 'w', **meta) as dst: 
             dst.write(counts,1)  # rasterio bands are 1-indexed 
 
-        with rs.open('/scratch/Nando/HAC2/data/OtherBuildings/ZMB/ZMB_own_google_barea_v3.tif', 'w', **meta) as dst: 
-            dst.write(area_map,1)  # rasterio bands are 1-indexed 
-    return output
+        with rs.open('/scratch/Nando/HAC2/data/OtherBuildings/TZA/TZA_own_google_barea_000.tif', 'w', **meta) as dst: 
+            dst.write(area_map,1)  # rasterio bands are 1-indexed
 
-
+    print("all Done!")
 
 
 def compute_building_count_area(guide_tiff, csv_dir, output_path, mode="count"):
@@ -117,9 +105,8 @@ def compute_building_count_area(guide_tiff, csv_dir, output_path, mode="count"):
     lat_range = np.linspace(lat_start,lat_end, height-1) + lat_pixel/2
 
     buildingsdf = pd.read_csv(csv_dir)
-    buildingsdf["long_range_round"] = rounder(long_range)(buildingsdf) 
-    buildingsdf["lat_range_round"] = rounder(lat_range)(buildingsdf) 
-
+    buildingsdf["long_range_round"] = rounder(long_range)(buildingsdf)
+    buildingsdf["lat_range_round"] = rounder(lat_range)(buildingsdf)
 
     counts = np.zeros((guide_tiff["height"], guide_tiff["width"])).astype(np.float32)
     area_map = np.zeros((guide_tiff["height"], guide_tiff["width"])).astype(np.float32)
@@ -145,29 +132,18 @@ def compute_building_count_area(guide_tiff, csv_dir, output_path, mode="count"):
     elif mode=="area":
         output = area_map
 
-    with rs.Env():
-        # read profile info from first file 
-        meta = guide_tiff["reader"].meta.copy()
-        # guide_tiff["reader"].close()
-
-        meta.update({"driver": "GTiff",'dtype': 'float32'})
-        # meta.update({"driver": "GTiff", "count": 1, 'dtype': 'float32'})
-
+    with rs.Env(): 
+        meta = guide_tiff["reader"].meta.copy()  
+        meta.update({"driver": "GTiff",'dtype': 'float32'})  
         with rs.open(output_path, 'w', **meta) as dst: 
             dst.write(output)  # rasterio bands are 1-indexed 
 
-    return output  
-
-
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("rst_wp_boundaries_path", type=str,
-                        help="Raster of WorldPop administrative boundaries information")
+    parser.add_argument("rst_wp_boundaries_path", type=str, help="Raster of WorldPop administrative boundaries information")
     parser.add_argument("csv_dir", type=str, help="CSV directory")
     parser.add_argument("output_path", type=str, help="Output path (tif file)")
     args = parser.parse_args()
-
-
     
     compute_percentage_of_built_up_area(args.rst_wp_boundaries_path, args.csv_dir, args.output_path)
     # compute_building_count_area(args.rst_wp_boundaries_path, args.csv_dir, args.output_path)
