@@ -21,6 +21,34 @@
                 "P_2020"
             ]
         },{
+            "name": "Py: ZAF preprocessing_zmb_census_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "preprocessing_zmb_pop_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "../../data/OtherBuildings/ZAF/zaf_adm4_sid.tif",
+                "../../data/OtherBuildings/ZAF/southafrica.csv",
+                "2020",
+                "preprocessed_data_3_zaf.pkl",
+                "zaf"
+            ]
+        },{
+            "name": "Py: ZAF wpop preprocessing_pop_data.py",
+        "type": "python",
+        "request": "launch",
+        "program": "preprocessing_pop_data.py",
+        "console": "integratedTerminal",
+        "args": [
+            "../../../data/OtherBuildings/ZAF/zaf_humdata_regions_shapefile/zaf_humdata_regions.shp",
+            "../../../data/OtherBuildings/ZAF/zaf_humdata_regions.tif",
+            "../../../data/OtherBuildings/ZAF/zaf_wpop_regions.tif",
+            "../../../data/OtherBuildings/ZAF/zaf_wpop_census.csv",
+            "preprocessed_data_3_zaf.pkl",
+            "zaf",
+            "P_2020"
+        ]
+        }, {
             "name": "Py: ZMB preprocessing_zmb_census_data.py",
             "type": "python",
             "request": "launch",
