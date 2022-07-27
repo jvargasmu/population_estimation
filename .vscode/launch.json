@@ -21,18 +21,31 @@
                 "P_2020"
             ]
         },{
-            "name": "Py: ZAF preprocessing_zmb_census_data.py",
+            "name": "Py: ZAF preprocessing_zaf_census_data.py",
             "type": "python",
             "request": "launch",
-            "program": "preprocessing_zmb_pop_data.py",
+            "program": "preprocessing_zaf_pop_data.py",
             "console": "integratedTerminal",
             "args": [
-                "../../data/OtherBuildings/ZAF/zaf_adm4_sid.tif",
-                "../../data/OtherBuildings/ZAF/southafrica.csv",
+                "../../data/OtherBuildings/ZAF/Subnational/Shapefile/zaf_subnational_2000_2020.shp",
+                "../../data/OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020.tif",
+                "../../data/OtherBuildings/ZAF/zaf_population_2000_2020.csv",
                 "2020",
                 "preprocessed_data_3_zaf.pkl",
                 "zaf"
             ]
+        },{
+            "name": "Py: ZAF compute_gbuilding_count_map", //works!
+        "type": "python",
+        "request": "launch",
+        "program": "compute_gbuilding_count_map.py",
+        "console": "integratedTerminal",
+        "args": [
+            "../../data/OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020.tif", //sftp://metzgern@pf-pc14.ethz.ch/scratch2/metzgern/HAC/data/OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020.tif
+            "../../data/OtherBuildings/ZAF/open_buildings_google_zaf.csv", //open_buildings_google_zaf.csv",//sftp://metzgern@pf-pc14.ethz.ch/scratch2/metzgern/HAC/data/OtherBuildings/ZAF/open_buildings_google_zaf.csv
+            "../../data/OtherBuildings/ZAF/ZAF_own_google_bcount.tif",
+            "../../data/OtherBuildings/ZAF/ZAF_own_google_meanarea.tif",
+        ]
         },{
             "name": "Py: ZAF wpop preprocessing_pop_data.py",
         "type": "python",

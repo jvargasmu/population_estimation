@@ -289,10 +289,8 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("hd_regions_path", type=str,
-                        help="Shapefile with humdata.org administrative regions information")
-    parser.add_argument("rst_hd_regions_path", type=str,
-                        help="Raster of humdata.org administrative regions information")
+    # parser.add_argument("hd_regions_path", type=str, help="Shapefile with humdata.org administrative regions information")
+    # parser.add_argument("rst_hd_regions_path", type=str,  help="Raster of humdata.org administrative regions information")
     parser.add_argument("rst_wp_regions_path", type=str,
                         help="Raster of WorldPop administrative boundaries information")
     parser.add_argument("census_data_path", type=str, help="CSV file containing ")
