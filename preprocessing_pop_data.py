@@ -86,6 +86,28 @@ def match_raster_ids(raster1, raster2, raster1_no_data, raster2_no_data, offset_
     return id_best_match
 
 
+# def compute_area_of_regions(regions, map_valid_ids, num_ids):
+#     # def compute_area_of_regions(np.ndarray[np.uint32_t, ndim=2] regions, np.ndarray[np.uint32_t, ndim=2] map_valid_ids, int num_labels):
+
+#     if np.isfortran(regions):
+#         raise ValueError("The input image is not C-contiguous")
+
+#     h = regions.shape[0]
+#     w = regions.shape[1]
+
+#     areas = np.zeros(num_ids, dtype=np.uint32)
+
+#     for i in range(h):
+#         for j in range(w):
+#             if map_valid_ids[i, j] == 1:
+#                 areas[regions[i, j]] = areas[regions[i, j]] + 1
+
+#     for region in regions:
+#         asdf
+
+#     return areas
+
+
 def compute_agg_features_from_raster(regions, inputs, no_data_vals=None, buildings_mask=None):
     feats_list = list(inputs.keys())
     ids = list(np.unique(regions))
