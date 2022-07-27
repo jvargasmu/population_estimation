@@ -6,7 +6,10 @@ import os
 # if os.isdir()
 root_paths = ["/home/john.vargas/data/wpop/",
     "/scratch/Nando/HAC2/data/",
-    "/cluster/work/igp_psr/metzgern/HAC/data/"]
+    "/cluster/work/igp_psr/metzgern/HAC/data/",
+    "/scratch2/metzgern/HAC/data/",
+    "/scratch2/metzgern/HAC/data/codedata/"]
+
 for dir in root_paths:
     if os.path.isdir(dir):
         root_path = dir
@@ -254,6 +257,70 @@ input_paths = {
             root_path),
         "zmb_wdpa_dst_cat1_100m_2015": "{}Covariates/ZMB/WDPA/WDPA_1/zmb_wdpa_dst_cat1_100m_2015.tif".format(
             root_path),
+    },
+    "zaf" : {
+        "buildings_google": "{}OtherBuildings/ZAF/ZAF_own_google_bcount.tif".format(root_path),
+        # "buildings_maxar": "{}OtherBuildings/ZAF/ZAF_buildings_v1_1_count.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/ZAF/ZAF_own_google_meanarea.tif".format(root_path),
+        # "buildings_maxar_mean_area": "{}OtherBuildings/ZAF/ZAF_buildings_v1_1_mean_area.tif".format(root_path),
+        "zaf_tt50k_100m_2000": "{}Covariates/ZAF/Accessibility/zaf_tt50k_100m_2000.tif".format(
+            root_path),
+        "zaf_dst_bsgme_100m_2015": "{}Covariates/ZAF/BSGM/2015/DTE/zaf_dst_bsgme_100m_2015.tif".format(
+            root_path),
+        "zaf_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/ZAF/BuiltSettlement/2014/DTE/zaf_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
+             root_path),
+        "zaf_dst_coastline_100m_2000_2020": "{}Covariates/ZAF/Coastline/DST/zaf_dst_coastline_100m_2000_2020.tif".format(
+            root_path),
+        "zaf_dmsp_100m_2011": "{}Covariates/ZAF/DMSP/zaf_dmsp_100m_2011.tif".format(
+            root_path),
+        "zaf_esaccilc_dst_water_100m_2000_2012": "{}Covariates/ZAF/ESA_CCI_Water/DST/zaf_esaccilc_dst_water_100m_2000_2012.tif".format(
+            root_path),
+        "zaf_osm_dst_roadintersec_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_roadintersec_100m_2016.tif".format(
+            root_path),
+        "zaf_osm_dst_waterway_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_waterway_100m_2016.tif".format(
+            root_path),
+        "zaf_osm_dst_road_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_road_100m_2016.tif".format(
+            root_path),
+        "zaf_srtm_slope_100m": "{}Covariates/ZAF/Slope/zaf_srtm_slope_100m.tif".format(
+            root_path),
+        "zaf_srtm_topo_100m": "{}Covariates/ZAF/Topo/zaf_srtm_topo_100m.tif".format(
+            root_path),
+        "zaf_viirs_100m_2015": "{}Covariates/ZAF/VIIRS/zaf_viirs_100m_2015.tif".format(
+            root_path),
+        "zaf_wdpa_dst_cat1_100m_2015": "{}Covariates/ZAF/WDPA/WDPA_1/zaf_wdpa_dst_cat1_100m_2015.tif".format(
+            root_path),
+    },
+    "dza" : {
+        "buildings_google": "{}OtherBuildings/DZA/DZA_own_google_bcount.tif".format(root_path),
+        # "buildings_maxar": "{}OtherBuildings/DZA/DZA_buildings_v1_1_count.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/DZA/DZA_own_google_meanarea.tif".format(root_path),
+        # "buildings_maxar_mean_area": "{}OtherBuildings/DZA/DZA_buildings_v1_1_mean_area.tif".format(root_path),
+        "dza_tt50k_100m_2000": "{}Covariates/DZA/Accessibility/dza_tt50k_100m_2000.tif".format(
+            root_path),
+        "dza_dst_bsgme_100m_2015": "{}Covariates/DZA/BSGM/2015/DTE/dza_dst_bsgme_100m_2015.tif".format(
+            root_path),
+        "dza_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/DZA/BuiltSettlement/2014/DTE/dza_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
+             root_path),
+        "dza_dst_coastline_100m_2000_2020": "{}Covariates/DZA/Coastline/DST/dza_dst_coastline_100m_2000_2020.tif".format(
+            root_path),
+        "dza_dmsp_100m_2011": "{}Covariates/DZA/DMSP/dza_dmsp_100m_2011.tif".format(
+            root_path),
+        "dza_esaccilc_dst_water_100m_2000_2012": "{}Covariates/DZA/ESA_CCI_Water/DST/dza_esaccilc_dst_water_100m_2000_2012.tif".format(
+            root_path),
+        "dza_osm_dst_roadintersec_100m_2016": "{}Covariates/DZA/OSM/DST/dza_osm_dst_roadintersec_100m_2016.tif".format(
+            root_path),
+        "dza_osm_dst_waterway_100m_2016": "{}Covariates/DZA/OSM/DST/dza_osm_dst_waterway_100m_2016.tif".format(
+            root_path),
+        "dza_osm_dst_road_100m_2016": "{}Covariates/DZA/OSM/DST/dza_osm_dst_road_100m_2016.tif".format(
+            root_path),
+        "dza_srtm_slope_100m": "{}Covariates/DZA/Slope/dza_srtm_slope_100m.tif".format(
+            root_path),
+        "dza_srtm_topo_100m": "{}Covariates/DZA/Topo/dza_srtm_topo_100m.tif".format(
+            root_path),
+        "dza_viirs_100m_2015": "{}Covariates/DZA/VIIRS/dza_viirs_100m_2015.tif".format(
+            root_path),
+        "dza_wdpa_dst_cat1_100m_2015": "{}Covariates/DZA/WDPA/WDPA_1/dza_wdpa_dst_cat1_100m_2015.tif".format(
+            root_path),
     }
 }
 
@@ -461,6 +528,64 @@ no_data_values = {
         "zmb_srtm_topo_100m": 32767.,
         "zmb_viirs_100m_2015": 3.4028235e+38,
         "zmb_wdpa_dst_cat1_100m_2015": -99999,
+    },
+    "zaf":{
+        "buildings_j": None,
+        "buildings_google": -99999,
+        "buildings_maxar": -99999, 
+        "buildings_google_mean_area": -99999,
+        "buildings_merge_mean_area": -99999,
+        "buildings_maxar_mean_area": -99999,
+        "esaccilc_dst011_100m_2000": -99999,
+        "esaccilc_dst040_100m_2000": -99999,
+        "esaccilc_dst130_100m_2000": -99999,
+        "esaccilc_dst140_100m_2000": -99999,
+        "esaccilc_dst150_100m_2000": -99999,
+        "esaccilc_dst160_100m_2000": -99999,
+        "esaccilc_dst190_100m_2000": -99999,
+        "esaccilc_dst200_100m_2000": -99999,
+        "zaf_tt50k_100m_2000": -99999,
+        "zaf_dst_bsgme_100m_2015": -99999,
+        "zaf_dst_ghslesaccilcgufghsll_100m_2014": -99999,
+        "zaf_dst_coastline_100m_2000_2020": -99999,
+        "zaf_dmsp_100m_2011": 32767.,
+        "zaf_esaccilc_dst_water_100m_2000_2012":-99999, 
+        "zaf_osm_dst_roadintersec_100m_2016":-99999, 
+        "zaf_osm_dst_waterway_100m_2016": -99999,
+        "zaf_osm_dst_road_100m_2016": -99999,
+        "zaf_srtm_slope_100m": 255.,
+        "zaf_srtm_topo_100m": 32767.,
+        "zaf_viirs_100m_2015": 3.4028235e+38,
+        "zaf_wdpa_dst_cat1_100m_2015": -99999,
+    },
+    "dza":{
+        "buildings_j": None,
+        "buildings_google": -99999,
+        "buildings_maxar": -99999, 
+        "buildings_google_mean_area": -99999,
+        "buildings_merge_mean_area": -99999,
+        "buildings_maxar_mean_area": -99999,
+        "esaccilc_dst011_100m_2000": -99999,
+        "esaccilc_dst040_100m_2000": -99999,
+        "esaccilc_dst130_100m_2000": -99999,
+        "esaccilc_dst140_100m_2000": -99999,
+        "esaccilc_dst150_100m_2000": -99999,
+        "esaccilc_dst160_100m_2000": -99999,
+        "esaccilc_dst190_100m_2000": -99999,
+        "esaccilc_dst200_100m_2000": -99999,
+        "dza_tt50k_100m_2000": -99999,
+        "dza_dst_bsgme_100m_2015": -99999,
+        "dza_dst_ghslesaccilcgufghsll_100m_2014": -99999,
+        "dza_dst_coastline_100m_2000_2020": -99999,
+        "dza_dmsp_100m_2011": 32767.,
+        "dza_esaccilc_dst_water_100m_2000_2012":-99999, 
+        "dza_osm_dst_roadintersec_100m_2016":-99999, 
+        "dza_osm_dst_waterway_100m_2016": -99999,
+        "dza_osm_dst_road_100m_2016": -99999,
+        "dza_srtm_slope_100m": 255.,
+        "dza_srtm_topo_100m": 32767.,
+        "dza_viirs_100m_2015": 3.4028235e+38,
+        "dza_wdpa_dst_cat1_100m_2015": -99999,
     }
 }
 
@@ -670,6 +795,60 @@ norms = {
         "zmb_viirs_100m_2015": (0.2205 , 1.0825),
         "zmb_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
         'buildings_merge_mean_area': (26.3673, 48.1988)
+    },
+    "zaf":{
+        "buildings_j": (0.00089380914, 8.41622997e-03),
+        # "buildings": (0.265996819, 1.83158563e+00),
+        "esaccilc_dst011_100m_2000": (2.81727052, 5.69885715e+00),
+        "esaccilc_dst040_100m_2000": (0.44520899, 2.72345595e+00),
+        "esaccilc_dst130_100m_2000": (3.09648584, 4.70480562e+00),
+        "esaccilc_dst140_100m_2000": (9.18009012, 9.85124076e+00),
+        "esaccilc_dst150_100m_2000": (108.52330299, 8.17261502e+01),
+        "esaccilc_dst160_100m_2000": (8.65616757, 9.26884634e+00),
+        "esaccilc_dst190_100m_2000": (37.38046272, 3.10730075e+01),
+        "esaccilc_dst200_100m_2000": (64.73759992, 4.46013049e+01),
+        "zaf_tt50k_100m_2000": (209.1351, 188.1936),
+        "zaf_dst_bsgme_100m_2015": (3.2670, 4.2283),
+        "zaf_dst_ghslesaccilcgufghsll_100m_2014": (3.3381, 4.2542),
+        "zaf_dst_coastline_100m_2000_2020": (698.8104,  326.6751),
+        "zaf_dmsp_100m_2011": (71.8836 ,  399.8602 ),
+        "zaf_esaccilc_dst_water_100m_2000_2012":(18.1815, 14.8920), 
+        "zaf_osm_dst_roadintersec_100m_2016":(19.8096, 29.5883), 
+        "zaf_osm_dst_waterway_100m_2016": (15.2655, 15.4519), 
+        "zaf_osm_dst_road_100m_2016": (3.7082,  5.6608), 
+        "zaf_srtm_slope_100m": (3.2089 , 3.8157),
+        "zaf_srtm_topo_100m": (1143.9080 , 402.7680),
+        "zaf_viirs_100m_2015": (0.2205 , 1.0825),
+        "zaf_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
+        'buildings_merge_mean_area': (26.3673, 48.1988),
+        'buildings_google_mean_area': (26.3673, 48.1988)
+    },
+    "dza":{
+        "buildings_j": (0.00089380914, 8.41622997e-03),
+        # "buildings": (0.265996819, 1.83158563e+00),
+        "esaccilc_dst011_100m_2000": (2.81727052, 5.69885715e+00),
+        "esaccilc_dst040_100m_2000": (0.44520899, 2.72345595e+00),
+        "esaccilc_dst130_100m_2000": (3.09648584, 4.70480562e+00),
+        "esaccilc_dst140_100m_2000": (9.18009012, 9.85124076e+00),
+        "esaccilc_dst150_100m_2000": (108.52330299, 8.17261502e+01),
+        "esaccilc_dst160_100m_2000": (8.65616757, 9.26884634e+00),
+        "esaccilc_dst190_100m_2000": (37.38046272, 3.10730075e+01),
+        "esaccilc_dst200_100m_2000": (64.73759992, 4.46013049e+01),
+        "dza_tt50k_100m_2000": (209.1351, 188.1936),
+        "dza_dst_bsgme_100m_2015": (3.2670, 4.2283),
+        "dza_dst_ghslesaccilcgufghsll_100m_2014": (3.3381, 4.2542),
+        "dza_dst_coastline_100m_2000_2020": (698.8104,  326.6751),
+        "dza_dmsp_100m_2011": (71.8836 ,  399.8602 ),
+        "dza_esaccilc_dst_water_100m_2000_2012":(18.1815, 14.8920), 
+        "dza_osm_dst_roadintersec_100m_2016":(19.8096, 29.5883), 
+        "dza_osm_dst_waterway_100m_2016": (15.2655, 15.4519), 
+        "dza_osm_dst_road_100m_2016": (3.7082,  5.6608), 
+        "dza_srtm_slope_100m": (3.2089 , 3.8157),
+        "dza_srtm_topo_100m": (1143.9080 , 402.7680),
+        "dza_viirs_100m_2015": (0.2205 , 1.0825),
+        "dza_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
+        'buildings_merge_mean_area': (26.3673, 48.1988),
+        'buildings_google_mean_area': (26.3673, 48.1988)
     }
 }
 
@@ -729,6 +908,22 @@ metadata = {
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_zmb.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/ZMB/zmb_adm4_sid.tif'.format(root_path)
+    },
+    "zaf":{
+        "wp_no_data": [0],
+        "wp_covariates_no_data": -9999,
+        # "hd_no_data": [0],
+        "scale_maxar_to_google": None,
+        "preproc_data_path": 'preprocessed_data_3_zaf.pkl',
+        "rst_wp_regions_path": '{}OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020_SID.tif'.format(root_path)
+    },
+    "dza":{
+        "wp_no_data": [0],
+        "wp_covariates_no_data": -9999,
+        # "hd_no_data": [0],
+        "scale_maxar_to_google": None,
+        "preproc_data_path": 'preprocessed_data_3_dza.pkl',
+        "rst_wp_regions_path": '{}OtherBuildings/DZA/Subnational/dza_subnational_admin_2000_2020_SID.tif'.format(root_path)
     }
 }
 
