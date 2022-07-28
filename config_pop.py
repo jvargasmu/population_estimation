@@ -385,6 +385,38 @@ input_paths = {
             root_path),
         "mli_wdpa_dst_cat1_100m_2015": "{}Covariates/MAR/WDPA/WDPA_1/mli_wdpa_dst_cat1_100m_2015.tif".format(
             root_path),
+    },
+    "civ" : {
+        # "buildings_google": "{}OtherBuildings/MAR/MAR_own_google_bcount.tif".format(root_path),
+        # "buildings_maxar": "{}OtherBuildings/MAR/MAR_buildings_v1_1_count.tif".format(root_path),
+        # "buildings_google_mean_area": "{}OtherBuildings/MAR/MAR_own_google_meanarea.tif".format(root_path),
+        # "buildings_maxar_mean_area": "{}OtherBuildings/MAR/MAR_buildings_v1_1_mean_area.tif".format(root_path),
+        "civ_tt50k_100m_2000": "{}Covariates/MAR/Accessibility/civ_tt50k_100m_2000.tif".format(
+            root_path),
+        "civ_dst_bsgme_100m_2015": "{}Covariates/MAR/BSGM/2015/DTE/civ_dst_bsgme_100m_2015.tif".format(
+            root_path),
+        "civ_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/MAR/BuiltSettlement/2014/DTE/civ_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
+             root_path),
+        "civ_dst_coastline_100m_2000_2020": "{}Covariates/MAR/Coastline/DST/civ_dst_coastline_100m_2000_2020.tif".format(
+            root_path),
+        "civ_dmsp_100m_2011": "{}Covariates/MAR/DMSP/civ_dmsp_100m_2011.tif".format(
+            root_path),
+        "civ_esaccilc_dst_water_100m_2000_2012": "{}Covariates/MAR/ESA_CCI_Water/DST/civ_esaccilc_dst_water_100m_2000_2012.tif".format(
+            root_path),
+        "civ_osm_dst_roadintersec_100m_2016": "{}Covariates/MAR/OSM/DST/civ_osm_dst_roadintersec_100m_2016.tif".format(
+            root_path),
+        "civ_osm_dst_waterway_100m_2016": "{}Covariates/MAR/OSM/DST/civ_osm_dst_waterway_100m_2016.tif".format(
+            root_path),
+        "civ_osm_dst_road_100m_2016": "{}Covariates/MAR/OSM/DST/civ_osm_dst_road_100m_2016.tif".format(
+            root_path),
+        "civ_srtm_slope_100m": "{}Covariates/MAR/Slope/civ_srtm_slope_100m.tif".format(
+            root_path),
+        "civ_srtm_topo_100m": "{}Covariates/MAR/Topo/civ_srtm_topo_100m.tif".format(
+            root_path),
+        "civ_viirs_100m_2015": "{}Covariates/MAR/VIIRS/civ_viirs_100m_2015.tif".format(
+            root_path),
+        "civ_wdpa_dst_cat1_100m_2015": "{}Covariates/MAR/WDPA/WDPA_1/civ_wdpa_dst_cat1_100m_2015.tif".format(
+            root_path),
     }
 }
 
@@ -708,6 +740,35 @@ no_data_values = {
         "mli_srtm_topo_100m": 32767.,
         "mli_viirs_100m_2015": 3.4028235e+38,
         "mli_wdpa_dst_cat1_100m_2015": -99999,
+    },
+    "civ":{
+        "buildings_j": None,
+        "buildings_google": -99999,
+        "buildings_maxar": -99999, 
+        "buildings_google_mean_area": -99999,
+        "buildings_merge_mean_area": -99999,
+        "buildings_maxar_mean_area": -99999,
+        "esaccilc_dst011_100m_2000": -99999,
+        "esaccilc_dst040_100m_2000": -99999,
+        "esaccilc_dst130_100m_2000": -99999,
+        "esaccilc_dst140_100m_2000": -99999,
+        "esaccilc_dst150_100m_2000": -99999,
+        "esaccilc_dst160_100m_2000": -99999,
+        "esaccilc_dst190_100m_2000": -99999,
+        "esaccilc_dst200_100m_2000": -99999,
+        "civ_tt50k_100m_2000": -99999,
+        "civ_dst_bsgme_100m_2015": -99999,
+        "civ_dst_ghslesaccilcgufghsll_100m_2014": -99999,
+        "civ_dst_coastline_100m_2000_2020": -99999,
+        "civ_dmsp_100m_2011": 32767.,
+        "civ_esaccilc_dst_water_100m_2000_2012":-99999, 
+        "civ_osm_dst_roadintersec_100m_2016":-99999, 
+        "civ_osm_dst_waterway_100m_2016": -99999,
+        "civ_osm_dst_road_100m_2016": -99999,
+        "civ_srtm_slope_100m": 255.,
+        "civ_srtm_topo_100m": 32767.,
+        "civ_viirs_100m_2015": 3.4028235e+38,
+        "civ_wdpa_dst_cat1_100m_2015": -99999,
     }
 }
 
@@ -1001,6 +1062,33 @@ norms = {
         "mli_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
         'buildings_merge_mean_area': (26.3673, 48.1988),
         'buildings_google_mean_area': (26.3673, 48.1988)
+    },
+    "civ":{
+        "buildings_j": (0.00089380914, 8.41622997e-03),
+        # "buildings": (0.265996819, 1.83158563e+00),
+        "esaccilc_dst011_100m_2000": (2.81727052, 5.69885715e+00),
+        "esaccilc_dst040_100m_2000": (0.44520899, 2.72345595e+00),
+        "esaccilc_dst130_100m_2000": (3.09648584, 4.70480562e+00),
+        "esaccilc_dst140_100m_2000": (9.18009012, 9.85124076e+00),
+        "esaccilc_dst150_100m_2000": (108.52330299, 8.17261502e+01),
+        "esaccilc_dst160_100m_2000": (8.65616757, 9.26884634e+00),
+        "esaccilc_dst190_100m_2000": (37.38046272, 3.10730075e+01),
+        "esaccilc_dst200_100m_2000": (64.73759992, 4.46013049e+01),
+        "civ_tt50k_100m_2000": (209.1351, 188.1936),
+        "civ_dst_bsgme_100m_2015": (3.2670, 4.2283),
+        "civ_dst_ghslesaccilcgufghsll_100m_2014": (3.3381, 4.2542),
+        "civ_dst_coastline_100m_2000_2020": (698.8104,  326.6751),
+        "civ_dmsp_100m_2011": (71.8836 ,  399.8602 ),
+        "civ_esaccilc_dst_water_100m_2000_2012":(18.1815, 14.8920), 
+        "civ_osm_dst_roadintersec_100m_2016":(19.8096, 29.5883), 
+        "civ_osm_dst_waterway_100m_2016": (15.2655, 15.4519), 
+        "civ_osm_dst_road_100m_2016": (3.7082,  5.6608), 
+        "civ_srtm_slope_100m": (3.2089 , 3.8157),
+        "civ_srtm_topo_100m": (1143.9080 , 402.7680),
+        "civ_viirs_100m_2015": (0.2205 , 1.0825),
+        "civ_wdpa_dst_cat1_100m_2015": (388.8701 , 221.6834),
+        'buildings_merge_mean_area': (26.3673, 48.1988),
+        'buildings_google_mean_area': (26.3673, 48.1988)
     }
 }
 
@@ -1092,6 +1180,14 @@ metadata = {
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_mli.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/MLI/Subnational/mli_subnational_admin_2000_2020_SID.tif'.format(root_path)
+    }, 
+    "civ":{
+        "wp_no_data": [0],
+        "wp_covariates_no_data": -9999,
+        # "hd_no_data": [0],
+        "scale_maxar_to_google": None,
+        "preproc_data_path": 'preprocessed_data_3_mli.pkl',
+        "rst_wp_regions_path": '{}OtherBuildings/CIV/Subnational/civ_subnational_admin_2000_2020_SID.tif'.format(root_path)
     }
 }
 
