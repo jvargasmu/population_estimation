@@ -38,7 +38,7 @@
             "name": "Py: DZA preprocessing_wp_census_data.py",
             "type": "python",
             "request": "launch",
-            "program": "preprocessing_zaf_pop_data.py",
+            "program": "preprocessing_wp_pop_data.py",
             "console": "integratedTerminal",
             "args": [
                 "../../data/OtherBuildings/DZA/Subnational/Shapefile/dza_subnational_2000_2020.shp",
@@ -63,7 +63,21 @@
                 "mar"
             ]
         },{
-            "name": "Py: ZAF compute_gbuilding_count_map", //works!
+            "name": "Py: MAR preprocessing_wp_census_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "preprocessing_zaf_pop_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "../../data/OtherBuildings/MLI/Subnational/Shapefile/mli_subnational_2000_2020.shp",
+                "../../data/OtherBuildings/MLI/Subnational/mli_subnational_admin_2000_2020.tif",
+                "../../data/OtherBuildings/MLI/mli_population_2000_2020.csv",
+                "P_2020",
+                "preprocessed_data_3_mli.pkl",
+                "mli"
+            ]
+        },{
+            "name": "Py: ZAF compute_gbuilding_count_map.py", //works!
         "type": "python",
         "request": "launch",
         "program": "compute_gbuilding_count_map.py",
@@ -75,7 +89,7 @@
             "../../data/OtherBuildings/ZAF/ZAF_own_google_meanarea.tif",
         ]
         },{
-            "name": "Py: DZA compute_gbuilding_count_map", //works!
+            "name": "Py: DZA compute_gbuilding_count_map.py", //works!
         "type": "python",
         "request": "launch",
         "program": "compute_gbuilding_count_map.py",
@@ -480,7 +494,7 @@
             ]
         },
         {
-            "name": "ZAF LogL1 kernel superpixel_disagg_model.py fold x",
+            "name": "DZA LogL1 kernel superpixel_disagg_model.py fold x",
             "type": "python",
             "request": "launch",
             "program": "superpixel_disagg_model.py",
