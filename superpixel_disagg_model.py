@@ -209,7 +209,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
         boundingbox = bbox2(regmask)
         # boundingbox = bbox2(mask)
         rmin, rmax, cmin, cmax = boundingbox
-        tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
+        # tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
         tY.append(np.asarray(tr_census[regid]))
         tregid.append(np.asarray(regid))
         tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())

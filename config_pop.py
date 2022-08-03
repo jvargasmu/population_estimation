@@ -15,6 +15,14 @@ for dir in root_paths:
         root_path = dir
 
 # Input files
+input_paths_sat = {
+    "tza": {
+        "buildings_google": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
+        "buildings_maxar": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_count.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
+        "buildings_maxar_mean_area": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_mean_area.tif".format(root_path),
+    }
+}
 
 input_paths = {
     "tza": {
