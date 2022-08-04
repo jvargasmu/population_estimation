@@ -155,6 +155,10 @@ def PixAdminTransform(
 
                 # Backwards
                 loss = myloss(y_pred, y_gt)
+                if loss.isnan():
+                    pred_nan = mynet.forward_one_or_more(old_sample)
+                    continue
+                old_sample = sample
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(mynet.parameters(), params["grad_clip"])
                 optimizer.step()

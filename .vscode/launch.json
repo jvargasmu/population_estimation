@@ -161,19 +161,37 @@
             ]
         }, 
         {
-            "name": "Py: RWA preprocessing_pop_data.py",
+            "name": "Py: RWA preprocessing_pop_data.py Geodata",
             "type": "python",
             "request": "launch",
             "program": "preprocessing_pop_data.py",
             "console": "integratedTerminal",
             "args": [
-                "../../../data/OtherBuildings/RWA/rwa_humdata_regions_shapefile/rwa_humdata_regions.shp",
-                "../../../data/OtherBuildings/RWA/rwa_humdata_regions.tif",
-                "../../../data/OtherBuildings/RWA/rwa_wpop_regions.tif",
-                "../../../data/OtherBuildings/RWA/rwa_wpop_census.csv",
-                "preprocessed_data_3_rwa.pkl",
+                "../../data/OtherBuildings/RWA/rwa_humdata_regions_shapefile/rwa_humdata_regions.shp",
+                "../../data/OtherBuildings/RWA/rwa_humdata_regions.tif",
+                "../../data/OtherBuildings/RWA/rwa_wpop_regions.tif",
+                "../../data/OtherBuildings/RWA/rwa_wpop_census.csv",
+                "preprocessed_data_4_rwa.pkl",
                 "rwa",
-                "P_2020"
+                "P_2020",
+                "Geodata"
+            ]
+        },
+        {
+            "name": "Py: RWA preprocessing_pop_data.py Sat2Pop",
+            "type": "python",
+            "request": "launch",
+            "program": "preprocessing_pop_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "../../data/OtherBuildings/RWA/rwa_humdata_regions_shapefile/rwa_humdata_regions.shp",
+                "../../data/OtherBuildings/RWA/rwa_humdata_regions.tif",
+                "../../data/OtherBuildings/RWA/rwa_wpop_regions.tif",
+                "../../data/OtherBuildings/RWA/rwa_wpop_census.csv",
+                "preprocessed_data_4_Sat2Pop_rwa.pkl",
+                "rwa",
+                "P_2020",
+                "Sat2Pop"
             ]
         }, 
         {
@@ -599,6 +617,43 @@
                 "--max_step", "150000",
                 //"--population_target", "True"
                 "--name", "this-is-a-test-for-rwa_adj"
+            ]
+        },{
+            "name": "RWA_CV LogL1 kernel superpixel_disagg_model.py fold x, Sat2Pop",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false, 
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-train", "rwa",
+                "-train_lvl", "f",
+                "-test", "rwa",
+                "-lr", "0.0001",
+                "-wr", "0.000001",
+                "--dropout", "0.0",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "50",
+                "--validation_fold", "0",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "m", 
+                "--loss", "LogL1", 
+                "--kernel_size", "3,3,1,1",
+                // "--admin_augment", "True",
+                //"--population_target", "True",
+                // "--input_scaling", "True",
+                // "--output_scaling", "True", 
+                "--sampler", "custom",
+                "--max_step", "150000",
+                //"--population_target", "True"
+                "--name", "this-is-a-test-for-rwa_adj_Sat2Pop",
+                "--dataset_dir", "datasets_Sat2Pop",
+                "--datamode", "Sat2Pop"
             ]
         },{
             "name": "UGA_CV LogL1 kernel superpixel_disagg_model.py fold x",

@@ -15,12 +15,13 @@ for dir in root_paths:
         root_path = dir
 
 # Input files
-input_paths_sat = {
+input_paths_sat2pop = {
     "tza": {
-        "buildings_google": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
-        "buildings_maxar": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_count.tif".format(root_path),
-        "buildings_google_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
-        "buildings_maxar_mean_area": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_mean_area.tif".format(root_path),
+        "buildings_preds": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
+    },
+    "rwa": {
+        "BuildingPreds_Own": "{}/ResampledBuildDenseCovariates3/BuildingPreds-1-RWAc.tif".format(root_path),
+        "DeepFeatures_Own": "{}/ResampledBuildDenseCovariates3/BuildingFeatures-1-RWAc.tif".format(root_path), 
     }
 }
 
@@ -31,22 +32,6 @@ input_paths = {
         "buildings_maxar": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_count.tif".format(root_path),
         "buildings_google_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
         "buildings_maxar_mean_area": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_mean_area.tif".format(root_path),
-        # "esaccilc_dst011_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst011_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst040_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst040_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst130_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst130_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst140_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst140_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst150_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst150_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst160_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst160_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst190_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst190_100m_2015.tif".format(
-        #     root_path), # Urban Areas
-        # "esaccilc_dst200_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst200_100m_2015.tif".format(
-        #     root_path), 
         "tza_tt50k_100m_2000": "{}Covariates/TZA/Accessibility/tza_tt50k_100m_2000.tif".format(
             root_path), 
         "tza_dst_bsgme_100m_2015": "{}Covariates/TZA/BSGM/2015/DTE/tza_dst_bsgme_100m_2015.tif".format(
@@ -428,6 +413,27 @@ input_paths = {
     }
 }
 
+no_data_values_Sat2Pop = {
+    "rwa":{
+        "BuildingPreds_Own": -99999,
+        "DeepFeatures_Own0": -99999,
+        "DeepFeatures_Own1": -99999,
+        "DeepFeatures_Own2": -99999,
+        "DeepFeatures_Own3": -99999,
+        "DeepFeatures_Own4": -99999,
+        "DeepFeatures_Own5": -99999,
+        "DeepFeatures_Own6": -99999,
+        "DeepFeatures_Own7": -99999,
+        "DeepFeatures_Own8": -99999,
+        "DeepFeatures_Own9": -99999,
+        "DeepFeatures_Own10": -99999,
+        "DeepFeatures_Own11": -99999,
+        "DeepFeatures_Own12": -99999,
+        "DeepFeatures_Own13": -99999,
+        "DeepFeatures_Own14": -99999,
+        "DeepFeatures_Own15": -99999,
+    }
+}
 
 no_data_values = {
     "tza": {
@@ -1131,6 +1137,7 @@ metadata = {
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_rwa.pkl',
+        "preproc_data_path_Sat2Pop": 'preprocessed_data_4_Sat2Pop_rwa.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/RWA/rwa_wpop_regions.tif'.format(root_path)
     },
     "nga":{

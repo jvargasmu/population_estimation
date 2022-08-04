@@ -40,6 +40,31 @@ def read_input_raster_data_to_np(input_paths, keys=None):
     return inputs
 
 
+def read_input_raster_data_to_np_Sat2Pop(input_paths): 
+    input_list = []
+    feature_names = []
+    for i,kinp in enumerate(input_paths.keys()):
+        print("read {}".format(input_paths[kinp]))
+        feat = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
+        if kinp.endswith("_Own"):
+            feat = feat[:-1]
+        invalid_mask = feat>1e+37
+        if invalid_mask.sum()>0:
+            feat[feat>1e+37] = np.median(feat[feat<=1e+37])
+        if feat.shape.__len__()==3:
+            if feat.shape[0]==1:
+                input_list.append(feat[0])
+                feature_names.append(kinp)
+            else:
+                for i,f in enumerate(feat):
+                    input_list.append(f)
+                    feature_names.append(kinp+str(i))
+        else:
+            input_list.append(feat)
+
+    return np.array(input_list), feature_names
+
+
 def read_input_raster_data_to_np_buildings(input_paths, keys=None):
     #assuming every covariate has same dimensions
     first_name = list(input_paths.keys())[0]
@@ -51,7 +76,6 @@ def read_input_raster_data_to_np_buildings(input_paths, keys=None):
             print("read {}".format(input_paths[kinp]))
             inputs[i] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
     return inputs
-
 
 
 def read_input_raster_data(input_paths):
@@ -87,6 +111,30 @@ def read_input_raster_data(input_paths):
     
     return inputs
 
+def read_input_raster_data_Sat2Pop(input_paths):
+    inputs = {}
+    for kinp in input_paths.keys():
+        feat = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
+        invalid_mask = feat>1e+37
+        if kinp.endswith("_Own"):
+            feat = feat[:-1]
+        if feat.shape.__len__()==3:
+            if feat.shape[0]==1:
+                inputs[kinp] = feat[0]
+            else:
+                for i,f in enumerate(feat):
+                    inputs[kinp+str(i)] = f
+        else:
+            inputs[kinp] = feat
+        if invalid_mask.sum()>0:
+            inputs[kinp][inputs[kinp]>1e+37] = np.median(inputs[kinp][inputs[kinp]<=1e+37])
+    
+    inputs["buildings"] = inputs.pop("BuildingPreds_Own")
+    orig_input_keys = list(inputs.keys())
+
+    new_list_of_keys = ["buildings"] + orig_input_keys[:-1]
+    inputs = {k:inputs[k] for k in new_list_of_keys}
+    return inputs
 
 def read_shape_layer_data(shape_layer_path):
     with fiona.open(shape_layer_path) as reader:
@@ -388,8 +436,7 @@ def bbox2(img):
     rows = torch.any(img, axis=1)
     cols = torch.any(img, axis=0)
     rmin, rmax = torch.where(rows)[0][[0, -1]]
-    cmin, cmax = torch.where(cols)[0][[0, -1]]
-
+    cmin, cmax = torch.where(cols)[0][[0, -1]] 
     return rmin, rmax+1, cmin, cmax+1
 
 

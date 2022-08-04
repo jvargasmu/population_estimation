@@ -16,7 +16,7 @@ import random
 import config_pop as cfg
 from utils import read_input_raster_data, read_input_raster_data_to_np, compute_performance_metrics, write_geolocated_image, create_map_of_valid_ids, \
     compute_grouped_values, transform_dict_to_array, transform_dict_to_matrix, calculate_densities, plot_2dmatrix, \
-    bbox2
+    bbox2, read_input_raster_data_to_np_Sat2Pop
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 
@@ -25,15 +25,24 @@ from pix_transform.evaluation import Eval5Fold_PixAdminTransform, EvalModel_PixA
 from pix_transform_utils.plots import plot_result
 from distutils.util import strtobool
 
-def get_dataset(dataset_name, params, building_features, related_building_features):
+def get_dataset(dataset_name, params, building_features, related_building_features, mode):
 
-    # configure paths
+    # configure paths and mode specific stuff
+    if mode=="Geodata":
+        preproc_data_path = cfg.metadata[dataset_name]["preproc_data_path"]
+        input_paths = cfg.input_paths[dataset_name]
+        features = read_input_raster_data_to_np(input_paths)
+        feature_names = list(input_paths.keys())
+        no_data_values = cfg.no_data_values[dataset_name]
+    elif mode=="Sat2Pop": 
+        preproc_data_path = cfg.metadata[dataset_name]["preproc_data_path_Sat2Pop"]
+        input_paths = cfg.input_paths_sat2pop[dataset_name]
+        features, feature_names = read_input_raster_data_to_np_Sat2Pop(input_paths)
+        no_data_values = cfg.no_data_values_Sat2Pop[dataset_name]
+
     rst_wp_regions_path = cfg.metadata[dataset_name]["rst_wp_regions_path"]
-    preproc_data_path = cfg.metadata[dataset_name]["preproc_data_path"]
 
     # Read input data
-    input_paths = cfg.input_paths[dataset_name]
-    no_data_values = cfg.no_data_values[dataset_name]
 
     with open(preproc_data_path, 'rb') as handle:
         pdata = pickle.load(handle)
@@ -52,7 +61,6 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     wp_ids = list(np.unique(fine_regions)) 
     fine_area = dict(zip(wp_ids, areas))
     num_wp_ids = len(wp_ids)
-    features = read_input_raster_data_to_np(input_paths)
 
     # Binary map representing a pixel belong to a region with valid id
     map_valid_ids = create_map_of_valid_ids(fine_regions, no_valid_ids)
@@ -68,7 +76,6 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
         cr_census[key] = cr_census_arr[key]
 
     # Reorganize features into one numpy array and handling of no-data mask
-    feature_names = list(input_paths.keys())
     # torch_feature_names = torch.tensor(list(input_paths.keys()))
 
     # Merging building features from google and maxar if both are available
@@ -105,10 +112,14 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
         
         if name in (building_features + related_building_features):
             features[i][features[i]<0] = 0
+            features[i][np.isnan(features[i])] = 0
         else:
-            this_mask = features[i]!=no_data_values[name]
+            this_mask = np.logical_or( features[i]!=no_data_values[name], ~np.isnan(features[i]) )
             if no_data_values[name]>1e30:
                 this_mask *= ~(np.isclose(features[i],no_data_values[name]))
+            
+            if np.isnan(features[i]).sum()>0:
+                features[i][np.isnan(features[i])] = 0.0
             valid_data_mask *= this_mask
 
         # Normalize the features, execpt for the buildings layer when the scale Network is used
@@ -116,8 +127,9 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
             if name in list(cfg.norms[dataset_name].keys()):
                 # normalize by known mean and std
                 features[i] = (features[i] - cfg.norms[dataset_name][name][0]) / cfg.norms[dataset_name][name][1]
-            else:
-                raise Exception("Did not find precalculated mean and std")
+            # else:
+            #     pass
+            #     raise Exception("Did not find precalculated mean and std")
                 
     # features = torch.cat(features, 0)
     features = torch.from_numpy(features)
@@ -305,7 +317,8 @@ def superpixel_with_pix_data(
     kernel_size,
     eval_model,
     full_ceval,
-    remove_feat_idxs
+    remove_feat_idxs,
+    datamode
     ):
 
     ####  define parameters  ########################################################
@@ -353,10 +366,11 @@ def superpixel_with_pix_data(
             'random_seed_folds': random_seed_folds,
             'eval_model': eval_model,
             'full_ceval': full_ceval,
-            'remove_feat_idxs' : remove_feat_idxs
+            'remove_feat_idxs' : remove_feat_idxs,
+            'datamode': datamode
             }
 
-    building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge']
+    building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge', 'BuildingPreds_Own']
     related_building_features = ['buildings_google_mean_area', 'buildings_maxar_mean_area', 'buildings_merge_mean_area']
 
     fine_train_source_vars = ["features", "fine_census", "fine_regions", "fine_map", "fine_map_full", "guide_res", "valid_data_mask", "fine", "feature_names"]
@@ -404,7 +418,7 @@ def superpixel_with_pix_data(
             and os.path.isfile(eval_var_filename) and os.path.isfile(eval_disag_filename)):
             Path(parent_dir).mkdir(parents=True, exist_ok=True)
 
-            this_dataset = get_dataset(ds, params, building_features, related_building_features) 
+            this_dataset = get_dataset(ds, params, building_features, related_building_features, params["datamode"]) 
             prep_train_hdf5_file(build_variable_list(this_dataset, fine_train_source_vars), h5_filename, train_var_filename_f, silent_mode=silent_mode)
             prep_train_hdf5_file(build_variable_list(this_dataset, cr_train_source_vars), h5_filename, train_var_filename_c, silent_mode=silent_mode)
             
@@ -589,6 +603,8 @@ def main():
     
     parser.add_argument("--population_target", "-pop_target", type=lambda x: bool(strtobool(x)), default=False, help="Use population as target")
     
+    parser.add_argument("--datamode", "-dm", type=str, default="Geodata", help="Use satelite features 'Sat2Pop'or 'Geodata'")
+    
     parser.add_argument("--num_epochs", "-ep", type=int, default=2000, help="Number of epochs")
     
     parser.add_argument("--wandb_user", "-wandbu", type=str, default="nandometzger", help="Wandb username")
@@ -596,7 +612,7 @@ def main():
     
     parser.add_argument("--remove_feat_idxs", "-rmfi", type=str, default=None, help="Comaseparated list of indexes of features to be removed")
 
-    args = parser.parse_args()  
+    args = parser.parse_args()
 
 
     # check arguments and fill with default values
@@ -673,7 +689,8 @@ def main():
         args.kernel_size,
         args.eval_model,
         args.full_ceval,
-        args.remove_feat_idxs
+        args.remove_feat_idxs,
+        args.datamode
     )
 
 

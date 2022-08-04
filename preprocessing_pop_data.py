@@ -5,7 +5,7 @@ import csv
 import pickle
 import config_pop as cfg
 from cy_utils import count_matches, compute_area_of_regions, compute_accumulated_values_by_region
-from utils import read_shape_layer_data, read_input_raster_data, preprocess_census_targets, compute_grouped_values
+from utils import read_input_raster_data_Sat2Pop, read_shape_layer_data, read_input_raster_data, preprocess_census_targets, compute_grouped_values
 
 
 def get_valid_ids(wp_ids, matches_wp_to_hd, wp_no_data):
@@ -174,11 +174,16 @@ def compute_agg_features_from_raster(regions, inputs, no_data_vals=None, buildin
 
 
 def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_path,
-                           census_data_path, output_path, dataset_name, target_col):
+                           census_data_path, output_path, dataset_name, target_col, mode):
     # Read input data
-    input_paths = cfg.input_paths[dataset_name]
-    metadata = cfg.metadata[dataset_name]
-    inputs = read_input_raster_data(input_paths)
+    if mode=="Geodata":
+        input_paths = cfg.input_paths[dataset_name]
+        metadata = cfg.metadata[dataset_name]
+        inputs = read_input_raster_data(input_paths)
+    elif mode=="Sat2Pop":
+        input_paths = cfg.input_paths_sat2pop[dataset_name]
+        metadata = cfg.metadata[dataset_name]
+        inputs = read_input_raster_data_Sat2Pop(input_paths)
     buildings = inputs["buildings"]
     buildings_mask = buildings > 0
     hd_regions = read_shape_layer_data(hd_regions_path)
@@ -220,6 +225,8 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
         buildings_path = input_paths["buildings_google"]
     if "buildings" in input_paths.keys():
         buildings_path = input_paths["buildings"]
+    if "BuildingPreds_Own" in input_paths.keys():
+        buildings_path = input_paths["BuildingPreds_Own"]
     
     source = gdal.Open(buildings_path)
     geo_transform = source.GetGeoTransform()
@@ -311,19 +318,20 @@ def preprocessing_pop_data(hd_regions_path, rst_hd_regions_path, rst_wp_regions_
 
 def main():
     parser = argparse.ArgumentParser()
-    # parser.add_argument("hd_regions_path", type=str, help="Shapefile with humdata.org administrative regions information")
-    # parser.add_argument("rst_hd_regions_path", type=str,  help="Raster of humdata.org administrative regions information")
+    parser.add_argument("hd_regions_path", type=str, help="Shapefile with humdata.org administrative regions information")
+    parser.add_argument("rst_hd_regions_path", type=str,  help="Raster of humdata.org administrative regions information")
     parser.add_argument("rst_wp_regions_path", type=str,
                         help="Raster of WorldPop administrative boundaries information")
     parser.add_argument("census_data_path", type=str, help="CSV file containing ")
     parser.add_argument("output_path", type=str, help="Output path")
     parser.add_argument("dataset_name", type=str, help="Dataset name")
     parser.add_argument("target_col", type=str, help="Target column")
+    parser.add_argument("mode", type=str, help="'Geodata' or 'Sat2Pop'")
     args = parser.parse_args()
 
     preprocessing_pop_data(args.hd_regions_path, args.rst_hd_regions_path,
                            args.rst_wp_regions_path, args.census_data_path, args.output_path,
-                           args.dataset_name, args.target_col)
+                           args.dataset_name, args.target_col, args.mode)
 
 
 if __name__ == "__main__":
