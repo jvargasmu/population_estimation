@@ -137,7 +137,6 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     # this_mask = features[0]!=no_data_values[name]
     if params["Net"]=='ScaleNet':
         valid_data_mask *= features[0]>0
-
     guide_res = features.shape[1:3]
 
     # also account for the invalid map ids
@@ -146,6 +145,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     # Create dataformat with densities for administrative boundaries of level -1 and -2
     # Fills in the densities per pixel # distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
     valid_data_mask = valid_data_mask.to("cuda")
+    fine_regions = fine_regions.to("cuda")
     fine_built_area = {}
     cr_built_area = {}
     for key in tqdm(fine_census.keys()):
@@ -154,6 +154,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     for key in tqdm(cr_census.keys()):
         cr_built_area[key] = valid_data_mask[cr_regions==key].sum()
     valid_data_mask = valid_data_mask.cpu()
+    fine_regions = fine_regions.cpu()
 
     fine_density_full, fine_map_full = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
     cr_density_full, cr_map_full = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
