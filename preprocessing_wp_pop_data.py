@@ -4,7 +4,7 @@ from osgeo import gdal
 import config_pop as cfg
 import csv
 import pickle
-from utils import read_shape_layer_data, read_input_raster_data, preprocess_census_targets, compute_grouped_values, write_geolocated_image
+from utils import read_shape_layer_data, read_input_raster_data, read_input_raster_data_Sat2Pop, preprocess_census_targets, compute_grouped_values, write_geolocated_image
 from preprocessing_pop_data import compute_agg_features_from_raster
 from tqdm import tqdm
 import torch
@@ -29,30 +29,6 @@ def read_multiple_targets_from_csv(csv_path):
                     index_to_col[j] = val
                     targets[val] = {}
     return targets
-
-# def get_census_data_by_year(census_data, geo_match_to_id, year_col):
-#     census_by_geo_match = census_data[year_col]
-#     print("census_data size {}".format(len(census_by_geo_match.keys())))
-#     # Store information about the administrative region parents
-#     id_to_geo_match = {geo_match_to_id[k] : k for k in geo_match_to_id.keys()}
-#     cr_geo_match_to_cr_id = {}
-#     cr_geo_match_list = set()
-#     for geo_match in census_by_geo_match.keys():
-#         cr_geo_match = "_".join(geo_match.split("_")[:-1])
-#         cr_geo_match_list.add(cr_geo_match)
-#     cr_geo_match_list = list(cr_geo_match_list)
-#     cr_geo_match_list.sort()
-    
-#     cr_sid = 1
-#     for cr_geo_match in cr_geo_match_list:
-#         cr_geo_match_to_cr_id[cr_geo_match] = cr_sid
-#         cr_sid += 1
-    
-#     census = {geo_match_to_id[geo_match] : census_by_geo_match[geo_match] for geo_match in census_by_geo_match.keys()}
-    
-#     num_coarse_regions = len(cr_geo_match_list) + 1  # indices start in 1 in the shp file, the index 0 corresponds to no data value
-
-#     return census, num_coarse_regions, id_to_geo_match, cr_geo_match_to_cr_id
 
 
 def geo_match_to_coarse(geo_match):
@@ -87,12 +63,18 @@ def change_keys_in_dict(data_dict_orig, mapping):
 
 
 def preprocessing_wp_census_data(wp_regions_path, rst_wp_regions_path, census_data_path, 
-                                    target_col, output_path, dataset_name):
+                                    target_col, output_path, dataset_name, mode):
     
     # Read input data
-    input_paths = cfg.input_paths[dataset_name]
-    metadata = cfg.metadata[dataset_name]
-    inputs = read_input_raster_data(input_paths)
+    if mode=="Geodata":
+        input_paths = cfg.input_paths[dataset_name]
+        metadata = cfg.metadata[dataset_name]
+        inputs = read_input_raster_data(input_paths)
+    else:
+        input_paths = cfg.input_paths_sat2pop[dataset_name]
+        metadata = cfg.metadata[dataset_name]
+        inputs = read_input_raster_data_Sat2Pop(input_paths)
+
     buildings = inputs["buildings"]
     buildings_mask = buildings > 0
     hd_regions = read_shape_layer_data(wp_regions_path)
@@ -108,7 +90,9 @@ def preprocessing_wp_census_data(wp_regions_path, rst_wp_regions_path, census_da
         buildings_path = input_paths["buildings_google"]
     if "buildings" in input_paths.keys():
         buildings_path = input_paths["buildings"]
-    
+    if "BuildingPreds_Own" in input_paths.keys():
+        buildings_path = input_paths["BuildingPreds_Own"]
+
     source = gdal.Open(buildings_path)
     geo_transform = source.GetGeoTransform()
     projection = source.GetProjection()
@@ -192,10 +176,11 @@ def main():
     parser.add_argument("target_col", type=str, help="Target column")
     parser.add_argument("output_path", type=str, help="Output directory")
     parser.add_argument("dataset_name", type=str, help="Country code")
+    parser.add_argument("mode", type=str, help="'Geodata' or 'Sat2Pop'")
     args = parser.parse_args()
 
     preprocessing_wp_census_data(args.wp_regions_path, args.rst_wp_regions_path, args.census_data_path, 
-                                     args.target_col, args.output_path, args.dataset_name)
+                                     args.target_col, args.output_path, args.dataset_name, args.mode)
 
 if __name__ == "__main__":
     main()

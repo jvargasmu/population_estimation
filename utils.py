@@ -81,6 +81,9 @@ def read_input_raster_data_to_np_buildings(input_paths, keys=None):
 def read_input_raster_data(input_paths):
     inputs = {}
     for kinp in input_paths.keys():
+        if kinp=="BuildingPreds_Own":
+            continue
+        print("read:", input_paths[kinp])
         inputs[kinp] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
         invalid_mask = inputs[kinp]>1e+37
         if invalid_mask.sum()>0:
@@ -114,6 +117,7 @@ def read_input_raster_data(input_paths):
 def read_input_raster_data_Sat2Pop(input_paths):
     inputs = {}
     for kinp in input_paths.keys():
+        print("read", kinp)
         feat = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
         invalid_mask = feat>1e+37
         if kinp.endswith("_Own"):

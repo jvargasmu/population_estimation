@@ -20,9 +20,14 @@ input_paths_sat2pop = {
         "buildings_preds": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
     },
     "rwa": {
-        "buildings_google": "{}OtherBuildings/RWA/RWA_own_google_bcount.tif".format(root_path),
-        "BuildingPreds_Own": "{}/ResampledBuildDenseCovariates3/BuildingPreds-1-RWAc.tif".format(root_path),
-        "DeepFeatures_Own": "{}/ResampledBuildDenseCovariates3/BuildingFeatures-1-RWAc.tif".format(root_path), 
+        # "buildings_google": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_count.tif".format(root_path),
+        "BuildingPreds_Own": "{}/ResampledBuildDenseCovariates5/BuildingPreds-1-RWAc.tif".format(root_path),
+        "DeepFeatures_Own": "{}/ResampledBuildDenseCovariates5/BuildingFeatures-1-RWAc.tif".format(root_path), 
+    },
+    "zaf": {
+        # "buildings_google": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_count.tif".format(root_path),
+        "BuildingPreds_Own": "{}/ResampledBuildDenseCovariates3/BuildingPreds-1-ZAFc.tif".format(root_path),
+        "DeepFeatures_Own": "{}/ResampledBuildDenseCovariates3/BuildingFeatures-1-ZAFc.tif".format(root_path), 
     }
 }
 
@@ -257,32 +262,32 @@ input_paths = {
         # "buildings_maxar": "{}OtherBuildings/ZAF/ZAF_buildings_v1_1_count.tif".format(root_path),
         "buildings_google_mean_area": "{}OtherBuildings/ZAF/ZAF_own_google_meanarea.tif".format(root_path),
         # "buildings_maxar_mean_area": "{}OtherBuildings/ZAF/ZAF_buildings_v1_1_mean_area.tif".format(root_path),
-        "zaf_tt50k_100m_2000": "{}Covariates/ZAF/Accessibility/zaf_tt50k_100m_2000.tif".format(
-            root_path),
-        "zaf_dst_bsgme_100m_2015": "{}Covariates/ZAF/BSGM/2015/DTE/zaf_dst_bsgme_100m_2015.tif".format(
-            root_path),
-        "zaf_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/ZAF/BuiltSettlement/2014/DTE/zaf_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
-             root_path),
-        "zaf_dst_coastline_100m_2000_2020": "{}Covariates/ZAF/Coastline/DST/zaf_dst_coastline_100m_2000_2020.tif".format(
-            root_path),
-        "zaf_dmsp_100m_2011": "{}Covariates/ZAF/DMSP/zaf_dmsp_100m_2011.tif".format(
-            root_path),
-        "zaf_esaccilc_dst_water_100m_2000_2012": "{}Covariates/ZAF/ESA_CCI_Water/DST/zaf_esaccilc_dst_water_100m_2000_2012.tif".format(
-            root_path),
-        "zaf_osm_dst_roadintersec_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_roadintersec_100m_2016.tif".format(
-            root_path),
-        "zaf_osm_dst_waterway_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_waterway_100m_2016.tif".format(
-            root_path),
-        "zaf_osm_dst_road_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_road_100m_2016.tif".format(
-            root_path),
-        "zaf_srtm_slope_100m": "{}Covariates/ZAF/Slope/zaf_srtm_slope_100m.tif".format(
-            root_path),
-        "zaf_srtm_topo_100m": "{}Covariates/ZAF/Topo/zaf_srtm_topo_100m.tif".format(
-            root_path),
-        "zaf_viirs_100m_2015": "{}Covariates/ZAF/VIIRS/zaf_viirs_100m_2015.tif".format(
-            root_path),
-        "zaf_wdpa_dst_cat1_100m_2015": "{}Covariates/ZAF/WDPA/WDPA_1/zaf_wdpa_dst_cat1_100m_2015.tif".format(
-            root_path),
+        # "zaf_tt50k_100m_2000": "{}Covariates/ZAF/Accessibility/zaf_tt50k_100m_2000.tif".format(
+        #     root_path),
+        # "zaf_dst_bsgme_100m_2015": "{}Covariates/ZAF/BSGM/2015/DTE/zaf_dst_bsgme_100m_2015.tif".format(
+        #     root_path),
+        # "zaf_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/ZAF/BuiltSettlement/2014/DTE/zaf_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
+        #      root_path),
+        # "zaf_dst_coastline_100m_2000_2020": "{}Covariates/ZAF/Coastline/DST/zaf_dst_coastline_100m_2000_2020.tif".format(
+        #     root_path),
+        # "zaf_dmsp_100m_2011": "{}Covariates/ZAF/DMSP/zaf_dmsp_100m_2011.tif".format(
+        #     root_path),
+        # "zaf_esaccilc_dst_water_100m_2000_2012": "{}Covariates/ZAF/ESA_CCI_Water/DST/zaf_esaccilc_dst_water_100m_2000_2012.tif".format(
+        #     root_path),
+        # "zaf_osm_dst_roadintersec_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_roadintersec_100m_2016.tif".format(
+        #     root_path),
+        # "zaf_osm_dst_waterway_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_waterway_100m_2016.tif".format(
+        #     root_path),
+        # "zaf_osm_dst_road_100m_2016": "{}Covariates/ZAF/OSM/DST/zaf_osm_dst_road_100m_2016.tif".format(
+        #     root_path),
+        # "zaf_srtm_slope_100m": "{}Covariates/ZAF/Slope/zaf_srtm_slope_100m.tif".format(
+        #     root_path),
+        # "zaf_srtm_topo_100m": "{}Covariates/ZAF/Topo/zaf_srtm_topo_100m.tif".format(
+        #     root_path),
+        # "zaf_viirs_100m_2015": "{}Covariates/ZAF/VIIRS/zaf_viirs_100m_2015.tif".format(
+        #     root_path),
+        # "zaf_wdpa_dst_cat1_100m_2015": "{}Covariates/ZAF/WDPA/WDPA_1/zaf_wdpa_dst_cat1_100m_2015.tif".format(
+        #     root_path),
     },
     "dza" : {
         "buildings_google": "{}OtherBuildings/DZA/DZA_own_google_bcount.tif".format(root_path),
@@ -1138,7 +1143,8 @@ metadata = {
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_rwa.pkl',
-        "preproc_data_path_Sat2Pop": 'preprocessed_data_4_Sat2Pop_rwa.pkl',
+        "preproc_data_path_Sat2Pop": 'preprocessed_data_3_rwa.pkl',
+        # "preproc_data_path_Sat2Pop": 'preprocessed_data_4_Sat2Pop_rwa.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/RWA/rwa_wpop_regions.tif'.format(root_path)
     },
     "nga":{
@@ -1171,6 +1177,7 @@ metadata = {
         # "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_zaf.pkl',
+        "preproc_data_path_Sat2Pop": 'preprocessed_data_4_zaf.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020_SID.tif'.format(root_path)
     },
     "dza":{
