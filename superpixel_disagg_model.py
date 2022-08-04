@@ -111,8 +111,8 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     for i, name in enumerate(feature_names):
         
         if name in (building_features + related_building_features):
-            features[i][features[i]<0] = 0
-            features[i][np.isnan(features[i])] = 0
+            features[i][features[i]<0] = 0.0
+            features[i][np.isnan(features[i])] = 0.0
         else:
             this_mask = np.logical_or( features[i]!=no_data_values[name], ~np.isnan(features[i]) )
             if no_data_values[name]>1e30:

@@ -637,7 +637,7 @@
                 "--dropout", "0.0",
                 "-optim", "adam",
                 "-adamwr", "0",
-                "-lstep", "50",
+                "-lstep", "200",
                 "--validation_fold", "0",
                 "-rs", "1610",
                 "-rsf", "1610",

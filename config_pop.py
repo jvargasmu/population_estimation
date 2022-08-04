@@ -20,6 +20,7 @@ input_paths_sat2pop = {
         "buildings_preds": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_count.tif".format(root_path),
     },
     "rwa": {
+        "buildings_google": "{}OtherBuildings/RWA/RWA_own_google_bcount.tif".format(root_path),
         "BuildingPreds_Own": "{}/ResampledBuildDenseCovariates3/BuildingPreds-1-RWAc.tif".format(root_path),
         "DeepFeatures_Own": "{}/ResampledBuildDenseCovariates3/BuildingFeatures-1-RWAc.tif".format(root_path), 
     }
