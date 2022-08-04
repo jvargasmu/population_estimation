@@ -144,17 +144,20 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
 
     # Create dataformat with densities for administrative boundaries of level -1 and -2
     # Fills in the densities per pixel # distribute sourcemap and target map according to the building pixels! To do so, we need to calculate the number of builtup pixels per regions!
-    valid_data_mask = valid_data_mask.to("cuda")
-    fine_regions = fine_regions.to("cuda")
+    valid_data_mask_gpu = valid_data_mask.to("cuda")
     fine_built_area = {}
     cr_built_area = {}
+    fine_regions_gpu = torch.from_numpy(fine_regions.astype(np.int32)).to("cuda")
     for key in tqdm(fine_census.keys()):
-        fine_built_area[key] = valid_data_mask[fine_regions==key].sum()
-        # fine_built_area[key] = valid_data_mask_gpu[fine_regions==key].sum().cpu()
+        fine_built_area[key] = valid_data_mask[fine_regions_gpu==key].sum()
+    del fine_regions_gpu
+
+    cr_regions_gpu = torch.from_numpy(cr_regions.astype(np.int32)).to("cuda")
     for key in tqdm(cr_census.keys()):
         cr_built_area[key] = valid_data_mask[cr_regions==key].sum()
-    valid_data_mask = valid_data_mask.cpu()
-    fine_regions = fine_regions.cpu()
+    del fine_regions_gpu
+    del valid_data_mask_gpu
+    
 
     fine_density_full, fine_map_full = calculate_densities(census=fine_census, area=fine_area, map=fine_regions)
     cr_density_full, cr_map_full = calculate_densities(census=cr_census, area=cr_areas, map=cr_regions)
