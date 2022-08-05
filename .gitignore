@@ -9,6 +9,8 @@ outputs/
 datasets/
 datasets2/
 dataset_deleteme/
+datasets_euler_Sat2Pop/
+datasets_euler/
 __pycache__/
 euler_job_submission/
 euleroutputs/

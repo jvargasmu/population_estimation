@@ -173,7 +173,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
     cr_map = torch.from_numpy(cr_map)
     fine_map = torch.from_numpy(fine_map).float()
     valid_data_mask =  valid_data_mask.to(torch.bool)
-    fine_regions = torch.from_numpy(fine_regions.astype(np.int16))
+    fine_regions = torch.from_numpy(fine_regions.astype(np.int32))
     map_valid_ids = torch.from_numpy(map_valid_ids.astype(np.bool8))
     id_to_cr_id = torch.from_numpy(id_to_cr_id.astype(np.int32))
     cr_regions = torch.from_numpy(cr_regions.astype(np.int32)) 
