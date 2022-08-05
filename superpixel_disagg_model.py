@@ -4,6 +4,7 @@ import argparse
 import pickle
 import numpy as np
 import torch
+from torchvision.ops import masks_to_boxes
 import matplotlib.pyplot as plt 
 from osgeo import gdal
 import wandb
@@ -73,7 +74,7 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
 
     cr_census = {}
     for key in cr_areas.keys():
-        cr_census[key] = cr_census_arr[key]
+        cr_census[key] = cr_areas[key]
 
     # Reorganize features into one numpy array and handling of no-data mask
     # torch_feature_names = torch.tensor(list(input_paths.keys()))
@@ -154,8 +155,8 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
 
     cr_regions_gpu = torch.from_numpy(cr_regions.astype(np.int32)).to("cuda")
     for key in tqdm(cr_census.keys()):
-        cr_built_area[key] = valid_data_mask[cr_regions==key].sum()
-    del fine_regions_gpu
+        cr_built_area[key] = valid_data_mask[cr_regions_gpu==key].sum()
+    del cr_regions_gpu
     del valid_data_mask_gpu
     
 
@@ -224,15 +225,20 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
     for regid in tqdm(tr_census.keys(), disable=silent_mode):
         regmask = regid==tr_regions
         mask = regmask * tr_valid_data_mask
-        boundingbox = bbox2(regmask)
-        # boundingbox = bbox2(mask)
-        rmin, rmax, cmin, cmax = boundingbox
+        # boundingbox = bbox2(regmask)
+        # # boundingbox = bbox2(mask)
+        # rmin, rmax, cmin, cmax = boundingbox
+        tv_boundingbox = masks_to_boxes(regmask.unsqueeze(0))
+        cmin, rmin, cmax, rmax = tv_boundingbox[0].to(torch.int).tolist()
         # tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
+        # tY.append(tr_census[regid])
         tY.append(np.asarray(tr_census[regid]))
-        tregid.append(np.asarray(regid))
+        # tregid.append(np.asarray(regid))
+        tregid.append(regid)
         tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
-        tregMasks.append(regmask[rmin:rmax, cmin:cmax].cpu().numpy())
-        boundingbox = [rmin.cpu(), rmax.cpu(), cmin.cpu(), cmax.cpu()]
+        tregMasks.append(regmask[rmin:rmax, cmin:cmax].cpu().numpy()) 
+        boundingbox = [rmin, rmax, cmin, cmax]
+        boundingbox = tv_boundingbox[0].cpu().to(torch.int).numpy()
         tBBox.append(boundingbox)
         
     tr_regions = tr_regions.cpu()
@@ -259,7 +265,7 @@ def prep_test_hdf5_file(validation_data, this_disaggregation_data, h5_filename, 
     if not os.path.isfile(h5_filename):
         with h5py.File(h5_filename, "w") as f:
             h5_features = f.create_dataset("features", (1, dim, h, w), dtype=np.float32, fillvalue=0, chunks=(1,dim,512,512))
-            for i,feat in tqdm(enumerate(val_features)):
+            for i,feat in enumerate(tqdm(val_features)):
                 h5_features[:,i] = feat
             
     with open(var_filename, 'wb') as handle:

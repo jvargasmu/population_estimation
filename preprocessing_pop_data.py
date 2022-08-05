@@ -107,6 +107,18 @@ def match_raster_ids(raster1, raster2, raster1_no_data, raster2_no_data, offset_
 
 #     return areas
 
+# def compute_area(regions, inputs, no_data_vals=None, buildings_mask=None):
+    # feats_list = list(inputs.keys())
+    # ids = list(np.unique(regions))
+    # num_ids = len(ids)
+
+    # map_valid_ids = np.ones(regions.shape).astype(np.uint32)
+    # for nd in no_data_vals:
+    #     map_valid_ids[regions == nd] = 0
+    
+    # print("regions.shape {}".format(regions.shape))
+
+    # return compute_area_of_regions(regions, map_valid_ids, num_ids)
 
 def compute_agg_features_from_raster(regions, inputs, no_data_vals=None, buildings_mask=None):
     feats_list = list(inputs.keys())

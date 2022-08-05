@@ -528,6 +528,45 @@
             ]
         },
         {
+            "name": "ZAF LogL1 kernel superpixel_disagg_model.py fold x Sat2Pop",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-train", "zaf",
+                "-train_lvl", "f",
+                "-test", "zaf", 
+                // "-lr", "0.0001", 
+                "-lr", "0.00001", 
+                "-wr", "0.01",
+                "--dropout", "0.4",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "800",
+                "--validation_fold", "0",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "d", 
+                "--loss", "LogL1", 
+                "--kernel_size", "1,1,1,1",
+                "--admin_augment", "True",
+                //"--population_target", "True",
+                "--input_scaling", "True",
+                "--output_scaling", "True", 
+                "--sampler", "custom",
+                "--max_step", "150000",
+                //"--population_target", "True"
+                "--name", "this-is-a-test-for-zaf-Sat2Pop",
+                "--datamode", "Sat2Pop",
+                "--dataset_dir", "datasets_Sat2Pop"
+            ]
+        },
+        {
             "name": "DZA LogL1 kernel superpixel_disagg_model.py fold x",
             "type": "python",
             "request": "launch",
@@ -561,7 +600,8 @@
                 "--sampler", "custom",
                 "--max_step", "150000",
                 //"--population_target", "True"
-                "--name", "this-is-a-test-for-dza"
+                "--name", "this-is-a-test-for-dza",
+                "--dataset_dir", "dataset_deleteme"
             ]
         },{
             "name": "MOZ_CV LogL1 kernel superpixel_disagg_model.py fold x",
