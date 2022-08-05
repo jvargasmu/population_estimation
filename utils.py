@@ -780,7 +780,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             pairs = np.asarray(pairs) 
             sumpixels_pairs12 = np.take(patchsize, pairs[:,0]) + np.take(patchsize, pairs[:,1])  
             pairs = pairs[(np.asarray(sumpixels_pairs12)<max_pix_forward**2) * ((np.asarray(sumpixels_pairs12))>0)]
-            # self.small_pairs = pairs[np.asarray(sumpixels_pairs12)>0]
+            self.small_pairs = pairs 
 
             # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
             # triplets = np.asarray(triplets, dtype=object)
@@ -791,7 +791,6 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
             self.custom_sampler_weights = [ self.all_sampler_weights[idx1]+self.all_sampler_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
             self.natural_sampler_weights = [ self.all_natural_weights[idx1]+self.all_natural_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
-        
         else:
             num_single = len(self.loc_list_train)
             self.small_pairs = np.expand_dims(np.arange(num_single, dtype=int), axis=1)
