@@ -438,6 +438,25 @@ no_data_values_Sat2Pop = {
         "DeepFeatures_Own13": -99999,
         "DeepFeatures_Own14": -99999,
         "DeepFeatures_Own15": -99999,
+    },
+    "zaf":{
+        "BuildingPreds_Own": -99999,
+        "DeepFeatures_Own0": -99999,
+        "DeepFeatures_Own1": -99999,
+        "DeepFeatures_Own2": -99999,
+        "DeepFeatures_Own3": -99999,
+        "DeepFeatures_Own4": -99999,
+        "DeepFeatures_Own5": -99999,
+        "DeepFeatures_Own6": -99999,
+        "DeepFeatures_Own7": -99999,
+        "DeepFeatures_Own8": -99999,
+        "DeepFeatures_Own9": -99999,
+        "DeepFeatures_Own10": -99999,
+        "DeepFeatures_Own11": -99999,
+        "DeepFeatures_Own12": -99999,
+        "DeepFeatures_Own13": -99999,
+        "DeepFeatures_Own14": -99999,
+        "DeepFeatures_Own15": -99999,
     }
 }
 
