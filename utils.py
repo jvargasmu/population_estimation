@@ -784,7 +784,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             # del self.memory_vars
             if num_single>10000:
                 self.small_pairs = None
-                
+                self.all_sample_ids = None
                 self.custom_sampler_weights = None
                 self.natural_sampler_weights = None
             else:
@@ -818,9 +818,10 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         # this will return the length when the data is used for training with a dataloader
-        if self.num_single>10000:
-            math.comb(self.num_single, 10000)
-        return self.all_sample_ids.__len__()
+        if self.all_sample_ids is None:
+            return math.comb(self.num_single, 2)
+        else:
+            return self.all_sample_ids.__len__()
     
     def len_val(self):
         # this will return the length of the validation dataset
@@ -908,14 +909,12 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
     def __getitem__(self,idx):
         if self.all_sample_ids is None: 
-            idx = [0,0]
-            secret_word = "python"
-            counter = 0 
             while True: 
                 a,b = np.random.choice(len(self.patchsize), 2)
                 sumpix = self.patchsize[a] + self.patchsize[b]
                 if sumpix<self.max_pix_forward**2:
                     break
+                idxs = [a,b]
         else:
             idxs = self.all_sample_ids[idx] 
             sample = []
