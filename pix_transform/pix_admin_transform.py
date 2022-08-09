@@ -62,7 +62,7 @@ def PixAdminTransform(
     torch.backends.cudnn.deterministic = True
     os.environ['PYTHONHASHSEED'] = str(params["random_seed"])
 
-    if params["sampler"] in ['custom', 'natural']:
+    if params["sampler"] in ['custom', 'natural'] and dataset.custom_sampler_weights is not None:
         weights = dataset.all_natural_weights if params["sampler"]=="natural" else dataset.custom_sampler_weights
         sampler = torch.utils.data.WeightedRandomSampler(weights, len(weights), replacement=False)
         shuffle = False

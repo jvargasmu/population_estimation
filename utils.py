@@ -20,6 +20,9 @@ import psutil
 import os
 import pdb
 import config_pop as cfg
+import itertools
+import math
+
 
 def get_properties_dict(data_dict_orig):
     data_dict = []
@@ -517,6 +520,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         for i, (name, rs) in tqdm(enumerate(datalocations.items())):
             print("Preparing dataloader: ", name)
             print("Initial:",process.memory_info().rss/1000/1000,"mb used")
+
             
             # get map of valid ids
             rst_wp_regions_path = cfg.metadata[name]["rst_wp_regions_path"]
@@ -533,17 +537,17 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 _, _, _, tY_c, tregid_c, tMasks_c, tregMasks_c, tBBox_c, feature_names = pickle.load(f)
 
             self.feature_names[name] = feature_names
-            # print("After loading trainvars",process.memory_info().rss/1000/1000,"mb used")
+            print("After loading trainvars",process.memory_info().rss/1000/1000,"mb used")
 
             if name not in self.val_valid_ids.keys():          
                 with open(rs['eval_vars'], "rb") as f:
                     self.memory_vars[name] = pickle.load(f)
                     self.val_valid_ids[name] = self.memory_vars[name][4]
-            # print("After loading of eval memory vars",process.memory_info().rss/1000/1000,"mb used")
+            print("After loading of eval memory vars",process.memory_info().rss/1000/1000,"mb used")
             with open(rs['disag'], "rb") as f:
                 self.memory_disag[name] = pickle.load(f) 
 
-            # print("After loading of disag memory",process.memory_info().rss/1000/1000,"mb used")
+            print("After loading of disag memory",process.memory_info().rss/1000/1000,"mb used")
 
             if memory_mode[i]=='m':
                 #self.features[name] = h5py.File(rs["features"], 'r', driver='core')["features"]
@@ -579,7 +583,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
                 self.features[name] = h5py.File(rs["features"], 'r')["features"]
             else:
                 raise Exception(f"Wrong memory mode for {name}. It should be 'd' or 'm' in a comma separated list. No spaces!")
-            # print("After loading of features",process.memory_info().rss/1000/1000,"mb used")
+            print("After loading of features",process.memory_info().rss/1000/1000,"mb used")
             
             # Validation split strategy:
             # We always split the coarse patches into 5 folds, then we look up fine patches that belong to those coarse validation patches
@@ -768,29 +772,39 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         if build_pairs:  
             
             num_single = len(self.loc_list_train)
+            self.num_single = num_single
             indicies = range(num_single)
-            max_pix_forward = 20000
+            self.max_pix_forward = 20000
             # max_pix_forward = 30000
 
             bboxlist = [ self.BBox[name][k] for name,k in self.loc_list_train ]
-            patchsize = [ (bb[1]-bb[0])*(bb[3]-bb[2]) for bb in bboxlist]
-            patchsize = np.asarray(patchsize)
+            self.patchsize = [ (bb[1]-bb[0])*(bb[3]-bb[2]) for bb in bboxlist]
+            self.patchsize = np.asarray(self.patchsize)
 
-            pairs = [[indicies[i],indicies[j]] for i in range(num_single) for j in range(i+1, num_single)]
-            pairs = np.asarray(pairs) 
-            sumpixels_pairs12 = np.take(patchsize, pairs[:,0]) + np.take(patchsize, pairs[:,1])  
-            pairs = pairs[(np.asarray(sumpixels_pairs12)<max_pix_forward**2) * ((np.asarray(sumpixels_pairs12))>0)]
-            self.small_pairs = pairs 
+            # del self.memory_vars
+            if num_single>10000:
+                self.small_pairs = None
+                
+                self.custom_sampler_weights = None
+                self.natural_sampler_weights = None
+            else:
 
-            # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
-            # triplets = np.asarray(triplets, dtype=object)
-            # sumpixels_triplets = [(patchsize[id1]+patchsize[id2]+patchsize[id3]) for id1,id2,id3 in triplets ]
-            # self.small_triplets = triplets[np.asarray(sumpixels_triplets)<max_pix_forward**2]
 
-            # prepare the weights
-            self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
-            self.custom_sampler_weights = [ self.all_sampler_weights[idx1]+self.all_sampler_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
-            self.natural_sampler_weights = [ self.all_natural_weights[idx1]+self.all_natural_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
+                self.small_pairs = np.transpose(np.triu_indices(num_single,1))
+
+                sumpixels_pairs12 = np.take(self.patchsize, self.small_pairs[:,0]) + np.take(self.patchsize, self.small_pairs[:,1])  
+                self.small_pairs = self.small_pairs[(np.asarray(sumpixels_pairs12)<self.max_pix_forward**2) * ((np.asarray(sumpixels_pairs12))>0)] 
+
+                # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
+                # triplets = np.asarray(triplets, dtype=object)
+                # sumpixels_triplets = [(patchsize[id1]+patchsize[id2]+patchsize[id3]) for id1,id2,id3 in triplets ]
+                # self.small_triplets = triplets[np.asarray(sumpixels_triplets)<max_pix_forward**2]
+
+                # prepare the weights
+                self.all_sample_ids = list(self.small_pairs) #+ list(self.small_triplets)
+                self.custom_sampler_weights = [ self.all_sampler_weights[idx1]+self.all_sampler_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
+                self.natural_sampler_weights = [ self.all_natural_weights[idx1]+self.all_natural_weights[idx2] for idx1,idx2 in self.all_sample_ids ]
+
         else:
             num_single = len(self.loc_list_train)
             self.small_pairs = np.expand_dims(np.arange(num_single, dtype=int), axis=1)
@@ -804,6 +818,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         # this will return the length when the data is used for training with a dataloader
+        if self.num_single>10000:
+            math.comb(self.num_single, 10000)
         return self.all_sample_ids.__len__()
     
     def len_val(self):
@@ -834,8 +850,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
     def get_single_item(self, idx, name=None): 
         if name is None:
             # should not be idx_to_loc_val?
-            name, k = self.idx_to_loc_val(idx)
-            # name, k = self.idx_to_loc(idx)
+            name, k = self.idx_to_loc_val(idx) 
         else:
             k = idx 
         rmin, rmax, cmin, cmax = self.BBox[name][k]
@@ -892,12 +907,22 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             return X, Y, Mask, name, census_id
 
     def __getitem__(self,idx):
-        idxs = self.all_sample_ids[idx] 
-        sample = []
-        for i in idxs:
-            sample.append(self.get_single_training_item(i))
-        
-        return sample
+        if self.all_sample_ids is None: 
+            idx = [0,0]
+            secret_word = "python"
+            counter = 0 
+            while True: 
+                a,b = np.random.choice(len(self.patchsize), 2)
+                sumpix = self.patchsize[a] + self.patchsize[b]
+                if sumpix<self.max_pix_forward**2:
+                    break
+        else:
+            idxs = self.all_sample_ids[idx] 
+            sample = []
+            for i in idxs:
+                sample.append(self.get_single_training_item(i))
+            
+            return sample
 
 
 def NormL1(outputs, targets, eps=1e-8):
@@ -919,3 +944,6 @@ def LogoutputL2(outputs, targets, eps=1e-8):
 
 def myMSEloss(y, target):
     return ((y-target)**2).mean()
+
+def _numpy(n): #@endolith
+    return np.transpose(np.triu_indices(n,1))
