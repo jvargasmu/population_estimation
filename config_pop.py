@@ -1196,7 +1196,7 @@ metadata = {
         # "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_zaf.pkl',
-        "preproc_data_path_Sat2Pop": 'preprocessed_data_4_zaf.pkl',
+        "preproc_data_path_Sat2Pop": 'preprocessed_data_3_zaf.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020_SID.tif'.format(root_path)
     },
     "dza":{
