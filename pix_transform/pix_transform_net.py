@@ -157,32 +157,32 @@ class PixScaleNet(nn.Module):
         if dropout>0.0:
             if small_net:
                 self.occratenet = nn.Sequential(
-                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
+                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
                             nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
                             )
             else:
                 self.occratenet = nn.Sequential(
                             nn.Dropout(p=dropout, inplace=True),                        
-                            nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
-                            nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
-                            nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
+                            nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+                            nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+                            nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2, padding_mode="reflect"),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
                             )
         else:
             if small_net:
                 self.occratenet = nn.Sequential(
-                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
+                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
+                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
                             )
             else:
                 self.occratenet = nn.Sequential(
-                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2),
-                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2),   
+                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
+                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
+                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2, padding_mode="reflect"),   
                             )
 
-        self.occrate_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() )
-        self.occrate_var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
+        self.occrate_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2, padding_mode="reflect"), nn.Softplus() )
+        self.occrate_var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2, padding_mode="reflect"), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
  
         self.params_with_regularizer += [{'params':self.occratenet.parameters(),'weight_decay':weights_regularizer}]
         self.params_with_regularizer += [{'params':self.occrate_layer.parameters(),'weight_decay':weights_regularizer}]

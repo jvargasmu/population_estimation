@@ -224,15 +224,12 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
     
     for regid in tqdm(tr_census.keys(), disable=silent_mode):
         regmask = regid==tr_regions
-        mask = regmask * tr_valid_data_mask
-        # boundingbox = bbox2(regmask) 
-        # rmin, rmax, cmin, cmax = boundingbox
+        mask = regmask * tr_valid_data_mask 
         tv_boundingbox = masks_to_boxes(regmask.unsqueeze(0))
-        cmin, rmin, cmax, rmax = tv_boundingbox[0].to(torch.int).tolist()
-        # tX.append(tr_features[:,rmin:rmax, cmin:cmax].numpy())
-        # tY.append(tr_census[regid])
-        tY.append(np.asarray(tr_census[regid]))
-        # tregid.append(np.asarray(regid))
+        cmin, rmin, cmax, rmax = tv_boundingbox[0].to(torch.int).tolist() 
+        if ((rmin-rmax)<1) or ((rmin-rmax)<1):
+            continue
+        tY.append(np.asarray(tr_census[regid])) 
         tregid.append(regid)
         tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
         tregMasks.append(regmask[rmin:rmax, cmin:cmax].cpu().numpy()) 

@@ -819,7 +819,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
     def __len__(self):
         # this will return the length when the data is used for training with a dataloader
         if self.all_sample_ids is None:
-            return math.comb(self.num_single, 2)
+            return math.comb(self.num_single//50, 2)
         else:
             return self.all_sample_ids.__len__()
     
@@ -908,20 +908,21 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             return X, Y, Mask, name, census_id
 
     def __getitem__(self,idx):
-        if self.all_sample_ids is None: 
+        if self.all_sample_ids is None:
+            # idxs = None 
             while True: 
                 a,b = np.random.choice(len(self.patchsize), 2)
                 sumpix = self.patchsize[a] + self.patchsize[b]
                 if sumpix<self.max_pix_forward**2:
+                    idxs = [a,b]
                     break
-                idxs = [a,b]
         else:
             idxs = self.all_sample_ids[idx] 
-            sample = []
-            for i in idxs:
-                sample.append(self.get_single_training_item(i))
-            
-            return sample
+        sample = []
+        for i in idxs:
+            sample.append(self.get_single_training_item(i))
+        
+        return sample
 
 
 def NormL1(outputs, targets, eps=1e-8):
