@@ -226,9 +226,12 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
         regmask = regid==tr_regions
         mask = regmask * tr_valid_data_mask 
         tv_boundingbox = masks_to_boxes(regmask.unsqueeze(0))
+        tv_boundingbox[0][2] += 1 # bounding box to real indices
+        tv_boundingbox[0][3] += 1 # bounding box to real indices
         cmin, rmin, cmax, rmax = tv_boundingbox[0].to(torch.int).tolist()
-        cmax += 1 # bounding box to real indices
-        rmax += 1 # bounding box to real indices
+        # cmax += 1 # bounding box to real indices
+        # rmax += 1 # bounding box to real indices
+
         tY.append(np.asarray(tr_census[regid])) 
         tregid.append(regid)
         tMasks.append(mask[rmin:rmax, cmin:cmax].cpu().numpy())
