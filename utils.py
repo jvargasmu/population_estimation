@@ -643,8 +643,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             tregMasks_c = np.asarray(tregMasks_c, dtype=object)
             tBBox_f = np.asarray(tBBox_f)
             tBBox_c = np.asarray(tBBox_c)
-            tregid_f = np.asarray(tregid_f).astype(np.int16)
-            tregid_c = np.asarray(tregid_c).astype(np.int16)
+            tregid_f = np.asarray(tregid_f).astype(np.int32)
+            tregid_c = np.asarray(tregid_c).astype(np.int32)
 
             tregid_val_c = tregid_c[choice_val_c]
             tregid_hout_c = tregid_c[choice_hout_c]
