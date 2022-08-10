@@ -10,7 +10,10 @@ datasets/
 datasets2/
 dataset_deleteme/
 datasets_euler_Sat2Pop/
+datasets_euler_Sat2Pop_2/
 datasets_euler/
+datasets_Sat2Pop_2/
+datasets_Sat2Pop/
 __pycache__/
 euler_job_submission/
 euleroutputs/
@@ -19,4 +22,3 @@ sHACenv4/
 cy_utils/__pycache__/
 *.pyc
 ftp.worldpop.org.uk/
-datasets_Sat2Pop/
