@@ -547,7 +547,7 @@
                 "--dropout", "0.4",
                 "-optim", "adam",
                 "-adamwr", "0",
-                "-lstep", "800",
+                "-lstep", "1600",
                 "--validation_fold", "0",
                 "-rs", "1610",
                 "-rsf", "1610",
@@ -559,7 +559,7 @@
                 // "--input_scaling", "True",
                 // "--output_scaling", "True", 
                 "--sampler", "custom",
-                "--max_step", "150000",
+                "--max_step", "1000000",
                 //"--population_target", "True"
                 "--name", "this-is-a-test-for-zaf-Sat2Pop",
                 "--datamode", "Sat2Pop",

@@ -127,8 +127,8 @@ class PixScaleNet(nn.Module):
                 incells = self.channels_in
             else:
                 incells = hidden_channels
-            convblock = nn.Sequential(nn.Dropout(p=dropout, inplace=True), nn.Conv2d(incells, hidden_channels, (k,k), padding=(k-1)//2, padding_mode="reflect"), nn.ReLU(inplace=True) )
-            Netlist.append(convblock)
+            convblock = [nn.Dropout(p=dropout, inplace=False), nn.Conv2d(incells, hidden_channels, (k,k), padding=(k-1)//2, padding_mode="reflect"), nn.ReLU(inplace=False)]
+            Netlist.extend(convblock)
         self.occratenet =nn.Sequential(*Netlist)
 
         self.convnet = torch.any(torch.tensor(kernel_size)>1)
@@ -189,7 +189,7 @@ class PixScaleNet(nn.Module):
         #                     )
 
         self.occrate_layer = nn.Sequential(nn.Conv2d(hidden_channels, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() )
-        self.occrate_var_layer = nn.Sequential( nn.Conv2d(hidden_channels, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
+        self.occrate_var_layer = nn.Sequential( nn.Conv2d(hidden_channels, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() if pred_var else nn.Identity(inplace=False) )
  
         self.params_with_regularizer += [{'params':self.occratenet.parameters(),'weight_decay':weights_regularizer}]
         self.params_with_regularizer += [{'params':self.occrate_layer.parameters(),'weight_decay':weights_regularizer}]

@@ -138,6 +138,8 @@ def PixAdminTransform(
         best_val_scores[test_dataset_name] = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
         best_val_scores_avg = [-1e12, 1e12, 1e12, -1e12, 1e12, 1e12]
 
+    torch.autograd.set_detect_anomaly(True)
+    
     with tqdm(range(0, epochs), leave=True, disable=params["silent_mode"]) as tnr:
         for epoch in tnr:
             for sample in tqdm(train_loader, disable=params["silent_mode"]):
