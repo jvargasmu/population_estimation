@@ -26,9 +26,9 @@ input_paths_sat2pop = {
     },
     "zaf": {
         "BuildingPreds_Own": "{}/ResampledBuildDenseCovariates5/BuildingPreds-1-ZAFc.tif".format(root_path),
-        # "DeepFeatures_Own": "{}/ResampledBuildDenseCovariates5/BuildingFeatures-1-ZAFc.tif".format(root_path), 
+        "DeepFeatures_Own": "{}/ResampledBuildDenseCovariates5/BuildingFeatures-1-ZAFc.tif".format(root_path), 
         # "buildings_google": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_count.tif".format(root_path),
-        "buildings_google_mean_area": "{}OtherBuildings/ZAF/ZAF_own_google_meanarea.tif".format(root_path),
+        #"buildings_google_mean_area": "{}OtherBuildings/ZAF/ZAF_own_google_meanarea.tif".format(root_path),
     }
 }
 
