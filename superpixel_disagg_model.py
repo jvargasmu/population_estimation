@@ -227,7 +227,7 @@ def prep_train_hdf5_file(training_source, h5_filename, var_filename, silent_mode
         mask = regmask * tr_valid_data_mask 
         tv_boundingbox = masks_to_boxes(regmask.unsqueeze(0))
         cmin, rmin, cmax, rmax = tv_boundingbox[0].to(torch.int).tolist() 
-        if ((rmax-rmin)<1) or ((rmax-rmin)<1):
+        if ((rmax-rmin)<1) or ((cmax-cmin)<1):
             continue
         tY.append(np.asarray(tr_census[regid])) 
         tregid.append(regid)
