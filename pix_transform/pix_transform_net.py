@@ -100,7 +100,7 @@ class PixTransformNet(nn.Module):
 
 class PixScaleNet(nn.Module):
 
-    def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
+    def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001, hidden_channels=128,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
         exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None, small_net=False, pop_target=False):
         super(PixScaleNet, self).__init__()
@@ -120,10 +120,17 @@ class PixScaleNet(nn.Module):
         self.bayesian = loss in ['gaussNLL', 'laplaceNLL']
         self.out_dim = 2 if self.bayesian else 1
 
-        n1 = 128
-        n2 = 128
-        n3 = 128
-        k1,k2,k3,k4 = kernel_size 
+        # k1,k2,k3,k4 = kernel_size
+        Netlist = []
+        for i,k in enumerate(kernel_size[:-1]):
+            if i==0:
+                incells = self.channels_in
+            else:
+                incells = hidden_channels
+            convblock = nn.Sequential(nn.Dropout(p=dropout, inplace=True), nn.Conv2d(incells, hidden_channels, (k,k), padding=(k-1)//2, padding_mode="reflect"), nn.ReLU(inplace=True) )
+            Netlist.append(convblock)
+        self.occratenet =nn.Sequential(*Netlist)
+
         self.convnet = torch.any(torch.tensor(kernel_size)>1)
 
         self.params_with_regularizer = []
@@ -154,35 +161,35 @@ class PixScaleNet(nn.Module):
                 # self.params_with_regularizer += [{'params':self.out_bias[name],'weight_decay':weights_regularizer}]
                 self.params_with_regularizer += [{'params':self.out_bias[name]}]
             
-        if dropout>0.0:
-            if small_net:
-                self.occratenet = nn.Sequential(
-                            nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
-                            nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
-                            )
-            else:
-                self.occratenet = nn.Sequential(
-                            nn.Dropout(p=dropout, inplace=True),                        
-                            nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
-                            nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
-                            nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2, padding_mode="reflect"),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
-                            )
-        else:
-            if small_net:
-                self.occratenet = nn.Sequential(
-                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
-                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
-                            )
-            else:
-                self.occratenet = nn.Sequential(
-                                                  nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
-                            nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
-                            nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2, padding_mode="reflect"),   
-                            )
+        # if dropout>0.0:
+        #     if small_net:
+        #         self.occratenet = nn.Sequential(
+        #                     nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
+        #                     nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
+        #                     nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
+        #                     )
+        #     else:
+        #         self.occratenet = nn.Sequential(
+        #                     nn.Dropout(p=dropout, inplace=True),                        
+        #                     nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+        #                     nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
+        #                     nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2, padding_mode="reflect"),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
+        #                     )
+        # else:
+        #     if small_net:
+        #         self.occratenet = nn.Sequential(
+        #                                           nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
+        #                     nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
+        #                     )
+        #     else:
+        #         self.occratenet = nn.Sequential(
+        #                                           nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
+        #                     nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
+        #                     nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2, padding_mode="reflect"),   
+        #                     )
 
-        self.occrate_layer = nn.Sequential(nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2, padding_mode="reflect"), nn.Softplus() )
-        self.occrate_var_layer = nn.Sequential( nn.Conv2d(n3, 1, (k4, k4),padding=(k4-1)//2, padding_mode="reflect"), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
+        self.occrate_layer = nn.Sequential(nn.Conv2d(hidden_channels, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() )
+        self.occrate_var_layer = nn.Sequential( nn.Conv2d(hidden_channels, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() if pred_var else nn.Identity(inplace=True) )
  
         self.params_with_regularizer += [{'params':self.occratenet.parameters(),'weight_decay':weights_regularizer}]
         self.params_with_regularizer += [{'params':self.occrate_layer.parameters(),'weight_decay':weights_regularizer}]
@@ -210,9 +217,7 @@ class PixScaleNet(nn.Module):
             mask = mask.to(self.device)
             if not self.convnet:
                 inputs = inputs[:,:,mask[0]].unsqueeze(3)
-                mask = mask[mask].unsqueeze(0).unsqueeze(2)
-            # inputs = inputs[:,:,mask[0]].unsqueeze(3)
-            # mask = mask[mask].unsqueeze(0).unsqueeze(2)
+                mask = mask[mask].unsqueeze(0).unsqueeze(2) 
             mask = mask.cpu()
         
         # check inputs
