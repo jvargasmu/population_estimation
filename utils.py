@@ -14,6 +14,7 @@ import copy
 from pylab import figure, imshow, matshow, grid, savefig
 import torch
 import pickle
+import torch.nn.functional as F
 import h5py
 import wandb
 import psutil
@@ -493,9 +494,10 @@ class MultiPatchDataset(torch.utils.data.Dataset):
     """Patch dataset."""
     def __init__(self, datalocations, train_dataset_name, train_level, memory_mode, device,
         validation_split, validation_fold, loss_weights, sampler_weights, val_valid_ids={}, build_pairs=True, random_seed_folds=1610,
-        index_permutation_feat=None, permutation_random_seed=42, remove_feat_idxs=None):
+        index_permutation_feat=None, permutation_random_seed=42, remove_feat_idxs=None, sample_padding=0):
 
         self.device = device    
+        self.sample_padding = sample_padding
         print("Preparing dataloader for: ", list(datalocations.keys()))
         self.features = {}
         self.loc_list, self.loc_list_train, self.loc_list_val = [],[],[]
@@ -515,6 +517,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         self.memory_vars = {}
         self.source_census_val = {}
         self.source_census_hout = {}
+        self.regdims = {}
         process = psutil.Process(os.getpid())
         
         for i, (name, rs) in tqdm(enumerate(datalocations.items())):
@@ -765,6 +768,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             self.all_weights.extend(self.weight_list[name])
             self.all_sampler_weights.extend( [sampler_weights[i]] * len(self.Ys_train[name]) )
             self.all_natural_weights.extend([len(self.Ys_train[name])] * len(self.Ys_train[name]))
+            
+            self.regdims[name] = self.features[name].shape[2:]
             print("Final usage",process.memory_info().rss/1000/1000,"mb used")
 
         self.dims = self.features[name].shape[1]
@@ -848,6 +853,15 @@ class MultiPatchDataset(torch.utils.data.Dataset):
     def num_feats(self):
         return self.dims
 
+    def get_feasible_padding(self, rmin, rmax, cmin, cmax, name):
+        new_rmin = np.max([0,rmin-self.sample_padding])
+        new_cmin = np.max([0,cmin-self.sample_padding])
+        new_rmax = np.min([self.regdims[name][0],rmax+self.sample_padding])
+        new_cmax = np.min([self.regdims[name][1],cmax+self.sample_padding])
+        new_padding = [rmin-new_rmin, new_rmax-rmax, cmin-new_cmin, new_cmax-cmax]
+        return [new_rmin, new_rmax, new_cmin, new_cmax], new_padding
+
+
     def get_single_item(self, idx, name=None): 
         if name is None:
             # should not be idx_to_loc_val?
@@ -867,13 +881,17 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         else:
             k = idx
         rmin, rmax, cmin, cmax = self.BBox_train[name][k]
+        [rmin, rmax, cmin, cmax], [prmin, prmax, pcmin, pcmax ] = self.get_feasible_padding(rmin, rmax, cmin, cmax, name)
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_train[name][k])
         Mask = torch.tensor(self.Masks_train[name][k])
+        if self.sample_padding>0:
+            Mask = F.pad(Mask, pad=(pcmin,pcmax,prmin,prmax))
         weight = self.weight_list[name][k]
+        assert(Mask.shape==X.shape[1:])
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
-        return X, Y, Mask, name, weight
+        return X, Y, Mask, name, weight, [prmin, prmax, pcmin, pcmax ]
 
     def get_single_validation_item(self, idx, name=None, return_BB=False): 
         if name is None:
@@ -881,9 +899,14 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         else:
             k = idx
         rmin, rmax, cmin, cmax = self.BBox_val[name][k]
+        [rmin, rmax, cmin, cmax], [prmin, prmax, pcmin, pcmax ] = self.get_feasible_padding(rmin, rmax, cmin, cmax, name)
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_val[name][k])
         Mask = torch.tensor(self.Masks_val[name][k])
+        regMasks_hout = torch.tensor(self.regMasks_hout[name][k])
+        if self.sample_padding>0:
+            Mask = F.pad(Mask, pad=(pcmin,pcmax,prmin,prmax))
+            regMasks_hout = F.pad(regMasks_hout, pad=(pcmin,pcmax,prmin,prmax))
         census_id = torch.tensor(self.tregid_val[name][k])
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
@@ -898,14 +921,19 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         else:
             k = idx
         rmin, rmax, cmin, cmax = self.BBox_hout[name][k]
+        [rmin, rmax, cmin, cmax], [prmin, prmax, pcmin, pcmax ] = self.get_feasible_padding(rmin, rmax, cmin, cmax, name)
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_hout[name][k])
         Mask = torch.tensor(self.Masks_hout[name][k])
+        regMasks_hout = torch.tensor(self.regMasks_hout[name][k])
+        if self.sample_padding>0:
+            Mask = F.pad(Mask, pad=(pcmin,pcmax,prmin,prmax))
+            regMasks_hout = F.pad(regMasks_hout, pad=(pcmin,pcmax,prmin,prmax))
         census_id = torch.tensor(self.tregid_hout[name][k])
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
         if return_BB:
-            return X, Y, Mask, name, census_id, self.BBox_hout[name][k], torch.tensor(self.regMasks_hout[name][k])
+            return X, Y, Mask, name, census_id, [rmin, rmax, cmin, cmax], regMasks_hout
         else:
             return X, Y, Mask, name, census_id
 

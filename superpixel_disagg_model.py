@@ -329,7 +329,8 @@ def superpixel_with_pix_data(
     eval_model,
     full_ceval,
     remove_feat_idxs,
-    datamode
+    datamode,
+    sample_padding
     ):
 
     ####  define parameters  ########################################################
@@ -378,7 +379,8 @@ def superpixel_with_pix_data(
             'eval_model': eval_model,
             'full_ceval': full_ceval,
             'remove_feat_idxs' : remove_feat_idxs,
-            'datamode': datamode
+            'datamode': datamode,
+            'sample_padding': sample_padding
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge', 'BuildingPreds_Own']
@@ -615,6 +617,8 @@ def main():
     parser.add_argument("--population_target", "-pop_target", type=lambda x: bool(strtobool(x)), default=False, help="Use population as target")
     
     parser.add_argument("--datamode", "-dm", type=str, default="Geodata", help="Use satelite features 'Sat2Pop'or 'Geodata'")
+
+    parser.add_argument("--sample_padding", "-sp", type=int, default=16, help="how much to pad the samples for training")
     
     parser.add_argument("--num_epochs", "-ep", type=int, default=2000, help="Number of epochs")
     
@@ -701,7 +705,8 @@ def main():
         args.eval_model,
         args.full_ceval,
         args.remove_feat_idxs,
-        args.datamode
+        args.datamode,
+        args.sample_padding
     )
 
 
