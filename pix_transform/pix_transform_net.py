@@ -191,6 +191,10 @@ class PixScaleNet(nn.Module):
 
     def forward(self, inputs, mask=None, name=None, predict_map=False, forward_only=False):
 
+        if mask is not None:
+            if mask.sum()==0 and not self.convnet:
+                return self.return_zero(inputs, predict_map)
+            
         if len(inputs.shape)==3:
             inputs = inputs.unsqueeze(0)
 
@@ -275,9 +279,9 @@ class PixScaleNet(nn.Module):
         # Check if masking should be applied
         if mask is not None: 
             if self.bayesian:
-                    return pop_est[0,:,mask[0]].sum(1).cpu()
+                return pop_est[0,:,mask[0]].sum(1).cpu()
             else:
-                    return pop_est[0,mask].sum().cpu()
+                return pop_est[0,mask].sum().cpu()
             #return pop_est.sum((0,2,3)).cpu()
         else:
             # check if the output should be the map or the sum
@@ -286,6 +290,14 @@ class PixScaleNet(nn.Module):
             else:
                 return pop_est.cpu(), occrate.cpu()
 
+
+    def return_zero(self, inputs, predict_map):
+        # Makes a dummy output for the case that the region contains no buildings
+        zero_map = inputs[0]*torch.zeros_like(inputs[0])
+        if not predict_map:
+            return zero_map.sum().cpu()
+        else:
+            return zero_map.cpu(), zero_map.cpu()
 
     def perform_scale_inputs(self, data, name):
         if name not in list(self.in_scale.keys()):

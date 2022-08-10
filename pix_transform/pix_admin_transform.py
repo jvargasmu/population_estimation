@@ -203,7 +203,7 @@ def PixAdminTransform(
                                 agg_preds_arr = torch.zeros((dataset.max_tregid[name]+1,))
 
                                 for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
-                                    X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name) 
+                                    X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name)
                                     pred = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
                                     agg_preds.append(pred)
                                     val_census.append(Y.cpu().numpy())

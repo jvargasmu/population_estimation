@@ -481,7 +481,7 @@ class PatchDataset(torch.utils.data.Dataset):
         output = []
         name, k = self.idx_to_loc(idx)
         rmin, rmax, cmin, cmax = self.BBox[name][k]
-        X = torch.from_numpy(self.features[name][:,:,rmin:rmax, cmin:cmax])
+        X = torch.from_numpy(self.features[name][:,:,rmin:rmax+1, cmin:cmax+1])
         Y = torch.from_numpy(self.Ys[name][k]) 
         Mask = torch.from_numpy(self.Masks[name][k]) 
         return X, Y, Mask
@@ -871,6 +871,8 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         Y = torch.tensor(self.Ys_train[name][k])
         Mask = torch.tensor(self.Masks_train[name][k])
         weight = self.weight_list[name][k]
+        if np.prod(X.shape[1:])==0:
+            raise Exception("no values")
         return X, Y, Mask, name, weight
 
     def get_single_validation_item(self, idx, name=None, return_BB=False): 
@@ -909,11 +911,11 @@ class MultiPatchDataset(torch.utils.data.Dataset):
 
     def __getitem__(self,idx):
         if self.all_sample_ids is None:
-            # idxs = None 
+            # generate valid pairs "on the fly"
             while True: 
                 a,b = np.random.choice(len(self.patchsize), 2)
                 sumpix = self.patchsize[a] + self.patchsize[b]
-                if sumpix<self.max_pix_forward**2:
+                if sumpix<self.max_pix_forward**2 and self.patchsize[a]>0 and self.patchsize[b]>0:
                     idxs = [a,b]
                     break
         else:
@@ -923,7 +925,6 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             sample.append(self.get_single_training_item(i))
         
         return sample
-
 
 def NormL1(outputs, targets, eps=1e-8):
     loss = torch.abs(outputs - targets) / torch.clamp(outputs + targets, min=eps)
