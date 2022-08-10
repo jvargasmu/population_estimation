@@ -563,7 +563,7 @@
                 //"--population_target", "True"
                 "--name", "this-is-a-test-for-zaf-Sat2Pop",
                 "--datamode", "Sat2Pop",
-                "--dataset_dir", "datasets_Sat2Pop"
+                "--dataset_dir", "datasets_Sat2Pop_2"
             ]
         },
         {
@@ -708,7 +708,7 @@
                 "--max_step", "150000",
                 //"--population_target", "True"
                 "--name", "this-is-a-test-for-rwa_adj_Sat2Pop",
-                "--dataset_dir", "datasets_Sat2Pop",
+                "--dataset_dir", "datasets_Sat2Pop_2",
                 "--datamode", "Sat2Pop"
             ]
         },{
