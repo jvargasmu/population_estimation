@@ -104,7 +104,7 @@ def PixAdminTransform(
     elif params['Net']=='ScaleNet':
         mynet = PixScaleNet(channels_in=dataset.num_feats(),
                         weights_regularizer=params['weights_regularizer'],
-                        device=device, loss=params['loss'], kernel_size=params['kernel_size'],
+                        device=device, loss=params['loss'], kernel_size=params['kernel_size'], hn=params["hidden_neurons"]
                         dropout=params["dropout"],
                         input_scaling=params["input_scaling"], output_scaling=params["output_scaling"],
                         datanames=train_dataset_name, small_net=params["small_net"], pop_target=params["population_target"]

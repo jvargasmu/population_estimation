@@ -100,7 +100,7 @@ class PixTransformNet(nn.Module):
 
 class PixScaleNet(nn.Module):
 
-    def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001, hidden_channels=128,
+    def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001, hidden_neurons=128,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
         exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None, small_net=False, pop_target=False):
         super(PixScaleNet, self).__init__()
@@ -126,8 +126,8 @@ class PixScaleNet(nn.Module):
             if i==0:
                 incells = self.channels_in
             else:
-                incells = hidden_channels
-            convblock = [nn.Dropout(p=dropout, inplace=False), nn.Conv2d(incells, hidden_channels, (k,k), padding=(k-1)//2, padding_mode="reflect"), nn.ReLU(inplace=False)]
+                incells = hidden_neurons
+            convblock = [nn.Dropout(p=dropout, inplace=False), nn.Conv2d(incells, hidden_neurons, (k,k), padding=(k-1)//2, padding_mode="reflect"), nn.ReLU(inplace=False)]
             Netlist.extend(convblock)
         self.occratenet =nn.Sequential(*Netlist)
 
@@ -141,10 +141,8 @@ class PixScaleNet(nn.Module):
             self.in_bias = {}
             for name in datanames:
                 self.in_scale[name] = torch.ones( (1,self.channels_in,1,1), requires_grad=True, device=device)
-                self.in_bias[name] = torch.zeros( (1,self.channels_in,1,1), requires_grad=True, device=device)
-                # self.params_with_regularizer += [{'params':self.in_scale[name],'weight_decay':weights_regularizer}]
-                self.params_with_regularizer += [{'params':self.in_scale[name]}]
-                # self.params_with_regularizer += [{'params':self.in_bias[name],'weight_decay':weights_regularizer}]
+                self.in_bias[name] = torch.zeros( (1,self.channels_in,1,1), requires_grad=True, device=device) 
+                self.params_with_regularizer += [{'params':self.in_scale[name]}] 
                 self.params_with_regularizer += [{'params':self.in_bias[name]}]
             
         if self.output_scaling and (datanames is not None):
@@ -152,44 +150,14 @@ class PixScaleNet(nn.Module):
             self.out_scale = {}
             self.out_bias = {}
             for name in datanames:
-                self.out_scale[name] = torch.ones( (1), requires_grad=True, device=device)
-                # self.out_scale[name].data.fill_(1.)
-                self.out_bias[name] =  torch.zeros( (1), requires_grad=True, device=device)
-                # self.out_bias[name].data.fill_(0.)
-                # self.params_with_regularizer += [{'params':self.out_scale[name],'weight_decay':weights_regularizer}]
-                self.params_with_regularizer += [{'params':self.out_scale[name]}]
-                # self.params_with_regularizer += [{'params':self.out_bias[name],'weight_decay':weights_regularizer}]
+                self.out_scale[name] = torch.ones( (1), requires_grad=True, device=device) 
+                self.out_bias[name] =  torch.zeros( (1), requires_grad=True, device=device) 
+                self.params_with_regularizer += [{'params':self.out_scale[name]}] 
                 self.params_with_regularizer += [{'params':self.out_bias[name]}]
-            
-        # if dropout>0.0:
-        #     if small_net:
-        #         self.occratenet = nn.Sequential(
-        #                     nn.Dropout(p=dropout, inplace=True),                        nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
-        #                     nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
-        #                     nn.Dropout(p=dropout, inplace=True), nn.ReLU(inplace=True), 
-        #                     )
-        #     else:
-        #         self.occratenet = nn.Sequential(
-        #                     nn.Dropout(p=dropout, inplace=True),                        
-        #                     nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),   nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
-        #                     nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True),
-        #                     nn.Conv2d(n2, n3, (k3, k3),padding=(k3-1)//2, padding_mode="reflect"),              nn.Dropout(p=dropout, inplace=True),    nn.ReLU(inplace=True), 
-        #                     )
-        # else:
-        #     if small_net:
-        #         self.occratenet = nn.Sequential(
-        #                                           nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
-        #                     nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
-        #                     )
-        #     else:
-        #         self.occratenet = nn.Sequential(
-        #                                           nn.Conv2d(self.channels_in, n1, (k1,k1), padding=(k1-1)//2, padding_mode="reflect"),
-        #                     nn.ReLU(inplace=True),nn.Conv2d(n1, n2, (k2,k2), padding=(k2-1)//2, padding_mode="reflect"),
-        #                     nn.ReLU(inplace=True),nn.Conv2d(n2, n3, (k3,k3), padding=(k3-1)//2, padding_mode="reflect"),   
-        #                     )
+             
 
-        self.occrate_layer = nn.Sequential(nn.Conv2d(hidden_channels, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() )
-        self.occrate_var_layer = nn.Sequential( nn.Conv2d(hidden_channels, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() if pred_var else nn.Identity(inplace=False) )
+        self.occrate_layer = nn.Sequential(nn.Conv2d(hidden_neurons, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() )
+        self.occrate_var_layer = nn.Sequential( nn.Conv2d(hidden_neurons, 1, (kernel_size[-1], kernel_size[-1]),padding=(kernel_size[-1]-1)//2, padding_mode="reflect"), nn.Softplus() if pred_var else nn.Identity(inplace=False) )
  
         self.params_with_regularizer += [{'params':self.occratenet.parameters(),'weight_decay':weights_regularizer}]
         self.params_with_regularizer += [{'params':self.occrate_layer.parameters(),'weight_decay':weights_regularizer}]

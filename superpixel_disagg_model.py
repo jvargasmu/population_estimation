@@ -330,7 +330,8 @@ def superpixel_with_pix_data(
     full_ceval,
     remove_feat_idxs,
     datamode,
-    sample_padding
+    sample_padding,
+    hidden_neurons
     ):
 
     ####  define parameters  ########################################################
@@ -380,7 +381,8 @@ def superpixel_with_pix_data(
             'full_ceval': full_ceval,
             'remove_feat_idxs' : remove_feat_idxs,
             'datamode': datamode,
-            'sample_padding': sample_padding
+            'sample_padding': sample_padding,
+            'hidden_neurons': hidden_neurons
             }
 
     building_features = ['buildings', 'buildings_j', 'buildings_google', 'buildings_maxar', 'buildings_merge', 'BuildingPreds_Own']
@@ -589,7 +591,8 @@ def main():
     parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
     parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="dropout probability ")
     parser.add_argument("--small_net", "-sn", type=bool, default=False, help="Using small variant.")
-    parser.add_argument("--kernel_size", "-ks", type=str, default="1,1,1,1", help="Commaseperated list of integer kernel sizes with size 4.")
+    parser.add_argument("--kernel_size", "-ks", type=str, default="1,1,1,1", help="Commaseperated list of integer kernel sizes.")
+    parser.add_argument("--hidden_neurons", "-hn", type=int, default=128, help="Number of hidden neurons in the scalenet")
 
     parser.add_argument("--memory_mode", "-mm", type=str, default='m', help="Loads the variables into memory to speed up the training process. Obviously: Needs more memory! m:load into memory; d: load from a hdf5 file on disk. (separated by commas)")
     parser.add_argument("--log_step", "-lstep", type=float, default=2000, help="Evealuate the model after 'logstep' batchiterations.")
@@ -649,8 +652,8 @@ def main():
     args.custom_sampler_weights = [ float(el) for el in args.custom_sampler_weights ]
     args.custom_sampler_weights =  [ el/sum(args.custom_sampler_weights) for el in args.custom_sampler_weights ]
 
-    args.kernel_size = unroll_arglist(args.kernel_size, '1', 4)
-    args.kernel_size = [ int(el) for el in args.kernel_size ] 
+    # args.kernel_size = unroll_arglist(args.kernel_size, '1', 4)
+    # args.kernel_size = [ int(el) for el in args.kernel_size ] 
 
     if args.remove_feat_idxs is not None:
         args.remove_feat_idxs = [int(el) for el in args.remove_feat_idxs.split(",") ] 
@@ -706,7 +709,8 @@ def main():
         args.full_ceval,
         args.remove_feat_idxs,
         args.datamode,
-        args.sample_padding
+        args.sample_padding,
+        args.hidden_neurons
     )
 
 

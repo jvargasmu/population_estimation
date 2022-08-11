@@ -563,7 +563,7 @@
                 //"--population_target", "True"
                 "--name", "this-is-a-test-for-zaf-Sat2Pop",
                 "--datamode", "Sat2Pop",
-                "--dataset_dir", "datasets_Sat2Pop_2"
+                "--dataset_dir", "datasets_euler_Sat2Pop_3ss"
             ]
         },
         {
@@ -700,6 +700,7 @@
                 "-mm", "m", 
                 "--loss", "LogL1", 
                 "--kernel_size", "3,3,3,3,3,3,3",
+                "--hidden_neurons", "64",
                 // "--admin_augment", "True",
                 //"--population_target", "True",
                 // "--input_scaling", "True",
