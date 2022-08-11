@@ -869,9 +869,12 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         else:
             k = idx 
         rmin, rmax, cmin, cmax = self.BBox[name][k]
+        [rmin, rmax, cmin, cmax], [prmin, prmax, pcmin, pcmax ] = self.get_feasible_padding(rmin, rmax, cmin, cmax, name)
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys[name][k])
         Mask = torch.tensor(self.Masks[name][k]) 
+        if self.sample_padding>0:
+            Mask = F.pad(Mask, pad=(pcmin,pcmax,prmin,prmax))
         census_id = torch.tensor(self.tregid[name][k])
         return X, Y, Mask, name, census_id
 
@@ -903,15 +906,15 @@ class MultiPatchDataset(torch.utils.data.Dataset):
         X = torch.tensor(self.features[name][0,:,rmin:rmax, cmin:cmax])
         Y = torch.tensor(self.Ys_val[name][k])
         Mask = torch.tensor(self.Masks_val[name][k])
-        regMasks_hout = torch.tensor(self.regMasks_hout[name][k])
+        regMasks_val = torch.tensor(self.regMasks_val[name][k])
         if self.sample_padding>0:
             Mask = F.pad(Mask, pad=(pcmin,pcmax,prmin,prmax))
-            regMasks_hout = F.pad(regMasks_hout, pad=(pcmin,pcmax,prmin,prmax))
+            regMasks_val = F.pad(regMasks_val, pad=(pcmin,pcmax,prmin,prmax))
         census_id = torch.tensor(self.tregid_val[name][k])
         if np.prod(X.shape[1:])==0:
             raise Exception("no values")
         if return_BB:
-            return X, Y, Mask, name, census_id, self.BBox_val[name][k], torch.tensor(self.regMasks_hout[name][k])
+            return X, Y, Mask, name, census_id, [rmin, rmax, cmin, cmax], regMasks_val
         else:
             return X, Y, Mask, name, census_id
     
