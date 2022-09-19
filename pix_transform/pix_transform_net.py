@@ -354,7 +354,11 @@ class PixScaleNet(nn.Module):
 
         #choose a responsible patch that does not exceed the GPU memory
         PS = 1800 if forward_only else 900
-        PS = 64 if self.convnet else PS
+        extra_low_memory = False
+        if extra_low_memory:
+            PS = 32 if self.convnet else PS
+        else:
+            PS = 64 if self.convnet else PS
         oh, ow = inputs.shape[-2:]
         if predict_map:
             outvar = torch.zeros((1,self.out_dim,oh, ow), dtype=torch.float32, device='cpu')

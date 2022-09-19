@@ -21,44 +21,30 @@
                 "P_2020"
             ]
         },{
-            "name": "Py: ZAF preprocessing_zmb_census_data.py",
+            "name": "Py: ZAF wpop preprocessing_zaf_census_data.py",
             "type": "python",
             "request": "launch",
-            "program": "preprocessing_zmb_pop_data.py",
+            "program": "preprocessing_zaf_pop_data.py",
             "console": "integratedTerminal",
             "args": [
-                "../../data/OtherBuildings/ZAF/zaf_adm4_sid.tif",
-                "../../data/OtherBuildings/ZAF/southafrica.csv",
+                "/scratch2/metzgern/HAC/data/codedata/OtherBuildings/ZAF/Subnational/Shapefile/zaf_subnational_2000_2020.shp",
+                "/scratch2/metzgern/HAC/data/codedata/OtherBuildings/ZAF/zaf_subnational_2000_2020_sid.tif",
+                "/scratch2/metzgern/HAC/data/codedata/OtherBuildings/ZAF/zaf_wpop_census.csv",
                 "2020",
                 "preprocessed_data_3_zaf.pkl",
                 "zaf"
             ]
         },{
-            "name": "Py: ZAF wpop preprocessing_pop_data.py",
-        "type": "python",
-        "request": "launch",
-        "program": "preprocessing_pop_data.py",
-        "console": "integratedTerminal",
-        "args": [
-            "../../../data/OtherBuildings/ZAF/zaf_humdata_regions_shapefile/zaf_humdata_regions.shp",
-            "../../../data/OtherBuildings/ZAF/zaf_humdata_regions.tif",
-            "../../../data/OtherBuildings/ZAF/zaf_wpop_regions.tif",
-            "../../../data/OtherBuildings/ZAF/zaf_wpop_census.csv",
-            "preprocessed_data_3_zaf.pkl",
-            "zaf",
-            "P_2020"
-        ]
-        }, {
             "name": "Py: ZMB preprocessing_zmb_census_data.py",
             "type": "python",
             "request": "launch",
             "program": "preprocessing_zmb_pop_data.py",
             "console": "integratedTerminal",
             "args": [
-                "../../../data/OtherBuildings/ZMB/zmb_adm4_sid.tif",
-                "../../../data/OtherBuildings/ZMB/zambia.csv",
+                "../../data/OtherBuildings/ZMB/zmb_adm4_sid.tif",
+                "../../data/OtherBuildings/ZMB/zambia.csv",
                 "2020",
-                "preprocessed_data_3_zmb.pkl",
+                "preprocessed_data_4_zmb.pkl",
                 "zmb"
             ]
         },{
@@ -100,11 +86,11 @@
             "program": "preprocessing_pop_data.py",
             "console": "integratedTerminal",
             "args": [
-                "../../../data/OtherBuildings/RWA/rwa_humdata_regions_shapefile/rwa_humdata_regions.shp",
-                "../../../data/OtherBuildings/RWA/rwa_humdata_regions.tif",
-                "../../../data/OtherBuildings/RWA/rwa_wpop_regions.tif",
-                "../../../data/OtherBuildings/RWA/rwa_wpop_census.csv",
-                "preprocessed_data_3_rwa.pkl",
+                "../../data/OtherBuildings/RWA/rwa_humdata_regions_shapefile/rwa_humdata_regions.shp",
+                "../../data/OtherBuildings/RWA/rwa_humdata_regions.tif",
+                "../../data/OtherBuildings/RWA/rwa_wpop_regions.tif",
+                "../../data/OtherBuildings/RWA/rwa_wpop_census.csv",
+                "preprocessed_data_4_rwa.pkl",
                 "rwa",
                 "P_2020"
             ]
@@ -341,8 +327,8 @@
                 "-rsf", "1610",
                 "-mm", "d", 
                 "--loss", "LogL1", 
-                "--kernel_size", "1,1,1,1",
-                "--admin_augment", "False",
+                "--kernel_size", "3,3,3,3",
+                // "--admin_augment", "False",
                 "--population_target", "False",
                 "--input_scaling", "True",
                 "--output_scaling", "True", 

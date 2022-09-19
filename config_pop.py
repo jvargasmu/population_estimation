@@ -6,7 +6,10 @@ import os
 # if os.isdir()
 root_paths = ["/home/john.vargas/data/wpop/",
     "/scratch/Nando/HAC2/data/",
-    "/cluster/work/igp_psr/metzgern/HAC/data/"]
+    "/cluster/work/igp_psr/metzgern/HAC/data/",
+    "/scratch2/metzgern/HAC/data/",
+    "/scratch2/metzgern/HAC/data/codedata/"]
+
 for dir in root_paths:
     if os.path.isdir(dir):
         root_path = dir
@@ -128,10 +131,10 @@ input_paths = {
             root_path),
     },
     "rwa": {
-        "buildings_google": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_count.tif".format(root_path),
-        "buildings_maxar": "{}OtherBuildings/RWA/RWA_mbp_BCB_v3_count.tif".format(root_path),
-        "buildings_google_mean_area": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_mean_area.tif".format(root_path),
-        "buildings_maxar_mean_area": "{}OtherBuildings/RWA/RWA_mbp_BCB_v3_mean_area.tif".format(root_path),
+        # "buildings_google": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_count.tif".format(root_path),
+        "buildings_maxar": "{}OtherBuildings/RWA/RWA_buildings_v1_1_count.tif".format(root_path),
+        # "buildings_google_mean_area": "{}OtherBuildings/RWA/RWA_gbp_BCB_v1_mean_area.tif".format(root_path),
+        "buildings_maxar_mean_area": "{}OtherBuildings/RWA/RWA_buildings_v1_1_mean_area.tif".format(root_path),
         "rwa_tt50k_100m_2000": "{}Covariates/RWA/Accessibility/rwa_tt50k_100m_2000.tif".format(
             root_path),
         "rwa_dst_bsgme_100m_2015": "{}Covariates/RWA/BSGM/2015/DTE/rwa_dst_bsgme_100m_2015.tif".format(
@@ -254,6 +257,10 @@ input_paths = {
             root_path),
         "zmb_wdpa_dst_cat1_100m_2015": "{}Covariates/ZMB/WDPA/WDPA_1/zmb_wdpa_dst_cat1_100m_2015.tif".format(
             root_path),
+    },
+    "zaf" : {
+        "buildings_google": "{}OtherBuildings/ZAF/ZAF_own_google_bcount.tif".format(root_path),
+        "buildings_google_mean_area": "{}OtherBuildings/ZAF/ZAF_own_google_meanarea.tif".format(root_path)
     }
 }
 
@@ -729,6 +736,14 @@ metadata = {
         "scale_maxar_to_google": None,
         "preproc_data_path": 'preprocessed_data_3_zmb.pkl',
         "rst_wp_regions_path": '{}OtherBuildings/ZMB/zmb_adm4_sid.tif'.format(root_path)
+    },
+    "zaf":{
+        "wp_no_data": [0],
+        "wp_covariates_no_data": -9999,
+        "hd_no_data": [0],
+        "scale_maxar_to_google": None,
+        "preproc_data_path": 'preprocessed_data_3_zaf.pkl',
+        "rst_wp_regions_path": '{}OtherBuildings/ZAF/zaf_adm4_sid.tif'.format(root_path)
     }
 }
 

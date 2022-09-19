@@ -52,8 +52,6 @@ def read_input_raster_data_to_np_buildings(input_paths, keys=None):
             inputs[i] = gdal.Open(input_paths[kinp]).ReadAsArray().astype(np.float32)
     return inputs
 
-
-
 def read_input_raster_data(input_paths):
     inputs = {}
     for kinp in input_paths.keys():
@@ -718,9 +716,10 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             
             num_single = len(self.loc_list_train)
             indicies = range(num_single)
-            max_pix_forward = 20000
+            max_pix_forward = 2500
 
-            bboxlist = [ self.BBox[name][k] for name,k in self.loc_list_train ]
+            bboxlist_old = [ self.BBox[name][k] for name,k in self.loc_list_train ]
+            bboxlist = [ self.BBox_train[name][k] for name,k in self.loc_list_train ]
             patchsize = [ (bb[1]-bb[0])*(bb[3]-bb[2]) for bb in bboxlist]
             patchsize = np.asarray(patchsize)
 
@@ -728,6 +727,7 @@ class MultiPatchDataset(torch.utils.data.Dataset):
             pairs = np.asarray(pairs) 
             sumpixels_pairs12 = np.take(patchsize, pairs[:,0]) + np.take(patchsize, pairs[:,1])  
             pairs = pairs[np.asarray(sumpixels_pairs12)<max_pix_forward**2]
+            sumpixels_pairs12 = sumpixels_pairs12[np.asarray(sumpixels_pairs12)<max_pix_forward**2]
             self.small_pairs = pairs[np.asarray(sumpixels_pairs12)>0]
 
             # triplets = [[indicies[i],indicies[j],indicies[k]] for i in tqdm(range(num_single)) for j in range(i+1, num_single) for k in range(j+1, num_single)]
