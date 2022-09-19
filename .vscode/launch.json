@@ -21,20 +21,61 @@
                 "P_2020"
             ]
         },{
+<<<<<<< HEAD
             "name": "Py: ZAF wpop preprocessing_zaf_census_data.py",
+=======
+            "name": "Py: ZAF preprocessing_zaf_census_data.py",
+>>>>>>> b8490851904455c9f7f9a4d2f8770c7174c46e42
             "type": "python",
             "request": "launch",
             "program": "preprocessing_zaf_pop_data.py",
             "console": "integratedTerminal",
             "args": [
+<<<<<<< HEAD
                 "/scratch2/metzgern/HAC/data/codedata/OtherBuildings/ZAF/Subnational/Shapefile/zaf_subnational_2000_2020.shp",
                 "/scratch2/metzgern/HAC/data/codedata/OtherBuildings/ZAF/zaf_subnational_2000_2020_sid.tif",
                 "/scratch2/metzgern/HAC/data/codedata/OtherBuildings/ZAF/zaf_wpop_census.csv",
                 "2020",
+=======
+                "../../data/OtherBuildings/ZAF/Subnational/Shapefile/zaf_subnational_2000_2020.shp",
+                "../../data/OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020.tif",
+                "../../data/OtherBuildings/ZAF/zaf_population_2000_2020.csv",
+                "P_2020",
+>>>>>>> b8490851904455c9f7f9a4d2f8770c7174c46e42
                 "preprocessed_data_3_zaf.pkl",
                 "zaf"
             ]
         },{
+<<<<<<< HEAD
+=======
+            "name": "Py: ZAF compute_gbuilding_count_map", //works!
+        "type": "python",
+        "request": "launch",
+        "program": "compute_gbuilding_count_map.py",
+        "console": "integratedTerminal",
+        "args": [
+            "../../data/OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020.tif", //sftp://metzgern@pf-pc14.ethz.ch/scratch2/metzgern/HAC/data/OtherBuildings/ZAF/Subnational/zaf_subnational_admin_2000_2020.tif
+            "../../data/OtherBuildings/ZAF/open_buildings_google_zaf.csv", //open_buildings_google_zaf.csv",//sftp://metzgern@pf-pc14.ethz.ch/scratch2/metzgern/HAC/data/OtherBuildings/ZAF/open_buildings_google_zaf.csv
+            "../../data/OtherBuildings/ZAF/ZAF_own_google_bcount.tif",
+            "../../data/OtherBuildings/ZAF/ZAF_own_google_meanarea.tif",
+        ]
+        },{
+            "name": "Py: ZAF ERROR wpop preprocessing_pop_data.py",
+        "type": "python",
+        "request": "launch",
+        "program": "preprocessing_pop_data.py",
+        "console": "integratedTerminal",
+        "args": [
+            "../../../data/OtherBuildings/ZAF/zaf_humdata_regions_shapefile/zaf_humdata_regions.shp",
+            "../../../data/OtherBuildings/ZAF/zaf_humdata_regions.tif",
+            "../../../data/OtherBuildings/ZAF/zaf_wpop_regions.tif",
+            "../../../data/OtherBuildings/ZAF/zaf_wpop_census.csv",
+            "preprocessed_data_3_zaf.pkl",
+            "zaf",
+            "P_2020"
+        ]
+        }, {
+>>>>>>> b8490851904455c9f7f9a4d2f8770c7174c46e42
             "name": "Py: ZMB preprocessing_zmb_census_data.py",
             "type": "python",
             "request": "launch",
@@ -373,6 +414,43 @@
                 "--max_step", "150000",
                 //"--population_target", "True"
                 "--name", "this-is-a-test-for-zmb"
+            ]
+        },
+        {
+            "name": "ZAF LogL1 kernel superpixel_disagg_model.py fold x",
+            "type": "python",
+            "request": "launch",
+            "program": "superpixel_disagg_model.py",
+            "console": "integratedTerminal",
+            //"justMyCode": false,
+            "env": {//"DISPLAY":":1",
+                "PYTHONPATH": "${workspaceRoot}",
+                "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
+            "args": [
+                "-train", "zaf",
+                "-train_lvl", "f",
+                "-test", "zaf", 
+                // "-lr", "0.0001", 
+                "-lr", "0.00001", 
+                "-wr", "0.01",
+                "--dropout", "0.4",
+                "-optim", "adam",
+                "-adamwr", "0",
+                "-lstep", "800",
+                "--validation_fold", "0",
+                "-rs", "1610",
+                "-rsf", "1610",
+                "-mm", "d", 
+                "--loss", "LogL1", 
+                "--kernel_size", "1,1,1,1",
+                "--admin_augment", "True",
+                //"--population_target", "True",
+                "--input_scaling", "True",
+                "--output_scaling", "True", 
+                "--sampler", "custom",
+                "--max_step", "150000",
+                //"--population_target", "True"
+                "--name", "this-is-a-test-for-zaf"
             ]
         },{
             "name": "MOZ_CV LogL1 kernel superpixel_disagg_model.py fold x",
