@@ -478,6 +478,7 @@ def superpixel_with_pix_data(
                 scale_vars_available = True
 
             # cr_map[~valid_data_mask]= torch.tensor([np.nan], type=torch.float)
+            # cr_map = cr_map.numpy()
             cr_map[~valid_data_mask]= np.nan
             predicted_target_img[~valid_data_mask]= np.nan
             predicted_target_img_adjusted[~valid_data_mask]= np.nan
