@@ -230,7 +230,7 @@ class PixScaleNet(nn.Module):
         if self.input_scaling:
             data = self.perform_scale_inputs(data, name)
 
-        feats = self.occratenet(data)
+            feats = self.occratenet(data)
         
         if self.pop_target:
             pop_est = self.occrate_layer(feats)

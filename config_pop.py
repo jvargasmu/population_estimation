@@ -23,24 +23,8 @@ input_paths = {
         "buildings_maxar": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_count.tif".format(root_path),
         "buildings_google_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
         "buildings_maxar_mean_area": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_mean_area.tif".format(root_path),
-        # "esaccilc_dst011_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst011_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst040_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst040_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst130_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst130_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst140_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst140_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst150_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst150_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst160_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst160_100m_2015.tif".format(
-        #     root_path),
-        # "esaccilc_dst190_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst190_100m_2015.tif".format(
-        #     root_path), # Urban Areas
-        # "esaccilc_dst200_100m_2000": "{}Covariates/TZA/ESA_CCI_Annual/2015/tza_esaccilc_dst200_100m_2015.tif".format(
-        #     root_path), 
-        "tza_tt50k_100m_2000": "{}Covariates/TZA/Accessibility/tza_tt50k_100m_2000.tif".format(
-            root_path), 
+        "tza_tt50k_1h), 00m_2000": "{}Covariates/TZA/Accessibility/tza_tt50k_100m_2000.tif".format(
+            root_path),
         "tza_dst_bsgme_100m_2015": "{}Covariates/TZA/BSGM/2015/DTE/tza_dst_bsgme_100m_2015.tif".format(
             root_path),
         "tza_dst_ghslesaccilcgufghsll_100m_2014": "{}Covariates/TZA/BuiltSettlement/2014/DTE/tza_dst_ghslesaccilcgufghsll_100m_2014.tif".format(
@@ -928,8 +912,8 @@ input_paths["tza_f2"] = {
 input_paths["tza_f3"] = {
     "buildings_google": input_paths["tza"]["buildings_google"],
     "buildings_maxar": input_paths["tza"]["buildings_maxar"],
-    "buildings_google_mean_area": input_paths["tza"]["buildings_google_mean_area"],
-    "buildings_maxar_mean_area": input_paths["tza"]["buildings_maxar_mean_area"],
+    # "buildings_google_mean_area": input_paths["tza"]["buildings_google_mean_area"],
+    # "buildings_maxar_mean_area": input_paths["tza"]["buildings_maxar_mean_area"],
     "tza_viirs_100m_2015" : input_paths["tza"]["tza_viirs_100m_2015"]
 }
 

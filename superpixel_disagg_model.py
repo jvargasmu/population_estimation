@@ -455,6 +455,10 @@ def superpixel_with_pix_data(
         for name in test_dataset_name:
             print("started saving files for", name)
 
+            log_output_path = dest_folder+'/log_dict.pkl'.format(name)
+            with open(log_output_path, 'wb') as handle:
+                pickle.dump(log_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            
             with open(datalocations[name]['eval_vars'], "rb") as f:
                 _, _, fine_map, fine_map_full, _, _, _, valid_data_mask, geo_metadata, cr_map, cr_map_full = pickle.load(f) 
 
@@ -473,6 +477,7 @@ def superpixel_with_pix_data(
                 scales = scales[0]
                 scale_vars_available = True
 
+            # cr_map[~valid_data_mask]= torch.tensor([np.nan], type=torch.float)
             cr_map[~valid_data_mask]= np.nan
             predicted_target_img[~valid_data_mask]= np.nan
             predicted_target_img_adjusted[~valid_data_mask]= np.nan
@@ -486,10 +491,6 @@ def superpixel_with_pix_data(
             if not os.path.exists(dest_folder):
                 os.makedirs(dest_folder)
             print("dest_folder {}".format(dest_folder))
-            
-            log_output_path = dest_folder+'/log_dict.pkl'.format(name)
-            with open(log_output_path, 'wb') as handle:
-                pickle.dump(log_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
             
             write_geolocated_image( cr_map_full, dest_folder+'/{}_cr_map_full.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )

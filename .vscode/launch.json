@@ -355,7 +355,7 @@
                 "PYDEVD_WARN_EVALUATION_TIMEOUT": "500"},
             "args": [
                 "-train", "tza",
-                "-train_lvl", "c",
+                "-train_lvl", "f",
                 "-test", "tza",
                 "-lr", "0.0001",
                 "-wr", "0.01",
@@ -368,7 +368,8 @@
                 "-rsf", "1610",
                 "-mm", "d", 
                 "--loss", "LogL1", 
-                "--kernel_size", "3,3,3,3",
+                "--dataset", "datasettop5",
+                "--kernel_size", "1,1,1,1",
                 // "--admin_augment", "False",
                 "--population_target", "False",
                 "--input_scaling", "True",
