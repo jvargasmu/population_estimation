@@ -455,6 +455,7 @@ def superpixel_with_pix_data(
         for name in test_dataset_name:
             print("started saving files for", name)
 
+            dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
             log_output_path = dest_folder+'/log_dict.pkl'.format(name)
             with open(log_output_path, 'wb') as handle:
                 pickle.dump(log_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -488,7 +489,6 @@ def superpixel_with_pix_data(
             cr_map_full[cr_map_full==0]= np.nan
 
             #Prepate the output folder
-            dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
             if not os.path.exists(dest_folder):
                 os.makedirs(dest_folder)
             print("dest_folder {}".format(dest_folder))
@@ -556,12 +556,12 @@ def main():
     parser.add_argument("--optimizer", "-optim", type=str, default="adam", help="adam, adamw ")
     parser.add_argument("--loss", "-l", type=str, default="NormL1", help="NormL1, NormL2, gaussNLL, laplaceNLL")
     parser.add_argument("--train_weight", "-train_w", type=str,  default='1', help="ordered by --train_dataset_name weighting of the samples in the datasets (separated by commas) ")
-    parser.add_argument("--learning_rate", "-lr", type=float, default=0.00001, help=" ")
+    parser.add_argument("--learning_rate", "-lr", type=float, default=0.0001, help=" ")
     parser.add_argument("--grad_clip", "-gc", type=float, default=10., help="Gradient norm clipping value")
     parser.add_argument("--lr_scheduler_step", "-lrs", type=float, default=np.inf, help="How many interations until LR is reduced to 10%.")
     parser.add_argument("--lr_scheduler_gamma", "-lrg", type=float, default=0.5, help="How many interations until LR is reduced to 10%.")
     parser.add_argument("--weights_regularizer", "-wr", type=float, default=0., help=" ")
-    parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.001, help=" ")
+    parser.add_argument("--weights_regularizer_adamw", "-adamwr", type=float, default=0.0, help=" ")
     parser.add_argument("--dropout", "-drop", type=float, default=0.0, help="dropout probability ")
     parser.add_argument("--small_net", "-sn", type=bool, default=False, help="Using small variant.")
     parser.add_argument("--kernel_size", "-ks", type=str, default="1,1,1,1", help="Commaseperated list of integer kernel sizes with size 4.")
