@@ -16,10 +16,14 @@ pip install numpy torch matplotlib h5py wandb tqdm torchvision fiona sklearn gda
 
 ## Data
 The raw data can be accessed through websites of [WorldPop](https://hub.worldpop.org/project/categories?id=14) and [Googles's Open Building](https://sites.research.google/open-buildings/).
-For your convinience, we provide the precompiled datasets [here]()
+For your convinience, we provide the precompiled datasets [here](https://drive.google.com/drive/folders/18IIPzj0pBOkq9T7SL-UYXz2AZMXhOuuZ?usp=sharing).
+
+## Population Maps
+
+Our Population Maps can be accessed [here](https://drive.google.com/drive/folders/1w_DGqBW4SkPIferoeKKVQNx1MrmgHws-?usp=sharing])
 
 
-## Running the code for tanzania
+## Running the code for Tanzania
 for random seeds ```${rs} = [1610,1611,1612,1612,1614]```
 
 ### Fine coarse training setting
