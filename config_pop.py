@@ -23,7 +23,7 @@ input_paths = {
         "buildings_maxar": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_count.tif".format(root_path),
         "buildings_google_mean_area": "{}OtherBuildings/TZA/TZA_gbp_BCB_v1_mean_area.tif".format(root_path),
         "buildings_maxar_mean_area": "{}OtherBuildings/TZA/TZA_mbp_BCB_v3_mean_area.tif".format(root_path),
-        "tza_tt50k_1h), 00m_2000": "{}Covariates/TZA/Accessibility/tza_tt50k_100m_2000.tif".format(
+        "tza_tt50k_100m_2000": "{}Covariates/TZA/Accessibility/tza_tt50k_100m_2000.tif".format(
             root_path),
         "tza_dst_bsgme_100m_2015": "{}Covariates/TZA/BSGM/2015/DTE/tza_dst_bsgme_100m_2015.tif".format(
             root_path),

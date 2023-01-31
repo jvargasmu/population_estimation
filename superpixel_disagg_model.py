@@ -455,6 +455,12 @@ def superpixel_with_pix_data(
         for name in test_dataset_name:
             print("started saving files for", name)
 
+            #Prepate the output folder
+            dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
+            if not os.path.exists(dest_folder):
+                os.makedirs(dest_folder)
+            print("dest_folder {}".format(dest_folder))
+            
             log_output_path = dest_folder+'/log_dict.pkl'.format(name)
             with open(log_output_path, 'wb') as handle:
                 pickle.dump(log_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -486,12 +492,6 @@ def superpixel_with_pix_data(
             fine_map[~valid_data_mask]= np.nan
             fine_map_full[fine_map_full==0]= np.nan
             cr_map_full[cr_map_full==0]= np.nan
-
-            #Prepate the output folder
-            dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
-            if not os.path.exists(dest_folder):
-                os.makedirs(dest_folder)
-            print("dest_folder {}".format(dest_folder))
             
             write_geolocated_image( cr_map_full, dest_folder+'/{}_cr_map_full.tiff'.format(name),
                 geo_metadata["geo_transform"], geo_metadata["projection"] )
