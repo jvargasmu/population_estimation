@@ -1,7 +1,7 @@
-# Population Estimation
+# Population Estimations using [POMELO](https://www.nature.com/articles/s41598-022-24495-w) (Population Mapping by Estimation of Local Occupancy rates)
 
 This code repository shows how to obtain population estimations using the POMELO model (see the paper "Fine-grained Population Mapping from Coarse Census Counts
-and Open Geodata" [here](https://www.nature.com/articles/s41598-022-24495-w)). In the following paragraphs, we describe the software requirements, the required input data, and how to use the scripts in the aforementioned repository to generate population maps for a given country, taking as an example the country of Tanzania.
+and Open Geodata" [here](https://www.nature.com/articles/s41598-022-24495-w)). In the following paragraphs, we describe the software requirements, the required input data, and how to use the scripts to generate population maps for a given country, taking as an example the country of Tanzania.
 
 ## Software requirements
 
@@ -60,4 +60,20 @@ Finally, to obtain the population estimations for the whole country, which colle
 
 ```
 python superpixel_disagg_model.py -train tza -train_lvl f -test tza -wr 0.01 --dropout 0.4 -lstep 800 --validation_fold 0 -rs 42 -mm d --loss LogL1 --dataset_dir datasets --sampler custom --max_step 150000 --name TZA_fine_allfolds --e5f_metric best_mape -e5f TZA_fine_vfold0,TZA_fine_vfold1,TZA_fine_vfold2,TZA_fine_vfold3,TZA_fine_vfold4
+```
+
+## Citation
+
+If this code is useful for you, please cite our paper:
+```
+@article{metzger2022fine,
+  title={Fine-grained population mapping from coarse census counts and open geodata},
+  author={Metzger, Nando and Vargas-Mu{\~n}oz, John E. and Daudt, Rodrigo C. and Kellenberger, Benjamin and Whelan, Thao Ton-That and Ofli, Ferda and Imran, Muhammad and Schindler, Konrad and Tuia, Devis},
+  journal={Scientific Reports},
+  volume={12},
+  number={1},
+  pages={20085},
+  year={2022},
+  publisher={Nature Publishing Group UK London}
+}
 ```
