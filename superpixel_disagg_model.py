@@ -305,7 +305,8 @@ def superpixel_with_pix_data(
     kernel_size,
     eval_model,
     full_ceval,
-    remove_feat_idxs
+    remove_feat_idxs,
+    output_dir
     ):
 
     ####  define parameters  ########################################################
@@ -456,7 +457,9 @@ def superpixel_with_pix_data(
             print("started saving files for", name)
 
             #Prepate the output folder
-            dest_folder = '../../../viz/outputs/{}'.format(wandb.run.name)
+            dest_folder = os.path.join(output_dir, wandb.run.name)
+            Path(dest_folder).mkdir(parents=True, exist_ok=True)
+
             if not os.path.exists(dest_folder):
                 os.makedirs(dest_folder)
             print("dest_folder {}".format(dest_folder))
@@ -597,6 +600,7 @@ def main():
     parser.add_argument("--name", type=str, default=None, help="short name for the run to identify it")
     
     parser.add_argument("--remove_feat_idxs", "-rmfi", type=str, default=None, help="Comaseparated list of indexes of features to be removed")
+    parser.add_argument("--output_dir", "-out", type=str, default='outputs', help="Output directory")
 
     args = parser.parse_args()  
 
@@ -675,7 +679,8 @@ def main():
         args.kernel_size,
         args.eval_model,
         args.full_ceval,
-        args.remove_feat_idxs
+        args.remove_feat_idxs,
+        args.output_dir
     )
 
 
