@@ -109,9 +109,9 @@ input_paths = {
         "moz_wdpa_dst_cat1_100m_2015": f"{root_path}MOZ/covariates/moz_wdpa_dst_cat1_100m_2015.tif"
     },
     "zmb" : {
-        "buildings_google": f"{root_path}ZMB/covariates/ZMB_own_google_bcount.tif",
+        "buildings_google": f"{root_path}ZMB/covariates/ZMB_gbp_BCB_v1_count.tif",
         "buildings_maxar": f"{root_path}ZMB/covariates/ZMB_buildings_v2_0_count.tif",
-        "buildings_google_mean_area": f"{root_path}ZMB/covariates/ZMB_own_google_barea_v3.tif",
+        "buildings_google_mean_area": f"{root_path}ZMB/covariates/ZMB_gbp_BCB_v1_mean_area.tif ",
         "buildings_maxar_mean_area": f"{root_path}ZMB/covariates/ZMB_buildings_v2_0_mean_area.tif",
         "zmb_tt50k_100m_2000": f"{root_path}ZMB/covariates/zmb_tt50k_100m_2000.tif",
         "zmb_dst_bsgme_100m_2015": f"{root_path}ZMB/covariates/zmb_dst_bsgme_100m_2015.tif",
