@@ -582,10 +582,10 @@ def main():
     parser.add_argument("--load_state", "-load", type=str, default=None, help="Loading from a specific state. Attention: 5fold evaluation not implmented yet!")
     parser.add_argument("--eval_only", "-eval", type=bool, default=False, help="Just evaluate the model and save results. Attention: 5fold evaluation not implmented yet! ")
 
-    parser.add_argument("--input_scaling", "-is", type=bool, default=False, help="Countrywise input feature scaling.")
-    parser.add_argument("--output_scaling", "-os", type=bool, default=False, help="Countrywise output scaling.")
+    parser.add_argument("--input_scaling", "-is", type=lambda x: bool(strtobool(x)), default=True, help="Countrywise input feature scaling.")
+    parser.add_argument("--output_scaling", "-os", type=lambda x: bool(strtobool(x)), default=True, help="Countrywise output scaling.")
 
-    parser.add_argument("--silent_mode", "-silent", type=bool, default=False, help="Surpresses tqdm output mostly")
+    parser.add_argument("--silent_mode", "-silent", type=lambda x: bool(strtobool(x)), default=True, help="Surpresses tqdm output mostly")
     parser.add_argument("--dataset_dir", "-dd", type=str, default='datasets', help="Directory of the hdf5 files")
     
     parser.add_argument("--e5f_metric", "-e5fmt", type=str, default="final", help="metric final, best_r2, best_mae, best_mape")
