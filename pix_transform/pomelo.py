@@ -6,12 +6,12 @@ from tqdm import tqdm
 from utils import plot_2dmatrix
 
 
-class PixScaleNet(nn.Module):
+class POMELO(nn.Module):
 
     def __init__(self, channels_in=5, kernel_size=1, weights_regularizer=0.001,
         device="cuda" if torch.cuda.is_available() else "cpu", loss=None, dropout=0.,
         exp_max_clamp=20, pred_var = True, input_scaling=False, output_scaling=False, datanames=None, small_net=False, pop_target=False):
-        super(PixScaleNet, self).__init__()
+        super(POMELO, self).__init__()
 
         # Define params
         self.pop_target = pop_target

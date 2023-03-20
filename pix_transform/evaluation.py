@@ -25,7 +25,7 @@ from utils import plot_2dmatrix, accumulate_values_by_region, compute_performanc
 from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_region, compute_disagg_weights, \
     set_value_for_each_region
 
-from pix_transform.pix_transform_net import PixScaleNet
+from pix_transform.pomelo import POMELO
 import config_pop as cfg
 
 
@@ -478,6 +478,7 @@ def eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, p
     wandb.log(log_dict) 
     return res_dict, log_dict
 
+
 def Eval5Fold_PixAdminTransform(
     datalocations,
     train_dataset_name,
@@ -555,14 +556,9 @@ def Eval5Fold_PixAdminTransform(
                 sample_stddev_w = torch.sqrt(sampleVariance_w)
 
                 for j,fname in enumerate(Datasets[k].feature_names[name]):
-                    # print("Train Fold", k, "; Dataset", name, "Featurename:", fname ,"; Mean=, Stdv= (", mean_w[j].item(), ",", sample_stddev_w[j].item(), ")")
                     print(mean_w[j].item(), ",", sample_stddev_w[j].item(), "," , fname, ", Train Fold", k, "; Dataset", name, "Featurename:", fname ,"; Mean=, Stdv= (", mean_w[j].item(), ",", sample_stddev_w[j].item(), ")")
 
 
-    # Fix all random seeds
-    # torch.manual_seed(params["random_seed"])
-    # random.seed(params["random_seed"])
-    # np.random.seed(params["random_seed"])
     # Fix all random seeds
     torch.manual_seed(params["random_seed"])
     random.seed(params["random_seed"])
@@ -576,7 +572,7 @@ def Eval5Fold_PixAdminTransform(
     # load 5 models
     Mynets = []
     for k in range(5):
-        mynet = PixScaleNet(channels_in=Datasets[0].num_feats(),
+        mynet = POMELO(channels_in=Datasets[0].num_feats(),
                     weights_regularizer=params['weights_regularizer'],
                     device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                     dropout=params["dropout"],
@@ -603,7 +599,6 @@ def Eval5Fold_PixAdminTransform(
         Mynets.append(mynet)
 
     return eval_generic_model(datalocations, train_dataset_name,  test_dataset_names, params, Mynets, Datasets, memory_vars)
-
 
 
 
@@ -639,7 +634,7 @@ def EvalModel_PixAdminTransform(
     os.environ['PYTHONHASHSEED'] = str(params["random_seed"])
 
 
-    mynet = PixScaleNet(channels_in=dataset.num_feats(),
+    mynet = POMELO(channels_in=dataset.num_feats(),
                 weights_regularizer=params['weights_regularizer'],
                 device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                 dropout=params["dropout"],
@@ -652,10 +647,8 @@ def EvalModel_PixAdminTransform(
     if params["e5f_metric"] == "final":
         checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["eval_5fold"]))
     elif params["e5f_metric"] in ["best_mape_avg","best_r2_avg","best_mae_avg","best_mape_adj_avg","best_r2_adj_avg","best_mae_adj_avg"]: 
-
         checkpoint = torch.load('checkpoints/{}/AVG/VAL/{}.pth'.format(params["e5f_metric"].split("_avg")[0], params["eval_model"])) 
     else:
-        #TODO: This works for one country in the test set. We need to verify if this would work for several countries in test_dataset_names
         checkpoint = torch.load('checkpoints/{}/{}/VAL/{}.pth'.format(params["e5f_metric"], test_dataset_names[0], params["val_valid_ids"])) 
     
 
@@ -667,12 +660,14 @@ def EvalModel_PixAdminTransform(
 
     mynet.eval()
 
+    # Iterate through datasets
     log_dict,res_dict = {},{}
     for name in test_dataset_names: 
         logging.info(f'Testing dataset of {name}')
         val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = memory_vars[name]
         val_features = dataset.features[name]
         
+        # eval model for this dataset
         res, this_log_dict = eval_my_model(
             mynet, val_features, val_valid_data_mask, val_regions,
             val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
@@ -680,7 +675,6 @@ def EvalModel_PixAdminTransform(
             disaggregation_data=dataset.memory_disag[name],
             dataset_name=name, return_scale=True, silent_mode=params["silent_mode"], full_eval=True
         )
-
 
         for key in this_log_dict.keys():
             log_dict[name+'/'+key] = this_log_dict[key]

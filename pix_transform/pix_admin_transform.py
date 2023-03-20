@@ -21,7 +21,7 @@ from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_
     set_value_for_each_region
 # from pix_transform_utils.utils import upsample
 
-from pix_transform.pix_transform_net import PixScaleNet
+from pix_transform.pomelo import POMELO
 
 from bayesian_dl.loss import GaussianNLLLoss, LaplacianNLLLoss
 
