@@ -22,7 +22,6 @@ from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_
 
 from pix_transform.pix_admin_transform import PixAdminTransform 
 from pix_transform.evaluation import Eval5Fold_PixAdminTransform, EvalModel_PixAdminTransform, Eval5Fold_FeatureImportance
-from pix_transform_utils.plots import plot_result
 from distutils.util import strtobool
 
 def get_dataset(dataset_name, params, building_features, related_building_features):
@@ -69,7 +68,6 @@ def get_dataset(dataset_name, params, building_features, related_building_featur
 
     # Reorganize features into one numpy array and handling of no-data mask
     feature_names = list(input_paths.keys())
-    # torch_feature_names = torch.tensor(list(input_paths.keys()))
 
     # Merging building features from google and maxar if both are available
     if ('buildings_google' in feature_names) and ('buildings_maxar' in feature_names):

@@ -21,7 +21,7 @@ from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_
     set_value_for_each_region
 # from pix_transform_utils.utils import upsample
 
-from pix_transform.pix_transform_net import PixTransformNet, PixScaleNet
+from pix_transform.pix_transform_net import PixScaleNet
 
 from bayesian_dl.loss import GaussianNLLLoss, LaplacianNLLLoss
 
@@ -41,16 +41,11 @@ def PixAdminTransform(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    #### prepare Dataset #########################################################################
-    # unique_datasets = set(list(validation_data.keys()) + list(training_source.keys()))
+    #### prepare Dataset ######################################################################### 
 
-    #if params["admin_augment"]:
     dataset = MultiPatchDataset(datalocations, train_dataset_name, params["train_level"], params['memory_mode'], device, 
         params["validation_split"], params["validation_fold"], params["weights"], params["custom_sampler_weights"], 
         random_seed_folds=params["random_seed_folds"], build_pairs=params["admin_augment"], remove_feat_idxs=params["remove_feat_idxs"])
-    #else:
-    #    raise Exception("option not available")
-    #    dataset = PatchDataset(training_source, params['memory_mode'], device, params["validation_split"])
 
     # Fix all random seeds
     torch.manual_seed(params["random_seed"])
@@ -62,6 +57,7 @@ def PixAdminTransform(
     torch.backends.cudnn.deterministic = True
     os.environ['PYTHONHASHSEED'] = str(params["random_seed"])
 
+    # Use a special datasampler (not in paper)
     if params["sampler"] in ['custom', 'natural']:
         weights = dataset.all_natural_weights if params["sampler"]=="natural" else dataset.custom_sampler_weights
         sampler = torch.utils.data.WeightedRandomSampler(weights, len(weights), replacement=False)
@@ -82,6 +78,7 @@ def PixAdminTransform(
     elif params['loss'] == 'NormL1':
         myloss = NormL1
     elif params['loss'] == 'LogL1':
+        # In paper
         myloss = LogL1
     elif params['loss'] == 'LogL2':
         myloss = LogL2
@@ -95,13 +92,8 @@ def PixAdminTransform(
         myloss = LaplacianNLLLoss(max_clamp=20.)
     else:
         raise Exception("unknown loss!")
-        
-    if params['Net']=='PixNet':
-        mynet = PixTransformNet(channels_in=dataset.num_feats(),
-                                weights_regularizer=params['weights_regularizer'],
-                                device=device).train().to(device)
-    elif params['Net']=='ScaleNet':
-        mynet = PixScaleNet(channels_in=dataset.num_feats(),
+       
+    mynet = PixScaleNet(channels_in=dataset.num_feats(),
                         weights_regularizer=params['weights_regularizer'],
                         device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                         dropout=params["dropout"],
@@ -118,12 +110,10 @@ def PixAdminTransform(
 
     # Load from state
     if params["load_state"] is not None:
-        # checkpoint = torch.load('checkpoints/best_mape/{}/VAL/{}.pth'.format(test_dataset_names[0], params["load_state"]))
         checkpoint = torch.load('checkpoints/Final/Maxstepstate_{}.pth'.format(params["load_state"]))
         mynet.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    # wandb.watch(mynet)
-    
+        
     #### train network ############################################################################
 
     epochs = params["epochs"]
@@ -160,7 +150,7 @@ def PixAdminTransform(
                 optimizer.step()
                 scheduler.step()
 
-                # train logging
+                # train logging every 50 steps
                 train_log_dict = {}
                 if batchiter % 50 == 0: 
                     if len(y_pred)==2:
@@ -181,13 +171,16 @@ def PixAdminTransform(
                 if mynet.output_scaling:
                     mynet.normalize_out_scales()
 
+                # Clear GPU memory
                 torch.cuda.empty_cache()
 
                 if itercounter>=( params['logstep'] ):
                     itercounter = 0
 
+                    #### Validate network ############################################################################
+
                     with torch.no_grad():
-                        # Validate and Test the model and save model
+                        # Validate the model and save model
                         log_dict = {}
 
                         # Validation
@@ -198,6 +191,7 @@ def PixAdminTransform(
                                 agg_preds,val_census = [],[]
                                 agg_preds_arr = torch.zeros((dataset.max_tregid[name]+1,))
 
+                                # Forward every validation patch and collect results
                                 for idx in tqdm(range(len(dataset.Ys_val[name])), disable=params["silent_mode"]):
                                     X, Y, Mask, name, census_id = dataset.get_single_validation_item(idx, name) 
                                     pred = mynet.forward(X, Mask, name=name, forward_only=True).detach().cpu().numpy()
@@ -208,12 +202,15 @@ def PixAdminTransform(
                                     agg_preds_arr[census_id.item()] = pred.item()
                                     torch.cuda.empty_cache()
 
+                                # Calculate the validation metrics
                                 metrics = compute_performance_metrics_arrays(np.asarray(agg_preds), np.asarray(val_census)) 
-                                # best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
+
+                                # Update best metrics for checkpointing
                                 if name in train_dataset_name:
                                     this_val_scores_avg += [metrics["r2"], metrics["mae"],  metrics["mape"]]
                                     n += 1
 
+                                # Collect metrics
                                 for key in metrics.keys():
                                     log_dict[name + '/validation/' + key ] = metrics[key]
                                 
@@ -230,16 +227,21 @@ def PixAdminTransform(
                                 best_val_scores[name] = checkpoint_model(mynet, optimizer.state_dict(), epoch, metrics, '/'+name+'/VAL/', best_val_scores[name])
 
                                 # "fake" new dissagregation data and reuse the function
-                                # Do the disagregation on country level
+                                # Do the disagregation on country level, e.g only one number (not in paper), called "country_like"
                                 tts = torch.zeros(dataset.memory_disag_val[name][0].shape, dtype=int)
                                 tts[torch.where(dataset.memory_disag_val[name][0])] = 1
                                 disaggregation_data_coarsest_val = [tts, {1: sum(list(dataset.memory_disag_val[name][1].values()))}, dataset.memory_disag_val[name][2] ]
-                            
+                                
+                                # Disagregate without the need of explicitly calculating the map
                                 agg_preds_arr_country_adj, this_metrics_cl = disag_wo_map(agg_preds_arr, disaggregation_data_coarsest_val)
+                                
+                                # Collect metrics
                                 for key,value in this_metrics_cl.items():
-                                    log_dict[name + "/validation/adjusted/country_like/"+key] = value  
-                                # agg_preds_arr_adj[dataset.tregid_val[name]]
+                                    log_dict[name + "/validation/adjusted/country_like/"+key] = value
+                                
                                 this_metrics_cl = compute_performance_metrics_arrays(agg_preds_arr_country_adj[dataset.tregid_val[name]].numpy(), np.asarray(val_census))  
+                                
+                                # Collect metrics
                                 for key,value in this_metrics_cl.items():
                                     log_dict[name + "/validation/adjusted/country_like/"+key] = value  
                                 
@@ -271,7 +273,7 @@ def PixAdminTransform(
                                     log_dict[name+'/'+key] = this_log_dict[key]
                                 torch.cuda.empty_cache()
 
-                    #log scales
+                    #log all scales
                     log_dict = log_scales(mynet, list(datalocations.keys()), dataset, log_dict)
 
                     # log_dict['train/loss'] = loss 
@@ -315,13 +317,13 @@ def PixAdminTransform(
         res_dict = {}
 
         # Evaluation Model
-        # for test_dataset_name, values in validation_data.items():
         for name in test_dataset_names: 
 
             logging.info(f'Testing dataset of {name}')
             val_census, val_regions, val_map, _, val_valid_ids, val_map_valid_ids, _, val_valid_data_mask, _, _, _ = dataset.memory_vars[name]
             val_features = dataset.features[name]
             
+            # eval completly
             res, this_log_dict = eval_my_model(
                 mynet, val_features, val_valid_data_mask, val_regions,
                 val_map_valid_ids, np.unique(val_regions).__len__(), val_valid_ids, val_census,
