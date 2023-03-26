@@ -93,7 +93,7 @@ def PixAdminTransform(
     else:
         raise Exception("unknown loss!")
        
-    mynet = PixScaleNet(channels_in=dataset.num_feats(),
+    mynet = POMELO(channels_in=dataset.num_feats(),
                         weights_regularizer=params['weights_regularizer'],
                         device=device, loss=params['loss'], kernel_size=params['kernel_size'],
                         dropout=params["dropout"],
