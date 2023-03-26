@@ -72,9 +72,9 @@ input_paths = {
     },
     "rwa": {
         "buildings_google": f"{root_path}RWA/covariates/RWA_gbp_BCB_v1_count.tif",
-        "buildings_maxar": f"{root_path}RWA/covariates/RWA_buildings_v1_1_count.tif",
+        "buildings_maxar": f"{root_path}RWA/covariates/RWA_mbp_BCB_v3_count.tif",
         "buildings_google_mean_area": f"{root_path}RWA/covariates/RWA_gbp_BCB_v1_mean_area.tif",
-        "buildings_maxar_mean_area": f"{root_path}RWA/covariates/RWA_buildings_v1_1_mean_area.tif",
+        "buildings_maxar_mean_area": f"{root_path}RWA/covariates/RWA_mbp_BCB_v3_mean_area.tif",
         "rwa_tt50k_100m_2000": f"{root_path}RWA/covariates/rwa_tt50k_100m_2000.tif",
         "rwa_dst_bsgme_100m_2015": f"{root_path}RWA/covariates/rwa_dst_bsgme_100m_2015.tif",
         "rwa_dst_ghslesaccilcgufghsll_100m_2014": f"{root_path}RWA/covariates/rwa_dst_ghslesaccilcgufghsll_100m_2014.tif",
