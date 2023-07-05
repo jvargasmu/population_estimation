@@ -1,11 +1,15 @@
-# Population Estimations using [POMELO](https://www.nature.com/articles/s41598-022-24495-w) (Population Mapping by Estimation of Local Occupancy rates)
+# [POMELO](https://www.nature.com/articles/s41598-022-24495-w): Population Mapping by Estimation of Local Occupancy rates
 
-This code repository shows how to obtain population estimations using the POMELO model (see the paper "Fine-grained Population Mapping from Coarse Census Counts
-and Open Geodata" [here](https://www.nature.com/articles/s41598-022-24495-w)). In the following paragraphs, we describe the software requirements, the required input data, and how to use the scripts to generate population maps for a given country, taking as an example the country of Tanzania.
+This code repository shows how to obtain population estimations using the POMELO model - a result of the paper [Fine-grained Population Mapping from Coarse Census Counts
+and Open Geodata](https://www.nature.com/articles/s41598-022-24495-w). In the following paragraphs, we describe the software requirements, the required input data, and how to use the scripts to generate population maps for a given country, taking as an example the country of Tanzania.
+
+## TL;DR - How can I download the maps?
+
+Using POMELO, we've created population maps for Tanzania, Mozambique, Uganda, Rwanda, and Zambia. All of the data is made readily available in ``.tif`` format, which you can access [here](https://drive.google.com/drive/folders/1KT8F0tytUMw7PjKQ_cxD1AmQMo1zchfX?usp=sharing). You are welcome to explore the population maps of Tanzania and Mozambique in our [web interface](https://popmap.herokuapp.com/#).
 
 ## Software requirements
 
-POMELO is implemented in Python, and some libraries need to be installed before using it. You can setup a virtual environment with all the required Python libraries by running the following commands in a terminal (on a computer with Linux OS).
+POMELO is implemented in Python, and some libraries need to be installed before using it. You can set up a virtual environment with all the required Python libraries by running the following commands in a terminal (on a computer with Linux OS).
 
 ```
 virtualenv -p python3 pomelo_env
@@ -64,7 +68,7 @@ python superpixel_disagg_model.py -train tza -train_lvl f -test tza -wr 0.01 --d
 
 ## Citation
 
-If this code is useful for you, please cite our paper:
+If this code and/or data is useful for you, please cite our paper:
 ```
 @article{metzger2022fine,
   title={Fine-grained population mapping from coarse census counts and open geodata},
