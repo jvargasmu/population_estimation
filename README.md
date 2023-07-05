@@ -1,5 +1,8 @@
 # [POMELO](https://www.nature.com/articles/s41598-022-24495-w): Population Mapping by Estimation of Local Occupancy rates
 
+![POMELO](imgs/POMELO.png)
+![Comparison](imgs/comparison.png)
+
 This code repository shows how to obtain population estimations using the POMELO model - a result of the paper [Fine-grained Population Mapping from Coarse Census Counts
 and Open Geodata](https://www.nature.com/articles/s41598-022-24495-w). In the following paragraphs, we describe the software requirements, the required input data, and how to use the scripts to generate population maps for a given country, taking as an example the country of Tanzania.
 
