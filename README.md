@@ -8,7 +8,13 @@ and Open Geodata](https://www.nature.com/articles/s41598-022-24495-w). In the fo
 
 ## TL;DR - How can I download the maps?
 
-Using POMELO, we've created population maps for Tanzania, Mozambique, Uganda, Rwanda, and Zambia. All of the data is made readily available in ``.tif`` format, which you can access [here](https://drive.google.com/drive/folders/1KT8F0tytUMw7PjKQ_cxD1AmQMo1zchfX?usp=sharing). You are welcome to explore the population maps of Tanzania and Mozambique in our [web interface](https://popmap.herokuapp.com/#).
+There are different ways to acces the population maps for Tanzania, Mozambique, Uganda, Rwanda, and Zambia.
+
+- You can directly download them in ``.tif`` format, [here](https://drive.google.com/drive/folders/1KT8F0tytUMw7PjKQ_cxD1AmQMo1zchfX?usp=sharing).
+- You also download the maps from Google Earth Engine directly via:
+![Google Earth Engine](imgs/ee_code_sample_slim.svg)
+- If you are interested in just exploring the population maps, use our [demo interface](https://ee-nandometzger.projects.earthengine.app/view/pomelo).
+![Google Earth Engine](imgs/EE_app.svg)
 
 ## Software requirements
 
