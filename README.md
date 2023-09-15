@@ -1,4 +1,4 @@
-# [POMELO](https://www.nature.com/articles/s41598-022-24495-w): Population Mapping by Estimation of Local Occupancy rates
+# [POMELO](https://www.nature.com/articles/s41598-022-24495-w): Fine-grained Population Mapping from Coarse Census Counts and Open Geodata
 
 ![POMELO](imgs/POMELO.png)
 ![Comparison](imgs/comparison.png)
