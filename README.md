@@ -11,10 +11,10 @@ and Open Geodata](https://www.nature.com/articles/s41598-022-24495-w). In the fo
 There are different ways to acces the population maps for Tanzania, Mozambique, Uganda, Rwanda, and Zambia.
 
 - You can directly download them in ``.tif`` format, [here](https://drive.google.com/drive/folders/1KT8F0tytUMw7PjKQ_cxD1AmQMo1zchfX?usp=sharing).
-- You also download the maps from Google Earth Engine directly via:
+- You can also download the maps from Google Earth Engine directly via:
 ![Google Earth Engine](imgs/ee_code_sample_slim.svg)
 - If you are interested in just exploring the population maps, use our [demo interface](https://ee-nandometzger.projects.earthengine.app/view/pomelo).
-![Google Earth Engine](imgs/EE_app.svg)
+![Google Earth Engine](imgs/EE_app.png)
 
 ## Software requirements
 
