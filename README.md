@@ -12,7 +12,9 @@ There are different ways to acces the population maps for Tanzania, Mozambique, 
 
 - You can directly download them in ``.tif`` format, [here](https://drive.google.com/drive/folders/1KT8F0tytUMw7PjKQ_cxD1AmQMo1zchfX?usp=sharing).
 - You can also download the maps from Google Earth Engine directly via:
-![Google Earth Engine](imgs/ee_code_sample_slim.svg)
+![var popDensity = ee.Image("projects/ee-nandometzger/assets/POMELOv1");](imgs/ee_code_sample_slim.svg)
+
+`var popDensity = ee.Image("projects/ee-nandometzger/assets/POMELOv1");`
 - If you are interested in just exploring the population maps, use our [demo interface](https://ee-nandometzger.projects.earthengine.app/view/pomelo).
 ![Google Earth Engine](imgs/EE_app.png)
 
