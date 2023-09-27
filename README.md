@@ -6,17 +6,34 @@
 This code repository shows how to obtain population estimations using the POMELO model - a result of the paper [Fine-grained Population Mapping from Coarse Census Counts
 and Open Geodata](https://www.nature.com/articles/s41598-022-24495-w). In the following paragraphs, we describe the software requirements, the required input data, and how to use the scripts to generate population maps for a given country, taking as an example the country of Tanzania.
 
-## TL;DR - How can I download the maps?
+Certainly! You can incorporate information about the community dataset that documents the Google Earth Engine dataset as follows:
 
-There are different ways to acces the population maps for Tanzania, Mozambique, Uganda, Rwanda, and Zambia.
+---
 
-- You can directly download them in ``.tif`` format, [here](https://drive.google.com/drive/folders/1KT8F0tytUMw7PjKQ_cxD1AmQMo1zchfX?usp=sharing).
-- You can also download the maps from Google Earth Engine directly via:
-![var popDensity = ee.Image("projects/ee-nandometzger/assets/POMELOv1");](imgs/ee_code_sample_slim.svg)
+## TL;DR: How to Download Population Maps
 
-`var popDensity = ee.Image("projects/ee-nandometzger/assets/POMELOv1");`
-- If you are interested in just exploring the population maps, use our [demo interface](https://ee-nandometzger.projects.earthengine.app/view/pomelo).
-![Google Earth Engine](imgs/EE_app.png)
+You have multiple options for accessing the population maps for Tanzania, Mozambique, Uganda, Rwanda, and Zambia:
+
+### Direct Download
+
+- **Format**: `.tif`
+- **Link**: [Download Here](https://drive.google.com/drive/folders/1KT8F0tytUMw7PjKQ_cxD1AmQMo1zchfX?usp=sharing)
+
+### Google Earth Engine
+
+- **Code Sample**: 
+  ```javascript
+  var popDensity = ee.Image("projects/ee-nandometzger/assets/POMELOv1");
+  ```
+  ![Google Earth Engine Code Sample](imgs/ee_code_sample_slim.svg)
+- **Community Dataset Documentation**: For more details on the Google Earth Engine dataset, you can visit the [GEE Community Catalog page](https://gee-community-catalog.org/projects/pomelo/).
+
+### Demo Interface
+
+- **Explore Online**: [Demo Interface](https://ee-nandometzger.projects.earthengine.app/view/pomelo)
+  ![Google Earth Engine Interface](imgs/EE_app.png)
+
+---
 
 ## Software requirements
 
@@ -27,6 +44,7 @@ virtualenv -p python3 pomelo_env
 source pomelo_env/bin/activate
 pip install numpy torch matplotlib h5py wandb tqdm torchvision fiona sklearn gdal==3.2.1
 ```
+---
 
 ## Input data
 
@@ -53,6 +71,8 @@ For instance, for the country of Tanzania, we used the census data (United Natio
 
 The census data and information about the administrative boundaries are used as input for the script `preprocessing_pop_data.py` that saves, into a file of format `pickle`, information about census counts of administrative regions (e.g., for Tanzania a file named `preprocessed_census_data_tza.pkl`). This file is used as input for the script `superpixel_disagg_model.py` that trains the population model. 
 
+---
+
 ## Estimating population maps
 
 In the POMELO paper, we describe two strategies to train and evaluate the model with the available data:
@@ -76,6 +96,8 @@ Finally, to obtain the population estimations for the whole country, which colle
 ```
 python superpixel_disagg_model.py -train tza -train_lvl f -test tza -wr 0.01 --dropout 0.4 -lstep 800 --validation_fold 0 -rs 42 -mm d --loss LogL1 --dataset_dir datasets --sampler custom --max_step 150000 --name TZA_fine_allfolds --e5f_metric best_mape -e5f TZA_fine_vfold0,TZA_fine_vfold1,TZA_fine_vfold2,TZA_fine_vfold3,TZA_fine_vfold4
 ```
+
+---
 
 ## Citation
 
