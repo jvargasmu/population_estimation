@@ -47,9 +47,11 @@ pip install numpy torch matplotlib h5py wandb tqdm torchvision fiona sklearn gda
 
 ## Input data
 
+> TL:DR: If you just want to train/evaluate the model, you can download the preprocessed dataset [here](https://drive.google.com/drive/folders/1ArQ_qEq26hXpjlRLzi36ZPUUVB_VcMUx?usp=sharing) and carefully set the paths in the `config_pop.py` folder. If you want to run it with your data. Please read the description on how to reproduce the dataset.
+
 As described in the POMELO paper we used, as input variables (covariates) of our model, geodata that is publicly available. The full list of input data is shown in [Table 4](https://www.nature.com/articles/s41598-022-24495-w/tables/4) of the POMELO paper (e.g., building counts, and night light images). The input data is stored in georeferenced raster images of the same spatial resolution (i.e., 100 m x 100 m). Most of the input data can be downloaded from the [WorldPop website](https://hub.worldpop.org/project/categories?id=14), the Google buildings from [here](https://sites.research.google/open-buildings/) and building data from [Gridded maps of building patterns](https://data.worldpop.org/repo/wopr/_MULT/buildings/v1.1/). 
 
-Once you downloaded this code repository you will need to edit the file `config_pop.py` to specify where the raster input data is located. To do that we need to edit the python dictionary `input_paths` by adding/editing an entry with the code of the country as key and another dictionary as value. As the following partial example:
+Once you downloaded this code repository you will need to edit the file `config_pop.py` to specify where the raster input data is located. To do that we need to edit the python dictionary `input_paths` by adding/editing an entry with the code of the country as key and another dictionary as a value. As the following partial example:
 
 ```
 input_paths = {
@@ -63,12 +65,12 @@ input_paths = {
 }
 ```
 
-After setting all the file paths of the input variables you also need to specify which are the "no data" values in the input raster images. This can be done by editing the python variable `no_data_values` in the file `config_pop.py`. There are already some predefined values, but you can edit them. Finally, in order to normalize the input data it is also needed to provide normalization values for each feature. In order to normalize the values we subtract each feature value by the defined mean and divide it by the defined standard deviation. Currently, those variables were computed for the country of Tanzania and used for all the other countries to facilitate multi-country analysis, but you can also define different means and standards deviation values by editing the variable `norms` in the file `config_pop.py`
+After setting all the file paths of the input variables you also need to specify which are the "no data" values in the input raster images. This can be done by editing the Python variable `no_data_values` in the file `config_pop.py`. There are already some predefined values, but you can edit them. Finally, in order to normalize the input data it is also needed to provide normalization values for each feature. In order to normalize the values we subtract each feature value by the defined mean and divide it by the defined standard deviation. Currently, those variables were computed for the country of Tanzania and used for all the other countries to facilitate multi-country analysis, but you can also define different means and standards deviation values by editing the variable `norms` in the file `config_pop.py`
 
 Apart from the input data that correlates with the population density, you also need to collect census data, since it is the target of the POMELO model. Census data is usually publicly available but is frequently stored in heterogeneous formats.
 For instance, for the country of Tanzania, we used the census data (United Nations projections for 2020 computed from the census of 2012). 
 
-The census data and information about the administrative boundaries are used as input for the script `preprocessing_pop_data.py` that saves, into a file of format `pickle`, information about census counts of administrative regions (e.g., for Tanzania a file named `preprocessed_census_data_tza.pkl`). This file is used as input for the script `superpixel_disagg_model.py` that trains the population model. 
+The census data and information about the administrative boundaries are used as input for the script `preprocessing_pop_data.py` that saves, into a file of format `pickle`, information about census counts of administrative regions (e.g., for Tanzania a file named `preprocessed_census_data_tza.pkl`). For the users convenience, we host all preprocessed census [here](https://drive.google.com/drive/folders/1nhB2jcXOIMlK__PSvHuSJqvaGlzbbpZ6?usp=sharing), such that this preprocessing step can be omitted. This file is used as input for the script `superpixel_disagg_model.py` that trains the population model. 
 
 ---
 
