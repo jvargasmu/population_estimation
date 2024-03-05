@@ -55,7 +55,7 @@ Once you downloaded this code repository you will need to edit the file `config_
 input_paths = {
     "tza": {
         "buildings_google" : "path_of_raster_building_counts_google",
-        "buildings_maxar" : "paht_of_raster_building_counts_maxar",
+        "buildings_maxar" : "path_of_raster_building_counts_maxar",
         "buildings_google_mean_area" : "path_of_raster_buildings_mean_area_google",
         "buildings_maxar_mean_area" : "path_of_raster_buildings_mean_area_maxar",
         ...
