@@ -75,7 +75,7 @@ The census data and information about the administrative boundaries are used as 
 For example, to extract the 2020 census from Mozambique, you can run:
 
 ```bash
-preprocessing_pop_data.py MOZ/moz_humdata_regions_shapefile/moz_humdata_regions.shp MOZ/moz_humdata_regions.tif MOZ/moz_wpop_regions.tif MOZ/moz_wpop_census.csv preprocessed_census_data_moz.pkl moz P_2020
+python preprocessing_pop_data.py MOZ/moz_humdata_regions_shapefile/moz_humdata_regions.shp MOZ/moz_humdata_regions.tif MOZ/moz_wpop_regions.tif MOZ/moz_wpop_census.csv preprocessed_census_data_moz.pkl moz P_2020
 ```
 
 For the user's convenience, we host all preprocessed 2020 census data [here](https://drive.google.com/drive/folders/1nhB2jcXOIMlK__PSvHuSJqvaGlzbbpZ6?usp=sharing), such that this command step can be omitted. The `.pkl` files are used as input for the script `superpixel_disagg_model.py` that trains the population model. 
