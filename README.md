@@ -70,11 +70,19 @@ After setting all the file paths of the input variables you also need to specify
 Apart from the input data that correlates with the population density, you also need to collect census data, since it is the target of the POMELO model. Census data is usually publicly available but is frequently stored in heterogeneous formats.
 For instance, for the country of Tanzania, we used the census data (United Nations projections for 2020 computed from the census of 2012). 
 
-The census data and information about the administrative boundaries are used as input for the script `preprocessing_pop_data.py` that saves, into a file of format `pickle`, information about census counts of administrative regions (e.g., for Tanzania a file named `preprocessed_census_data_tza.pkl`). For the users convenience, we host all preprocessed census [here](https://drive.google.com/drive/folders/1nhB2jcXOIMlK__PSvHuSJqvaGlzbbpZ6?usp=sharing), such that this preprocessing step can be omitted. This file is used as input for the script `superpixel_disagg_model.py` that trains the population model. 
+The census data and information about the administrative boundaries are used as input for the script `preprocessing_pop_data.py` that saves, into a file of format `pickle`, information about census counts of administrative regions (e.g., for Tanzania a file named `preprocessed_census_data_tza.pkl`).
+
+For example, to extract the 2020 census from Mozambique, you can run:
+
+```bash
+preprocessing_pop_data.py MOZ/moz_humdata_regions_shapefile/moz_humdata_regions.shp MOZ/moz_humdata_regions.tif MOZ/moz_wpop_regions.tif MOZ/moz_wpop_census.csv preprocessed_census_data_moz.pkl moz P_2020
+```
+
+For the user's convenience, we host all preprocessed 2020 census data [here](https://drive.google.com/drive/folders/1nhB2jcXOIMlK__PSvHuSJqvaGlzbbpZ6?usp=sharing), such that this command step can be omitted. The `.pkl` files are used as input for the script `superpixel_disagg_model.py` that trains the population model. 
 
 ---
 
-## Estimating population maps
+## Training POMELO and estimating population maps
 
 In the POMELO paper, we describe two strategies to train and evaluate the model with the available data:
 The `coarse level` training is conducted to analyze the capabilities of POMELO and the `fine level` training which is relevant in practice.
