@@ -49,7 +49,7 @@ pip install numpy torch matplotlib h5py wandb tqdm torchvision fiona sklearn gda
 
 ## Input data
 
-> TL:DR: If you just want to train/evaluate the model, you can download the preprocessed dataset [here](https://drive.google.com/drive/folders/1ArQ_qEq26hXpjlRLzi36ZPUUVB_VcMUx?usp=sharing) and carefully set the paths in the `config_pop.py` folder. If you want to run it with your data. Please read the description on how to reproduce the dataset.
+> TL:DR: If you just want to train/evaluate the model, you can download the preprocessed dataset [here](https://drive.google.com/drive/folders/1ArQ_qEq26hXpjlRLzi36ZPUUVB_VcMUx?usp=sharing) and carefully set the paths in the `config_pop.py` folder. If you want to run it with your data, please read the description on how to reproduce the dataset.
 
 As described in the POMELO paper we used, as input variables (covariates) of our model, geodata that is publicly available. The full list of input data is shown in [Table 4](https://www.nature.com/articles/s41598-022-24495-w/tables/4) of the POMELO paper (e.g., building counts, and night light images). The input data is stored in georeferenced raster images of the same spatial resolution (i.e., 100 m x 100 m). Most of the input data can be downloaded from the [WorldPop website](https://hub.worldpop.org/project/categories?id=14), the Google buildings from [here](https://sites.research.google/open-buildings/) and building data from [Gridded maps of building patterns](https://data.worldpop.org/repo/wopr/_MULT/buildings/v1.1/). 
 
