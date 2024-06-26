@@ -467,7 +467,7 @@ metadata = {
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": f'{root_path}TZA/preprocessed_census_data_tza.pkl',
-        "rst_wp_regions_path": f'{root_path}TZA/admin_regions/tza_wp_admin_regions.tif'
+        "rst_wp_regions_path": f'{root_path}TZA/admin_regions/tza_subnational_2000_2020_sid.tif'
     },
     "uga":{
         "wp_no_data": [0, 1],
@@ -475,7 +475,7 @@ metadata = {
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": f'{root_path}UGA/preprocessed_census_data_uga.pkl',
-        "rst_wp_regions_path": f'{root_path}UGA/admin_regions/uga_wp_admin_regions.tif'
+        "rst_wp_regions_path": f'{root_path}UGA/admin_regions/uga_wpop_regions.tif'
     },
     "cod":{
         "wp_no_data": [0, 1],
@@ -483,7 +483,7 @@ metadata = {
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": f'{root_path}COD/preprocessed_census_data_cod.pkl',
-        "rst_wp_regions_path": f'{root_path}COD/admin_regions/cod_wp_admin_regions.tif'
+        "rst_wp_regions_path": f'{root_path}COD/admin_regions/cod_wpop_regions.tif'
     },
     "rwa":{
         "wp_no_data": [0, 1],
@@ -491,7 +491,7 @@ metadata = {
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": f'{root_path}RWA/preprocessed_census_data_rwa.pkl',
-        "rst_wp_regions_path": f'{root_path}RWA/admin_regions/rwa_wp_admin_regions.tif'
+        "rst_wp_regions_path": f'{root_path}RWA/admin_regions/rwa_wpop_regions.tif'
     },
     "moz":{
         "wp_no_data": [0, 1],
@@ -499,7 +499,7 @@ metadata = {
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": f'{root_path}MOZ/preprocessed_census_data_moz.pkl',
-        "rst_wp_regions_path": f'{root_path}MOZ/admin_regions/moz_wp_admin_regions.tif'
+        "rst_wp_regions_path": f'{root_path}MOZ/admin_regions/moz_wpop_regions.tif'
     },
     "zmb":{
         "wp_no_data": [0],
@@ -507,7 +507,7 @@ metadata = {
         "hd_no_data": [0],
         "scale_maxar_to_google": None,
         "preproc_data_path": f'{root_path}ZMB/preprocessed_census_data_zmb.pkl',
-        "rst_wp_regions_path": f'{root_path}ZMB/admin_regions/zmb_wp_admin_regions.tif'
+        "rst_wp_regions_path": f'{root_path}ZMB/admin_regions/zmb_adm4_sid.tif'
     }
 }
 
