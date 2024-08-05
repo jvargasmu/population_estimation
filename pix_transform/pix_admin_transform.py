@@ -23,8 +23,6 @@ from cy_utils import compute_map_with_new_labels, compute_accumulated_values_by_
 
 from pix_transform.pomelo import POMELO
 
-from bayesian_dl.loss import GaussianNLLLoss, LaplacianNLLLoss
-
 from pix_transform.evaluation import disag_map, disag_wo_map, disag_and_eval_map, eval_my_model, checkpoint_model, log_scales
 
 if 'ipykernel' in sys.modules:
